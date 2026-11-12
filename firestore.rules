@@ -1,0 +1,45 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function signedIn() { return request.auth != null; }
+    function owner() {
+      return signedIn() &&
+        exists(/databases/$(db)/documents/meta/owners) &&
+        request.auth.uid in get(/databases/$(db)/documents/meta/owners).data.uids;
+    }
+    // Who may create tournaments: anyone with a confirmed email address.
+    function canCreate() { return signedIn() && request.auth.token.email_verified == true; }
+    function isAdmin(tid) {
+      return owner() || (signedIn() &&
+        request.auth.uid in get(/databases/$(db)/documents/tournaments/$(tid)).data.admins);
+    }
+
+    match /meta/{doc} {
+      allow read: if true;
+      allow write: if false;
+    }
+
+    match /tournaments/{tid} {
+      allow read: if true;
+      allow create: if canCreate()
+        && request.resource.data.admins == [request.auth.uid]
+        && request.resource.data.owner == request.auth.uid;
+      allow update, delete: if isAdmin(tid);
+      match /{col}/{id} {
+        allow read: if col != 'pending' || isAdmin(tid);
+        allow write: if isAdmin(tid);
+      }
+    }
+
+    // One small search entry per tournament (what Home and Tournaments list).
+    match /index/{tid} {
+      allow read: if true;
+      allow create: if signedIn()
+        && request.auth.uid in getAfter(/databases/$(db)/documents/tournaments/$(tid)).data.admins
+        && request.resource.data.listed == true;
+      allow update: if isAdmin(tid)
+        && (owner() || request.resource.data.listed == resource.data.listed);
+      allow delete: if isAdmin(tid);
+    }
+  }
+}

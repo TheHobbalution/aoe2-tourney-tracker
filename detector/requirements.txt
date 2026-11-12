@@ -1,0 +1,2 @@
+mgz-fast==1.0.0
+firebase-admin>=6.5,<8
