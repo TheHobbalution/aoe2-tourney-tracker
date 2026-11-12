@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-qHl4T0a4vg6+IshDXK6kXvrkcgKd1hEp4/oy9UvYeZU=' 'sha256-2Jt9paYT+96ixET2yF1f6vLOK5M28Fqi79nyz2l+ggY=' https://www.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-qHl4T0a4vg6+IshDXK6kXvrkcgKd1hEp4/oy9UvYeZU=' 'sha256-2Skqb8valLReO/gQdpfrhtVhxZeQvXMs6BZH6MD2mV0=' https://www.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -294,9 +294,10 @@ body.site main{max-width:none;margin:0 0 0 var(--railw);padding:36px clamp(18px,
 .tour .card{border-radius:4px;background:var(--card);border-color:var(--line)}
 .tour .card h3{font-size:.98rem;letter-spacing:.1em}
 /* hero */
-.bhero{position:relative;overflow:hidden;background:#181b1f;border-radius:6px 6px 0 0;color:#fff;border:1px solid var(--line);border-bottom:0}
-.bhero:before{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 0 50%,color-mix(in srgb,var(--accent) 70%,#000) 50% 62%,color-mix(in srgb,var(--accent2) 75%,#000) 62% 65%,transparent 65%);opacity:.9}
-.bhero:after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(110deg,transparent 0 22px,rgba(255,255,255,.025) 22px 23px);pointer-events:none}
+.bhero,.band{position:relative;overflow:hidden;background:#181b1f;border-radius:6px 6px 0 0;color:#fff;border:1px solid var(--line);border-bottom:0}
+.hero2.bhero{border-bottom:1px solid var(--line)}
+.bhero:before,.band:before{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 0 50%,color-mix(in srgb,var(--accent) 70%,#000) 50% 62%,color-mix(in srgb,var(--accent2) 75%,#000) 62% 65%,transparent 65%);opacity:.9}
+.bhero:after,.band:after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(110deg,transparent 0 22px,rgba(255,255,255,.025) 22px 23px);pointer-events:none}
 .bhero.hasbn:before{display:none}
 .bhero .bn{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
 .bhero.hasbn:after{background:linear-gradient(90deg,rgba(10,11,13,.88) 0,rgba(10,11,13,.55) 55%,rgba(10,11,13,.15))}
@@ -320,7 +321,7 @@ body.site main{max-width:none;margin:0 0 0 var(--railw);padding:36px clamp(18px,
 .tour .tourbar nav.tabs button.on{background:var(--accent);color:var(--accent-ink)}
 .tour .tourbar .livest{margin-left:0;padding:6px 14px}
 /* section headings */
-.sech{font-family:var(--head);font-size:1.05rem;letter-spacing:.14em;margin:26px 0 14px;display:flex;align-items:center;gap:12px}
+.sech{text-transform:uppercase;font-family:var(--head);font-size:1.05rem;letter-spacing:.14em;margin:26px 0 14px;display:flex;align-items:center;gap:12px}
 .sech:after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line2),transparent)}
 .tour > .wrap > .sech:first-of-type{margin-top:4px}
 /* match cards: the VS column has a fixed width so it lines up; long names are cut with … */
@@ -350,17 +351,17 @@ body.site main{max-width:none;margin:0 0 0 var(--railw);padding:36px clamp(18px,
 .infog{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;align-items:start}
 /* site menu: on tournament pages it's a slim bar across the top instead of a side rail */
 @media (min-width:861px){
-  body.site.tpage{--railw:0px}
-  body.site.tpage header.top{position:sticky;top:0;bottom:auto;width:auto;flex-direction:row;align-items:center;gap:22px;padding:8px 24px;border-right:0;border-bottom:1px solid var(--line);overflow:visible}
-  body.site.tpage .wm small{display:none}
-  body.site.tpage .railbody{flex-direction:row;align-items:center;gap:18px}
-  body.site.tpage .railnav{flex-direction:row}
-  body.site.tpage .railnav a{border-left:0;padding:6px 10px}
-  body.site.tpage .railorg{margin:0 0 0 auto;border:0;padding:0;display:flex;align-items:center;gap:12px}
-  body.site.tpage .railorg p{display:none}
-  body.site.tpage .railorg .who{margin:0;max-width:220px}
-  body.site.tpage .railorg button.pri{width:auto;padding:6px 14px}
-  body.site.tpage main{padding-top:22px}
+  body.site{--railw:0px}
+  body.site header.top{position:sticky;top:0;bottom:auto;width:auto;flex-direction:row;align-items:center;gap:22px;padding:8px 24px;border-right:0;border-bottom:1px solid var(--line);overflow:visible}
+  body.site .wm small{display:none}
+  body.site .railbody{flex-direction:row;align-items:center;gap:18px}
+  body.site .railnav{flex-direction:row}
+  body.site .railnav a{border-left:0;padding:6px 10px}
+  body.site .railorg{margin:0 0 0 auto;border:0;padding:0;display:flex;align-items:center;gap:12px}
+  body.site .railorg p{display:none}
+  body.site .railorg .who{margin:0;max-width:220px}
+  body.site .railorg button.pri{width:auto;padding:6px 14px}
+  body.site main{padding-top:22px}
 }
 @media (max-width:860px){
   .bin{flex-direction:column;text-align:center;gap:14px;padding:22px 16px;min-height:0}
@@ -378,11 +379,13 @@ body.site main{max-width:none;margin:0 0 0 var(--railw);padding:36px clamp(18px,
 /* stage picker in Fixtures/Standings */
 .tour .stagebar button{font-family:var(--head);text-transform:uppercase;letter-spacing:.08em;font-size:.82rem;font-weight:600;border-radius:3px;background:var(--card);border-color:var(--line);padding:7px 14px}
 .tour .stagebar button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
-.note.draft{display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-left:4px solid var(--accent2);margin-bottom:18px}
+.note.draft{display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:22px;padding:12px 16px;border-radius:4px;border:1px solid #e8902a;background:repeating-linear-gradient(135deg,rgba(232,144,42,.16) 0 14px,rgba(232,144,42,.08) 14px 28px)}
+.note.draft .dtag{font-family:var(--head);font-weight:800;text-transform:uppercase;letter-spacing:.1em;background:#e8902a;color:#15181c;padding:5px 12px;white-space:nowrap}
+.note.draft .dtx{flex:1 1 320px}
 /* ===== alignment pass ===== */
 .tour table th{text-align:left}
 .tour table th.n,.tour table td.n{text-align:center;width:78px;white-space:nowrap}
-.tour table tr > :first-child{width:40px}
+.tour .tablewrap table{width:100%}
 .tour .bk.rnd .bkcol{flex:0 1 330px;min-width:240px}
 .tour .bk.rnd .bkhead{text-align:left;padding-left:16px}
 .swbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
@@ -401,6 +404,98 @@ body.site main{max-width:none;margin:0 0 0 var(--railw);padding:36px clamp(18px,
 .tour [data-tql]{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px 14px}
 .tour [data-tql] label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:3px 0}
 .tour .row > button{min-height:34px}
+
+/* ===== Broadcast across the whole site ===== */
+:root{--accent:#2b8fd6;--accent2:#e8902a;--accent-ink:#fff;--steel:var(--accent);--link:#7fc0f0}
+.wrap{max-width:1280px}
+.card{border-radius:4px}
+button,input[type=text],input[type=number],input[type=date],input[type=url],input[type=email],input[type=password],input[type=search],select,textarea{border-radius:4px}
+button.pri,a.btn.pri{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+button.pri:hover,a.btn.pri:hover{filter:brightness(1.1)}
+button:hover{border-color:var(--accent)}
+button.big,a.btn{padding:11px 22px;font-size:1rem}
+a.btn{border-radius:4px}
+.wrap h1{font-family:var(--head);font-weight:800}
+h2,h3{font-family:var(--head)}
+/* segmented filters look like the tournament tab bar */
+.seg{border:1px solid var(--line);border-radius:4px;background:var(--rail);max-width:100%;overflow-x:auto}
+.seg button{white-space:nowrap}
+.authbox button.pri{padding:10px 24px}
+.seg button{font-family:var(--head);font-weight:600;letter-spacing:.06em;padding:9px 18px;color:var(--muted)}
+.seg button.on{background:var(--accent);color:var(--accent-ink)}
+/* page header band */
+.band{border-radius:6px;border:1px solid var(--line);margin-bottom:22px;color:#fff}
+.band:before{background:linear-gradient(110deg,transparent 0 64%,color-mix(in srgb,var(--accent) 70%,#000) 64% 74%,color-mix(in srgb,var(--accent2) 75%,#000) 74% 76.5%,transparent 76.5%)}
+.bandin{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;padding:26px 32px}
+.band h1{font-family:var(--head);font-weight:800;text-transform:uppercase;letter-spacing:.02em;font-size:clamp(1.8rem,4vw,2.8rem);line-height:1;margin:0}
+.band p{margin:8px 0 0;color:#c9ced4;max-width:60ch}
+.band .bandtx{min-width:0}
+/* home hero */
+.hero2.bhero{border-radius:6px;padding:44px 48px;margin-bottom:8px}
+.hero2.bhero:before{background:linear-gradient(110deg,transparent 0 84%,color-mix(in srgb,var(--accent) 70%,#000) 84% 93%,color-mix(in srgb,var(--accent2) 75%,#000) 93% 95.5%,transparent 95.5%);opacity:.9}
+.hero2.bhero > *{position:relative;z-index:1}
+.hero2 h1{font-family:var(--head);font-weight:800;font-size:clamp(2rem,4vw,3.1rem);line-height:1.02;letter-spacing:-.01em}
+.hero2 .lede{color:#c9ced4}
+.b-lines{stroke:rgba(255,255,255,.55)}
+.b-final{stroke:var(--accent2)}
+.b-dot{fill:var(--accent2)}
+.search input{border-radius:4px;background:rgba(0,0,0,.45);border-color:#3a3f46}
+.search button{border-radius:4px}
+/* tournament rows */
+.tlist{border-top:0;gap:10px}
+.trow{background:var(--card);border:1px solid var(--line);border-radius:4px;padding:14px 18px}
+.trow:hover{background:var(--card);border-color:var(--accent)}
+.tmark{border-radius:0;width:44px;height:48px;clip-path:polygon(0 0,100% 0,100% 75%,50% 100%,0 75%);font-family:var(--head);font-weight:800;color:#fff}
+.tname{font-family:var(--head);font-weight:700;font-size:1.15rem;letter-spacing:.01em}
+.tstat{font-family:var(--head);letter-spacing:.04em}
+/* what it does + call to action */
+.block{border-top:0;padding:4px 0 18px}
+.feat dt{font-family:var(--head);font-weight:700;font-size:1.08rem;padding-top:12px;border-top:2px solid var(--accent)}
+.band.cta{display:flex;justify-content:space-between;align-items:center;gap:24px;flex-wrap:wrap;padding:28px 32px;margin-top:30px}
+.band.cta > *{position:relative;z-index:1}
+.band.cta h2{font-size:1.5rem;margin:0 0 6px;text-transform:uppercase;letter-spacing:.04em}
+.band.cta p{margin:0}
+/* organiser */
+.acct{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;align-items:start}
+.authbox{border-top:3px solid var(--accent)}
+.modal > *{border-radius:6px}
+.modal{background:rgba(5,6,8,.65)}
+@media (max-width:860px){
+  .hero2.bhero{padding:24px 18px}
+  .bandin{padding:20px 18px}
+  .band:before,.hero2.bhero:before{background:linear-gradient(110deg,transparent 0 90%,color-mix(in srgb,var(--accent) 70%,#000) 90% 96%,color-mix(in srgb,var(--accent2) 75%,#000) 96% 98%,transparent 98%)}
+  .bandtx{max-width:86%}
+  .hero2-text{max-width:92%}
+  .seg button{padding:8px 12px}
+  .trow{padding:12px}
+}
+.card h3{text-transform:uppercase;letter-spacing:.1em;font-size:.98rem}
+.detline{margin:0 0 14px;padding:8px 12px;border-left:3px solid var(--line2);background:var(--rail)}
+/* ===== Teams page ===== */
+.tgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px;margin-bottom:8px}
+.tcard{background:var(--card);border:1px solid var(--line);border-radius:4px;cursor:pointer;display:flex;flex-direction:column;overflow:hidden}
+.tcard:hover{border-color:var(--accent)}
+.tchead{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;padding:14px 16px;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 30%,var(--card)),var(--card))}
+.tcname{display:flex;flex-direction:column;min-width:0}
+.tcname b{font-family:var(--head);font-size:1.08rem;letter-spacing:.02em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tcname span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tcrec{font-family:var(--head);font-weight:800;font-size:1.6rem;white-space:nowrap}
+.tcrec i{font-style:normal;color:var(--muted);margin:0 2px}
+.tcstats{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.tcstats > div{padding:10px 16px;display:flex;flex-direction:column;gap:2px;border-left:1px solid var(--line)}
+.tcstats > div:first-child{border-left:0}
+.tcstats span,.card.stat span{font-size:.78rem;color:var(--muted)}
+.tcstats b{font-family:var(--head);font-size:1.1rem}
+.tcroster{display:flex;flex-wrap:wrap;gap:6px;padding:12px 16px}
+.tcroster span{font-size:.88rem;padding:2px 9px;background:var(--raised);border-radius:3px}
+.tcroster span.cap{box-shadow:inset 3px 0 0 var(--accent2)}
+.bdg.big{width:84px;height:84px;font-size:1.8rem}
+.bdg.img.big img{width:84px;height:84px}
+.card.thead{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.statrow{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:16px}
+.card.stat{display:flex;flex-direction:column;gap:2px}
+.card.stat b{font-family:var(--head);font-size:1.7rem;font-weight:800}
+.card.stat i{font-style:normal;font-size:.78rem;color:var(--muted)}
 </style>
 </head>
 <body>
@@ -1108,7 +1203,7 @@ async function act(el, ev){
   const a = el.dataset.act, d = el.dataset, t = T();
   if(LIVE && await siteAct(a, d, el)) return;
   switch(a){
-    case 'tab': ui.tab = d.v; ui.player = null; break;
+    case 'tab': ui.tab = d.v; ui.player = null; ui.team = null; break;
     case 'stage': ui.stage = d.v; ui.mopen = null; break;
     case 'mgo': ui.tab = 'fixtures'; ui.stage = d.s; ui.mopen = d.m; render(); { const p = document.getElementById('mpanel'); if(p) p.scrollIntoView({block:'nearest'}); } return;
     case 'mopen': ui.mopen = ui.mopen===d.m ? null : d.m; render(); if(ui.mopen){ const p = document.getElementById('mpanel'); if(p) p.scrollIntoView({behavior:'smooth', block:'nearest'}); } return;
@@ -1482,28 +1577,30 @@ function dirFiltered(){
   return (live.dir||[]).filter(i=>(!q || q.split(/\s+/).every(w=>hay(i).includes(w))) && (f==='all' || tstat(i)===f))
     .sort((a,b)=>{ const o = {live:0, soon:1, done:2}; return o[tstat(a)]-o[tstat(b)] || (tstat(a)==='soon' ? (a.start||'9').localeCompare(b.start||'9') : (b.start||'').localeCompare(a.start||'')); });
 }
+/* page header in the Broadcast style, shared by Tournaments and Organiser pages */
+function band(title, sub, side){ return `<header class="band"><div class="bandin"><div class="bandtx"><h1>${title}</h1>${sub?`<p>${sub}</p>`:''}</div>${side||''}</div></header>`; }
 function pageSiteHome(){
   const running = (live.dir||[]).filter(i=>tstat(i)==='live').slice(0,5), anyLive = (live.dir||[]).some(i=>tstat(i)==='live');
   const list = live.dir===null ? `<p class="muted">Loading tournaments…</p>` : live.dirErr && !live.dir.length ? `<p class="warn">Tournaments couldn't be loaded (${esc(live.dirErr)}). Reload the page to try again.</p>`
     : running.length ? `<div class="tlist">${running.map(tourRow).join('')}</div>${(live.dir||[]).length>running.length ? `<p><a href="#/browse">See all ${(live.dir||[]).length} tournaments</a></p>` : ''}`
     : `<p class="muted">${(live.dir||[]).length ? 'Nothing is running right now. Upcoming and finished tournaments are on the <a href="#/browse">Tournaments</a> page.' : 'No tournaments have been added yet. Organisers can create one from the login in the side menu.'}</p>`;
   return `<div class="wrap home">
-    <section class="hero2"><div class="hero2-text"><h1>Follow an Age of Empires II tournament, or run your own.</h1>
+    <section class="hero2 bhero"><div class="hero2-text"><h1>Follow an Age of Empires II tournament, or run your own.</h1>
       <p class="lede">Fixtures, standings and results update live while the games are played. Organisers set up the format, the site finds each game on aoe2companion, and an organiser confirms it before it counts.</p>
       <form class="search" data-form="search" role="search"><label class="sr" for="hq">Search tournaments</label><input id="hq" name="q" type="search" placeholder="Search by name or host" autocomplete="off"><button class="pri" type="submit">Search</button></form>
       <p class="small muted"><a href="#/browse">Browse all tournaments</a> or <a href="#/organiser">run your own</a>.</p></div>${bracketArt()}</section>
-    <section class="block"><h2>${anyLive ? 'Running now' : 'Tournaments'}</h2>${list}</section>
-    <section class="block"><h2>What it does</h2><dl class="feat">
+    <h2 class="sech">${anyLive ? 'Running now' : 'Tournaments'}</h2>${list}
+    <h2 class="sech">What it does</h2><section class="block"><dl class="feat">
       <div><dt>Brackets and tables that work themselves out</dt><dd>Round robin, Swiss and knockout stages in any order, with tiebreakers, byes and seeding handled for you.</dd></div>
       <div><dt>Games found for you</dt><dd>Add each player's AoE2 profile ID and new lobby games are matched to the right fixture. They wait for an organiser to confirm them, so only real tournament games count.</dd></div>
       <div><dt>Replay stats</dt><dd>eAPM, age-up times, openings, units made and build orders for each game, taken from the replay when it's available.</dd></div>
       <div><dt>Free to follow, free to run</dt><dd>Watching needs no account. Organisers sign up with an email address and can add co-organisers.</dd></div></dl></section>
-    <section class="block cta"><div><h2>Run a tournament</h2><p>Create an organiser account, name your tournament and add the players. Most events are set up in a few minutes.</p></div><a class="btn pri" href="#/organiser">Organiser login</a></section>
+    <section class="band cta"><div><h2>Run a tournament</h2><p>Create an organiser account, name your tournament and add the players. Most events are set up in a few minutes.</p></div><a class="btn pri" href="#/organiser">Organiser login</a></section>
     <p class="small muted foot">Made for the Age of Empires II community. Not affiliated with Microsoft or World's Edge. Game data from aoe2companion.</p></div>`;
 }
 function pageBrowse(){
   const FIL = [['all','All'],['live','Running'],['soon','Upcoming'],['done','Finished']], rows = dirFiltered();
-  return `<div class="wrap"><h1>Tournaments</h1>
+  return `<div class="wrap">${band('Tournaments', 'Every published tournament. Search by name, host or organiser.')}
     <form class="search" data-form="search" role="search"><label class="sr" for="bq">Search tournaments</label><input id="bq" name="q" type="search" data-qin value="${esc(live.q||'')}" placeholder="Search by name or host" autocomplete="off"></form>
     <div class="seg" role="group" aria-label="Show">${FIL.map(([k,n])=>`<button data-act="tfilter" data-v="${k}" aria-pressed="${live.filter===k}" class="${live.filter===k?'on':''}">${n}</button>`).join('')}</div>
     <div id="tlist" aria-live="polite">${tlistHtml(rows)}</div></div>`;
@@ -1526,16 +1623,16 @@ function authForm(){
 function pageOrganiser(){
   const u = live.user;
   if(!live.ready) return `<div class="wrap"><p class="muted">Loading…</p></div>`;
-  if(!u) return `<div class="wrap two"><div><h1>Organiser login</h1><p class="lede">Organisers create tournaments, enter the format and players, and confirm games as they're found. Everyone else can watch without an account.</p>
-      <p>Creating a tournament needs a confirmed email address. Co-organisers can be added to a tournament once they have an account.</p></div>${authForm()}</div>`;
+  if(!u) return `<div class="wrap">${band('Organiser login', 'Set up and run a tournament. Watching needs no account.')}<div class="two"><div><p class="lede">Organisers create tournaments, enter the format and players, and confirm games as they're found. Everyone else can watch without an account.</p>
+      <p>Creating a tournament needs a confirmed email address. Co-organisers can be added to a tournament once they have an account.</p></div>${authForm()}</div></div>`;
   const ok = u.emailVerified, mine = live.mine;
-  return `<div class="wrap"><div class="pagehead"><h1>Your tournaments</h1><button class="pri" data-act="snew" ${ok?'':'disabled title="Confirm your email first"'}>New tournament</button></div>
+  return `<div class="wrap">${band('Your tournaments', 'Tournaments you run or help run.', `<button class="pri big" data-act="snew" ${ok?'':'disabled title="Confirm your email first"'}>New tournament</button>`)}
     ${ok ? '' : `<div class="note" role="status"><b>Confirm your email to create tournaments.</b> We sent a link to ${esc(u.email)}. ${esc(live.authMsg)}<div class="row" style="margin-top:8px"><button data-act="iverified">I've confirmed it</button><button data-act="resend">Send the email again</button></div></div>`}
     ${mine===null ? `<p class="muted">Loading…</p>` : mine.length ? `<div class="tlist">${mine.map(tourRow).join('')}</div>` : `<div class="card empty">You don't run any tournaments yet.${ok ? ' Choose <b>New tournament</b> to start one.' : ''}</div>`}
-    <div class="card"><h3>Your organiser ID</h3><p class="small muted">To be added as a co-organiser, give this ID to the organiser of that tournament. They paste it under Setup, Organisers.</p>
+    <h2 class="sech">Account</h2><div class="acct"><div class="card"><h3>Your organiser ID</h3><p class="small muted">To be added as a co-organiser, give this ID to the organiser of that tournament. They paste it under Setup, Organisers.</p>
       <div class="row"><code class="uid" id="myid">${esc(u.uid)}</code><button class="sm" data-act="copyid">Copy</button></div></div>
     <div class="card"><h3>Your account</h3><p class="small muted">Signed in as ${esc(u.email)}. To change your password, we email you a link to set a new one.</p>
-      <div class="row"><button class="sm" data-act="pwchange">Change password</button><span class="small muted" role="status">${esc(live.pwMsg||'')}</span></div></div></div>`;
+      <div class="row"><button class="sm" data-act="pwchange">Change password</button><span class="small muted" role="status">${esc(live.pwMsg||'')}</span></div></div></div></div>`;
 }
 /* Draft / published: new tournaments stay out of search until an organiser publishes them (the link works either way).
    'pub' is the organiser's switch; 'listed' stays the site owner's moderation switch. */
@@ -1545,7 +1642,7 @@ function pubState(){
     fs.getDoc(fs.doc(d,'index',tid)).then(x=>{ if(live.pubFor!==tid) return; live.pub = x.exists() ? x.data().pub!==false : null; render(); }).catch(()=>{}); }
   return live.pub;
 }
-function draftNote(){ return pubState()===false ? `<div class="note draft" role="status"><b>Draft.</b> This tournament isn't in the tournament search yet. Anyone with the link can still open it. <button class="pri sm" data-act="spub">Publish</button></div>` : ''; }
+function draftNote(){ return pubState()===false ? `<div class="note draft" role="status"><span class="dtag">Not live yet</span><span class="dtx">Visitors can't find this tournament in search or on the home page. Only people you give the link to can open it. Publish when it's ready.</span><button class="pri" data-act="spub">Publish tournament</button></div>` : ''; }
 function pubCard(){ const p = pubState(); if(p===null) return '';
   return `<div class="card"><h3>Visibility</h3><p class="small muted">${p ? 'Published: it shows in the tournament search and on the home page while it runs.' : 'Draft: hidden from the tournament search. Anyone with the link can still open it.'}</p>
     <button class="${p?'':'pri'}" data-act="spub">${p ? 'Hide from search (back to draft)' : 'Publish'}</button></div>`; }
@@ -1567,12 +1664,12 @@ function tourPage(){
   if(live.loading) return `<div class="wrap"><p class="muted">Loading tournament…</p></div>`;
   if(!state || !t) return `<div class="wrap"><div class="card empty"><h2>Tournament not found</h2><p>This link may be wrong, or the organiser deleted the tournament.</p><p><a href="#/browse">Browse tournaments</a></p></div></div>`;
   if(VIEW && (ui.tab==='setup' || ui.tab==='data' || ui.tab==='history')) ui.tab = 'home';
-  const tabs = [['home','Overview'],['fixtures','Fixtures' + (pendHere().length ? ` (${pendHere().length})` : '')],['standings','Standings'],['players','Players']].concat(VIEW ? [] : [['setup','Setup'],['data','Backup']]);
-  const pages = {home:pageHome, fixtures:pageFixtures, standings:pageStandings, setup:pageSetup, players:pagePlayers, data:pageData};
+  const tabs = [['home','Overview'],['fixtures','Fixtures' + (pendHere().length ? ` (${pendHere().length})` : '')],['standings','Standings']].concat(t.teams.length ? [['teams','Teams']] : []).concat([['players','Players']]).concat(VIEW ? [] : [['setup','Setup'],['data','Backup']]);
+  const pages = {home:pageHome, fixtures:pageFixtures, standings:pageStandings, setup:pageSetup, players:pagePlayers, teams:pageTeams, data:pageData};
   const note = live.user && !live.admin && live.doc ? `<span class="livest">You're signed in, but not as an organiser of this tournament.</span>` : '';
   const canEdit = live.admin ? `<span id="livest" class="livest ${live.bad?'bad':''}">${esc(live.status||'')}</span>` : (live.bad ? `<span id="livest" class="livest bad">${esc(live.status)}</span>` : '');
   return `<div class="tour" style="${themeStyle(t)}"><div class="wrap">
-    ${heroB(t, ui.tab==='home')}<div class="tourbar"><nav class="tabs" aria-label="Tournament">${tabs.map(([k,n])=>`<button data-act="tab" data-v="${k}" class="${ui.tab===k?'on':''}" ${ui.tab===k?'aria-current="page"':''}>${n}</button>`).join('')}</nav>${canEdit}${note}</div>${draftNote()}
+    ${heroB(t, true)}<div class="tourbar"><nav class="tabs" aria-label="Tournament">${tabs.map(([k,n])=>`<button data-act="tab" data-v="${k}" class="${ui.tab===k?'on':''}" ${ui.tab===k?'aria-current="page"':''}>${n}</button>`).join('')}</nav>${canEdit}${note}</div>${draftNote()}
     ${(pages[ui.tab]||pageHome)()}</div></div>`;
 }
 function renderSite(){
@@ -1601,6 +1698,8 @@ async function siteAct(a, d, el){
     case 'iverified': await live.user.reload(); await live.user.getIdToken(true); live.authMsg = ''; computeAdmin(); render(); return true;
     case 'copyid': try{ await navigator.clipboard.writeText(live.user.uid); toast('Copied'); }catch(e){ const r = document.createRange(); r.selectNodeContents($('#myid')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Press Ctrl+C to copy'); } return true;
     case 'sdel': await deleteTournament(); return true;
+    case 'team': ui.team = d.v || null; window.scrollTo(0,0); render(); return true;
+    case 'tplayer': ui.tab = 'players'; ui.player = d.v; ui.team = null; window.scrollTo(0,0); render(); return true;
     case 'spub': { const p = pubState(); if(p===null) return true; const {fs, d} = live.fb;
       try{ await fs.setDoc(fs.doc(d,'index',live.tid), {pub: !p}, {merge:true}); live.pub = !p; live.dirAt = 0; live.mine = null; }catch(e){ await say('Could not change that: '+(e.code||e.message)); }
       render(); return true; }
@@ -1627,10 +1726,11 @@ document.addEventListener('input', e=>{ const el = e.target; if(!el.matches || !
    parsed, tournaments/<site>/games/<matchId> {json}. Nothing counts until an admin confirms it here. */
 
 function pendListen(on){
-  if(live.pendOff){ live.pendOff(); live.pendOff = null; } live.pend = [];
+  if(live.pendOff){ live.pendOff(); live.pendOff = null; } live.pend = []; if(live.detOff){ live.detOff(); live.detOff = null; } live.det = null;
   if(!on || !live.fb) return; const {fs, d} = live.fb;
   live.pendOff = fs.onSnapshot(fs.query(fs.collection(d,'tournaments',live.tid,'pending'), fs.where('status','==','new')),
     snap=>{ live.pend = snap.docs.map(x=>x.data()).sort((a,b)=>(a.started||0)-(b.started||0)); if(state) liveRender(); }, ()=>{});
+  live.detOff = fs.onSnapshot(fs.doc(d,'tournaments',live.tid,'detector','meta'), x=>{ live.det = x.exists() ? x.data() : null; if(state) liveRender(); }, ()=>{});
 }
 const pendHere = () => { const t = T(); return LIVE && live.admin && t ? live.pend.filter(g=>g.tour===t.id) : []; };
 /* the two sides of a detected game, or null when it isn't a two-sided game */
@@ -1645,8 +1745,19 @@ function pendFits(g, t){ const ps = pendSides(g); if(!ps) return [];
   return out; }
 const normMap = s => String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
 function poolMap(S, name){ return S.maps.find(x=>normMap(x)===normMap(name)) || name || ''; }
+/* what the game finder did on its last run, so an empty queue isn't a mystery */
+function detLine(){
+  const t = T(); if(!LIVE || !live.admin || !t) return '';
+  const m = live.det, rep = m && m.report && m.report[t.id];
+  if(!m || !m.lastRun) return `<div class="detline small muted">Game finder: hasn't checked this tournament yet. It runs every 10 minutes while the tournament is on.</div>`;
+  const when = m.lastRun.toDate ? m.lastRun.toDate().toLocaleString(undefined,{weekday:'short',hour:'numeric',minute:'2-digit'}) : '';
+  if(!rep) return `<div class="detline small muted">Game finder last checked ${esc(when)}.</div>`;
+  const W = {ranked:'ranked', teams:"sides weren't two of this tournament's teams", lobby:'mostly other players', unfinished:'not finished'};
+  const sk = Object.entries(rep.skipped||{}).map(([k,n])=>`${n} ${W[k]||k}`).join(', ');
+  return `<div class="detline small muted">Game finder last checked ${esc(when)}: ${rep.players} players with profile IDs, ${rep.fit} tournament game${rep.fit===1?'':'s'} found.${sk?` Left out: ${esc(sk)}.`:''}${rep.failed?' Some players could not be checked; it will retry.':''}</div>`;
+}
 function pendCard(){
-  const list = pendHere(), t = T(); if(!list.length) return '';
+  const list = pendHere(), t = T(); if(!list.length) return detLine();
   const side = (ps, won) => `<span class="${won?'won':''}">${ps.map(p=>`${esc(p.id&&state.players[p.id]?P(p.id).name:(p.name||'?'))}${p.id&&state.players[p.id]?'':' <span class="muted small">(not in this tournament)</span>'} <span class="muted small">${esc(p.civ||'')}</span>`).join(', ')}${won?' 🏆':''}</span>`;
   const rows = list.map(g=>{ const ps = pendSides(g), fits = pendFits(g,t), when = g.started ? new Date(g.started*1000).toLocaleString(undefined,{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}) : '';
     const w = ps ? ps.findIndex(s=>s.some(p=>p.won===true)) : -1;
@@ -1656,7 +1767,7 @@ function pendCard(){
         <button class="pri sm" data-act="pconf" data-mid="${esc(g.matchId)}">Confirm</button>` : `<span class="small muted">No open fixture has these players on opposite sides.</span>`;
     return `<div class="match"><div class="small muted">${esc(when)} · ${esc(g.map||'?')}${g.gameTime?' · '+esc(g.gameTime):''}${g.stats?'':' · replay stats not in yet'}</div>${body}
       <div class="row" style="margin-top:6px">${pick} <button class="sm" data-act="pskip" data-mid="${esc(g.matchId)}">Not a tourney game</button></div></div>`; }).join('');
-  return `<div class="card edit-only" id="pendcard"><h3>Confirm games (${list.length})</h3><div class="small muted" style="margin-bottom:8px">Found automatically, oldest first. A game only counts once you confirm it.</div>${rows}</div>`;
+  return detLine() + `<div class="card edit-only" id="pendcard"><h3>Confirm games (${list.length})</h3><div class="small muted" style="margin-bottom:8px">Found automatically, oldest first. A game only counts once you confirm it.</div>${rows}</div>`;
 }
 async function pendSet(mid, patch){ const {fs, d} = live.fb; await fs.updateDoc(fs.doc(d,'tournaments',live.tid,'pending',String(mid)), Object.assign({by:live.user.uid, at:fs.serverTimestamp()}, patch)); }
 async function pendConfirm(mid){
@@ -1776,6 +1887,49 @@ function heroB(t, full){
   return `<div class="bhero ${full?'':'mini'} ${t.banner?'hasbn':''}">${t.banner?`<img class="bn" src="${t.banner}" alt="">`:''}<div class="bin">`
     + `${t.logo?`<img class="lg" src="${t.logo}" alt="">`:''}<div class="btx">${full&&t.place?`<div class="eyebrow">${esc(t.place)}</div>`:''}<h1>${esc(t.name)}</h1>`
     + `${full&&t.sub?`<div class="bsub">${esc(t.sub)}</div>`:''}${full&&chips?`<div class="chips">${chips}</div>`:''}</div></div></div>`; }
+
+/* ---------- Teams page: every team's record, roster and results ---------- */
+function teamStats(tm, t){
+  const k = 't:'+tm.id, st = {tm, w:0, l:0, gw:0, gl:0, maps:{}, civs:{}, list:[], e:0, en:0, div:''};
+  const S0 = t.stages.find(S=>S.div && stageEntrants(S,t).includes(k)); if(S0) st.div = S0.div;
+  allMatches(t).forEach(({S,m})=>{ const sd = sidesOf(S,m,t); if(!sd[0]||!sd[1]||!sd[0].length||!sd[1].length) return;
+    const si = sd.findIndex(side=>side.includes(k)); if(si<0) return;
+    const w = winnerOf(S,m,sd), sc = score(m); if(w!=null){ if(w===si) st.w++; else st.l++; }
+    (m.games||[]).forEach(g=>{ if(g.w!==0&&g.w!==1) return; const won = g.w===si; if(won) st.gw++; else st.gl++;
+      if(g.map){ const x = st.maps[g.map]||(st.maps[g.map]={n:0,w:0}); x.n++; if(won) x.w++; }
+      tm.members.forEach(id=>{ const c = (g.civs||{})[id]; if(c){ const x = st.civs[c]||(st.civs[c]={n:0,w:0}); x.n++; if(won) x.w++; }
+        const s = g.st && g.st[id]; if(s && s.eapm!=null){ st.e += s.eapm; st.en++; } }); });
+    st.list.push({S, m, si, sd, w, sc}); });
+  st.place = null; divs(t).forEach(dv=>{ if(!finalResult(t,dv).champ) return; const f = finalOrder(t,dv).find(p=>p.k===k); if(f) st.place = f; });
+  return st;
+}
+function teamBadge(tm, big){ return tm.logo ? `<span class="bdg img ${big?'big':''}"><img src="${esc(tm.logo)}" alt=""></span>` : bBadge('t:'+tm.id).replace('class="bdg"', `class="bdg ${big?'big':''}"`); }
+function pageTeams(){
+  const t = T();
+  if(!t.teams.length) return `<div class="card empty">No teams in this tournament.${VIEW?'':' Add them under <b>Setup › Teams</b>.'}</div>`;
+  const cur = ui.team && t.teams.find(x=>x.id===ui.team); if(cur) return teamProfile(cur, t);
+  const all = t.teams.map(tm=>teamStats(tm,t)).sort((a,b)=>(a.div||'').localeCompare(b.div||'') || (b.w-b.l)-(a.w-a.l) || (b.gw-b.gl)-(a.gw-a.gl) || a.tm.name.localeCompare(b.tm.name));
+  const groups = {}; all.forEach(x=>(groups[x.div] = groups[x.div]||[]).push(x));
+  const card = x => { const tm = x.tm;
+    return `<div class="tcard" data-act="team" data-v="${tm.id}" role="button" tabindex="0" title="Show ${esc(tm.name)}">
+      <div class="tchead">${teamBadge(tm)}<div class="tcname"><b title="${esc(tm.name)}">${esc(tm.name)}</b><span class="small muted">${tm.cap&&state.players[tm.cap]?'Captain: '+esc(P(tm.cap).name):tm.members.length+' players'}</span></div><div class="tcrec" title="Series won and lost">${x.w}<i>–</i>${x.l}</div></div>
+      <div class="tcstats"><div><span>Maps</span><b>${x.gw}–${x.gl}</b></div><div><span>Map win</span><b>${pct(x.gw,x.gw+x.gl)}</b></div><div><span>Avg eAPM</span><b>${x.en?Math.round(x.e/x.en):'–'}</b></div></div>
+      <div class="tcroster">${tm.members.filter(id=>state.players[id]).map(id=>`<span class="${id===tm.cap?'cap':''}">${esc(P(id).name)}</span>`).join('')}</div></div>`; };
+  return Object.entries(groups).map(([dv,list])=>`${dv||Object.keys(groups).length>1?`<h2 class="sech">${esc(dv||'Other teams')}</h2>`:''}<div class="tgrid">${list.map(card).join('')}</div>`).join('');
+}
+function teamProfile(tm, t){
+  const x = teamStats(tm,t);
+  const roster = tm.members.filter(id=>state.players[id]).map(id=>{ const p = playerStats(id,t), top = Object.entries(p.civs).sort((a,b)=>b[1].n-a[1].n)[0];
+    return `<tr style="cursor:pointer" data-act="tplayer" data-v="${id}"><td>${chip('p:'+id,t)}${id===tm.cap?' <span class="badge">captain</span>':''}</td><td class="n">${p.gw}–${p.gl}</td><td class="n">${pct(p.gw,p.gw+p.gl)}</td><td class="small">${top?esc(top[0])+` (${top[1].n})`:''}</td></tr>`; }).join('');
+  const games = x.list.map(({S,m,si,sd,w,sc})=>`<tr><td class="small">${esc(S.name)}<div class="muted">${esc(matchLabel(S,m))}</div></td><td>${sideHtml(sd[1-si])}</td><td class="n">${sc[si]}–${sc[1-si]}</td><td>${w==null?'<span class="muted small">to play</span>':w===si?'<b style="color:var(--win)">Won</b>':'<span style="color:var(--loss)">Lost</span>'}</td></tr>`).join('');
+  const tile = (k,v,sub) => `<div class="card stat"><span>${k}</span><b>${v}</b>${sub?`<i>${sub}</i>`:''}</div>`;
+  return `<p><button class="sm" data-act="team" data-v="">‹ All teams</button></p>
+    <div class="card thead">${teamBadge(tm,true)}<div><h2 style="margin:0">${esc(tm.name)}</h2><div class="muted">${[x.div, tm.cap&&state.players[tm.cap]?'Captain: '+P(tm.cap).name:'', x.place?'finished '+ord(x.place.place):''].filter(Boolean).map(esc).join(' · ')}</div></div></div>
+    <div class="statrow">${tile('Series', `${x.w}–${x.l}`)}${tile('Maps', `${x.gw}–${x.gl}`)}${tile('Map win', pct(x.gw,x.gw+x.gl))}${tile('Avg eAPM', x.en?Math.round(x.e/x.en):'–', x.en?'from replays':'no replays yet')}</div>
+    <div class="card"><h3>Roster</h3><div class="small muted">Click a player for their full stats.</div><div class="tablewrap"><table><tr><th>Player</th><th class="n">Maps W–L</th><th class="n">Map win %</th><th>Most played civ</th></tr>${roster}</table></div></div>
+    <div class="grid g2"><div class="card"><h3>Maps</h3>${wlTable(x.maps,'Map')}</div><div class="card"><h3>Civs</h3>${wlTable(x.civs,'Civ')}</div></div>
+    <div class="card"><h3>Matches</h3>${games?`<div class="tablewrap"><table><tr><th>Stage</th><th>Against</th><th class="n">Maps</th><th></th></tr>${games}</table></div>`:'<div class="muted">None yet.</div>'}</div>`;
+}
 
 /* ============ boot ============ */
 document.addEventListener('click', e=>{ const el = e.target.closest('[data-act]'); if(!el || el.tagName==='SELECT' || (el.tagName==='INPUT' && el.type!=='button')) return; act(el, e); });
