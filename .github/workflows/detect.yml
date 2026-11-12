@@ -1,0 +1,27 @@
+name: Detect games
+# Looks for new tournament games every ~10 minutes and puts them in the tracker's Confirm games queue.
+# GitHub may run it a few minutes late when busy. Run it by hand from the Actions tab with "Run workflow".
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+concurrency:
+  group: detect
+  cancel-in-progress: false
+permissions:
+  contents: read
+jobs:
+  detect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: detector/requirements.txt
+      - run: pip install -r detector/requirements.txt
+      - run: python detector/detect.py
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
