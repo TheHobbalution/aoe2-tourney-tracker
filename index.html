@@ -618,7 +618,8 @@ function roundsHtml(S){
     out += `<div class="card edit-only">Round ${r} of ${S.rounds} paired. ${r<S.rounds?`<button class="pri" data-act="swiss" data-s="${S.id}">Pair round ${r+1}</button>`:'All rounds paired.'} ${r?`<button class="sm danger" data-act="unswiss" data-s="${S.id}">Undo last pairing</button>`:''}</div>`; }
   const groups = {}; S.matches.forEach(m=>{ const k = (S.ent!=='rotate'&&(S.groups||1)>1) ? `Group ${GL(m.g)}` : ''; (groups[k]=groups[k]||{})[m.r] = ((groups[k]||{})[m.r]||[]).concat(m); });
   Object.entries(groups).forEach(([g,rounds])=>{ if(g) out += `<h3 style="margin-top:14px">${g}</h3>`;
-    out += `<div class="rounds">${Object.entries(rounds).map(([r,ms])=>`<div><h3 class="small muted">Round ${r}</h3>${ms.map(m=>matchHtml(S,m,true)).join('')}</div>`).join('')}</div>`; });
+    const maxR = S.matches.reduce((a,m)=>Math.max(a,m.r),0), mv = m => (S.type==='rr' && !VIEW) ? `<div class="small muted" style="margin:-4px 0 10px">Round <select data-act="mround" data-s="${S.id}" data-m="${m.id}">${Array.from({length:maxR+1},(_,k)=>k+1).map(k=>`<option value="${k}" ${k===m.r?'selected':''}>${k}${k===maxR+1?' (new)':''}</option>`).join('')}</select></div>` : '';
+    out += `<div class="rounds">${Object.entries(rounds).sort((a,b)=>a[0]-b[0]).map(([r,ms])=>`<div><h3 class="small muted">Round ${r}</h3>${ms.map(m=>matchHtml(S,m,true)+mv(m)).join('')}</div>`).join('')}</div>`; });
   return out;
 }
 function seedNote(S){
@@ -747,7 +748,10 @@ function setupTeams(){
         <label class="f">Team name<input type="text" data-team="${i}" data-tmf="name" value="${esc(tm.name)}"></label>
         <label class="f">Captain<select data-team="${i}" data-tmf="cap"><option value="">–</option>${tm.members.map(p=>`<option value="${p}" ${tm.cap===p?'selected':''}>${esc(P(p).name)}</option>`).join('')}</select></label>
         <div>${tm.logo?`<img src="${tm.logo}" style="height:40px;vertical-align:middle"> `:''}<button class="sm" data-act="teamlogo" data-i="${i}">Logo…</button> <button class="sm danger" data-act="teamdel" data-i="${i}">Delete team</button></div></div>
-      <div class="side" style="margin-top:8px">${t.roster.map(p=>{ const o = inTeam(p); const mine = tm.members.includes(p); return `<label class="small" style="${o&&!mine?'opacity:.45':''}"><input type="checkbox" data-act="teammem" data-i="${i}" value="${p}" ${mine?'checked':''}> ${esc(P(p).name)}${p===tm.cap?' (c)':''}</label>`; }).join(' ')}</div></div>`).join('')}
+      <div class="row" style="margin-top:8px"><label class="f">Find a player<input type="search" data-tq="${i}" value="${esc((window.TQ||{})[i]||'')}" placeholder="Type any part of a name" autocomplete="off"></label><span class="small muted">${tm.members.length} in team</span></div>
+      <div class="side" data-tql="${i}" style="margin-top:8px">${(()=>{ const q = ((window.TQ||{})[i]||'').toLowerCase(), rk = p => tm.members.includes(p) ? 1 : inTeam(p) ? 2 : 0;
+        return t.roster.slice().sort((a,b)=> rk(a)-rk(b) || P(a).name.localeCompare(P(b).name, undefined, {sensitivity:'base'})).map(p=>{ const o = inTeam(p); const mine = tm.members.includes(p); const hide = q && !mine && !P(p).name.toLowerCase().includes(q);
+          return `<label class="small" data-nm="${esc(P(p).name.toLowerCase())}" data-mine="${mine?1:0}" style="${o&&!mine?'opacity:.45;':''}${hide?'display:none':''}"><input type="checkbox" data-act="teammem" data-i="${i}" value="${p}" ${mine?'checked':''}> ${esc(P(p).name)}${p===tm.cap?' (c)':''}${o&&!mine?` <span class="muted">(${esc(o.name)})</span>`:''}</label>`; }).join(' '); })()}</div></div>`).join('')}
     <p><button class="pri" data-act="teamadd">+ Add team</button></p>
     ${t.roster.filter(p=>!inTeam(p)).length && t.teams.length ? `<div class="small muted">Not in a team: ${t.roster.filter(p=>!inTeam(p)).map(p=>esc(P(p).name)).join(', ')}</div>`:''}</div>`;
 }
@@ -994,6 +998,8 @@ async function act(el, ev){
       if(has) await addBackup(JSON.stringify(state),'before remake'); const err = generate(S); if(err){ await say(err); return; } ui.tab='fixtures'; ui.stage=S.id; toast(`${S.matches.length} matches made`); break; }
     case 'swiss': { const S = curStage(d.s); const err = swissPair(S); if(err) toast(err); break; }
     case 'unswiss': { const S = curStage(d.s); const r = S.matches.reduce((x,m)=>Math.max(x,m.r),0); const ms = S.matches.filter(m=>m.r===r); if(ms.some(m=>(m.games||[]).length) && !await askYes(`Round ${r} has results. Undo the pairing anyway?`)) return; S.matches = S.matches.filter(m=>m.r!==r); break; }
+    case 'mround': { const S = curStage(d.s), m = S.matches.find(x=>x.id===d.m); if(!m) return; m.r = +el.value || m.r;
+      const used = [...new Set(S.matches.map(x=>x.r))].sort((a,b)=>a-b); S.matches.forEach(x=>{ x.r = used.indexOf(x.r)+1; }); break; }
     case 'manual': { const S = curStage(d.s); S.manual = S.manual||{}; S.manual[d.v] = +el.value||0; break; }
     case 'tbup': { const S = curStage(d.s); const tb = tbOf(S).slice(), i = tb.indexOf(d.v); if(i>0) [tb[i-1],tb[i]] = [tb[i],tb[i-1]]; S.tb = tb; break; }
     case 'tbdel': { const S = curStage(d.s); S.tb = tbOf(S).filter(k=>k!==d.v); if(!S.tb.length) S.tb = ['pts']; break; }
@@ -1423,6 +1429,11 @@ document.addEventListener('submit', e=>{ const f = e.target.closest && e.target.
   if(f.dataset.form==='auth') authSubmit(f);
   else if(f.dataset.form==='search'){ live.q = (f.q.value||'').trim(); live.filter = 'all'; location.hash = '#/browse' + (live.q ? '?q='+encodeURIComponent(live.q) : ''); if(live.route.page==='browse') render(); } });
 document.addEventListener('input', e=>{ const el = e.target; if(el.matches && el.matches('[data-qin]')){ live.q = el.value; history.replaceState(null,'','#/browse'+(live.q.trim() ? '?q='+encodeURIComponent(live.q.trim()) : '')); const l = $('#tlist'); if(l) l.innerHTML = tlistHtml(dirFiltered()); } });
+
+/* ---------- Setup › Teams: find-a-player box (filters without re-rendering) ---------- */
+document.addEventListener('input', e=>{ const el = e.target; if(!el.matches || !el.matches('[data-tq]')) return; const i = el.dataset.tq, q = el.value.toLowerCase().trim();
+  (window.TQ = window.TQ || {})[i] = el.value; const box = document.querySelector('[data-tql="'+i+'"]'); if(!box) return;
+  box.querySelectorAll('label[data-nm]').forEach(l=>{ l.style.display = (!q || l.dataset.mine==='1' || l.dataset.nm.includes(q)) ? '' : 'none'; }); }, true);
 
 /* ---------- Confirm games queue (live admins) + replay stats ----------
    The detector (GitHub Action) writes tournaments/<site>/pending/<matchId> with status 'new' and, when the replay
