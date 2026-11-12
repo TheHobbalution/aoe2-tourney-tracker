@@ -1,20 +1,23 @@
 <!doctype html>
 <html lang="en">
 <head>
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-qHl4T0a4vg6+IshDXK6kXvrkcgKd1hEp4/oy9UvYeZU=' 'sha256-2Jt9paYT+96ixET2yF1f6vLOK5M28Fqi79nyz2l+ggY=' https://www.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script id="tt-live">
 /* Site settings: put the Firebase web config here (see the setup guide). Leave it null to use the offline, single-user tracker. */
-window.TT_LIVE = {firebase:{
-  apiKey: "AIzaSyA6cly2VjceVBA3Lr01ATQO5frDqu-dR1Y",
-  authDomain: "aoe2-tourney-tracker.firebaseapp.com",
-  projectId: "aoe2-tourney-tracker",
-  storageBucket: "aoe2-tourney-tracker.firebasestorage.app",
-  messagingSenderId: "330915936292",
-  appId: "1:330915936292:web:ea684dd7f76e9f0d5f80b1"
-}};
+window.TT_LIVE = {
+ "firebase": {
+  "apiKey": "AIzaSyA6cly2VjceVBA3Lr01ATQO5frDqu-dR1Y",
+  "authDomain": "aoe2-tourney-tracker.firebaseapp.com",
+  "projectId": "aoe2-tourney-tracker",
+  "storageBucket": "aoe2-tourney-tracker.firebasestorage.app",
+  "messagingSenderId": "330915936292",
+  "appId": "1:330915936292:web:ea684dd7f76e9f0d5f80b1"
+ }
+};
 </script>
 <style id="tt-css">
 :root{
@@ -243,6 +246,161 @@ body.site main{max-width:none;margin:0 0 0 var(--railw);padding:36px clamp(18px,
   .tourbar nav.tabs{overflow-x:auto;flex-wrap:nowrap;max-width:100%}
   .tourbar nav.tabs button{white-space:nowrap}
 }
+
+/* ---------- fixtures: bracket boxes ---------- */
+.bk{display:flex;overflow-x:auto;padding-bottom:10px;background:linear-gradient(var(--card) 0 34px,var(--line) 34px 35px,var(--rail) 35px);border:1px solid var(--line);border-radius:10px}
+.bkcol{flex:0 0 250px;display:flex;flex-direction:column}
+.bkhead{height:35px;box-sizing:border-box;border-right:1px solid var(--line);border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:.9rem;color:var(--muted);font-weight:600;letter-spacing:.02em}
+.bkbody{flex:1;display:flex;flex-direction:column;padding:6px 0}
+.bkslot{flex:1;display:flex;align-items:center;position:relative;padding:8px 26px 8px 26px;min-height:76px}
+.bk.rnd .bkslot{flex:0 0 auto;min-height:0;padding:6px 14px}
+.bk.rnd .bkcol{flex:0 0 260px}
+/* connectors (elimination only): arms to the right, joined in pairs, and a stub into the next round */
+.bk:not(.rnd) .bkcol:not(.last) .bkslot::after{content:"";position:absolute;right:12px;width:14px;border-color:var(--line2,#6b737c);border-style:solid;border-width:0}
+.bk:not(.rnd) .bkcol:not(.last) .bkslot:nth-child(odd)::after{top:50%;bottom:0;border-top-width:2px;border-right-width:2px}
+.bk:not(.rnd) .bkcol:not(.last) .bkslot:nth-child(even)::after{top:0;bottom:50%;border-bottom-width:2px;border-right-width:2px}
+.bk:not(.rnd) .bkcol:not(.last) .bkslot:only-child::after{bottom:auto;border-right-width:0;width:26px;right:0}
+.bk:not(.rnd) .bkcol:not(.first) .bkslot::before{content:"";position:absolute;left:-12px;width:38px;top:50%;border-top:2px solid var(--line2,#6b737c)}
+.bk:not(.rnd) .bkcol:not(.last) .bkslot{padding-right:26px}
+.bx{width:100%;background:var(--card);border:1px solid var(--line);border-radius:6px;overflow:hidden;cursor:pointer;box-shadow:0 1px 0 rgba(0,0,0,.25);transition:border-color .12s,transform .12s}
+.bx:hover{border-color:var(--accent)}
+.bx.sel{border-color:var(--accent);box-shadow:0 0 0 2px color-mix(in srgb,var(--accent) 35%,transparent)}
+.bx.isbye{cursor:default;opacity:.55}
+.bx.ghost{visibility:hidden}
+.bxl{font-size:.72rem;color:var(--muted);padding:2px 8px;border-bottom:1px solid var(--line)}
+.bxr{display:flex;align-items:stretch;height:30px;border-top:1px solid var(--line)}
+.bxr:first-of-type,.bxl+.bxr{border-top:0}
+.bxs{flex:0 0 24px;display:flex;align-items:center;justify-content:center;font-size:.75rem;color:var(--muted);background:var(--raised);border-right:1px solid var(--line)}
+.bxn{flex:1;min-width:0;display:flex;align-items:center;gap:7px;padding:0 8px;font-weight:600}
+.bxn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bxn img{width:20px;height:20px;border-radius:4px;object-fit:cover;flex:0 0 auto}
+.bxr.tbd .bxn{color:var(--muted);font-weight:500;font-style:italic}
+.bxsc{flex:0 0 34px;display:flex;align-items:center;justify-content:center;font-weight:700;background:var(--raised);border-left:1px solid var(--line);font-variant-numeric:tabular-nums}
+.bxr.won .bxsc{background:var(--accent);color:var(--accent-ink,#1b1b1b)}
+.bxr.won .bxn{color:var(--ink)}
+.bx.done .bxr:not(.won) .bxn{color:var(--muted)}
+.mpanel{margin-top:14px;border-color:var(--accent)}
+.mpanel .match{margin:10px 0 0}
+@media (max-width:640px){ .bkcol{flex-basis:210px} .bk.rnd .bkcol{flex-basis:230px} .bkslot{padding:6px 20px} }
+.bx.noseed .bxs{display:none}
+.nextgrid{display:grid;gap:10px;grid-template-columns:repeat(auto-fill,minmax(230px,1fr))}
+.nextgrid .bx.noseed .bxs{display:none}
+
+/* ===== Broadcast look ===== */
+:root{--head:'Oxanium',system-ui,sans-serif;--body:'Barlow',system-ui,sans-serif;
+  --bg:#15181c;--rail:#0e1013;--card:#1d2126;--raised:#282d33;--line:#30363d;--line2:#4a525b}
+.tour .wrap{max-width:1280px}
+.tour h1,.tour h2,.tour h3{text-transform:uppercase;letter-spacing:.06em}
+.tour .card{border-radius:4px;background:var(--card);border-color:var(--line)}
+.tour .card h3{font-size:.98rem;letter-spacing:.1em}
+/* hero */
+.bhero{position:relative;overflow:hidden;background:#181b1f;border-radius:6px 6px 0 0;color:#fff;border:1px solid var(--line);border-bottom:0}
+.bhero:before{content:'';position:absolute;inset:0;background:linear-gradient(110deg,transparent 0 50%,color-mix(in srgb,var(--accent) 70%,#000) 50% 62%,color-mix(in srgb,var(--accent2) 75%,#000) 62% 65%,transparent 65%);opacity:.9}
+.bhero:after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(110deg,transparent 0 22px,rgba(255,255,255,.025) 22px 23px);pointer-events:none}
+.bhero.hasbn:before{display:none}
+.bhero .bn{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.bhero.hasbn:after{background:linear-gradient(90deg,rgba(10,11,13,.88) 0,rgba(10,11,13,.55) 55%,rgba(10,11,13,.15))}
+.bin{position:relative;z-index:1;display:flex;align-items:center;gap:40px;padding:34px 48px;min-height:300px}
+.bhero .lg{width:220px;height:220px;object-fit:contain;flex:none;filter:drop-shadow(0 10px 30px rgba(0,0,0,.6))}
+.btx{min-width:0}
+.eyebrow{font-family:var(--head);font-weight:600;letter-spacing:.3em;font-size:.85rem;color:var(--accent2);text-transform:uppercase}
+.bhero h1{font-family:var(--head);font-size:clamp(2.2rem,5.4vw,4.4rem);line-height:.95;margin:8px 0 12px;font-weight:800;letter-spacing:-.01em;overflow-wrap:anywhere}
+.bsub{font-size:1.15rem;color:#c9ced4;margin-bottom:16px}
+.chips{display:flex;gap:10px;flex-wrap:wrap}
+.chip2{background:rgba(0,0,0,.5);border:1px solid #3a3f46;padding:7px 16px;font-weight:600;font-size:.92rem;clip-path:polygon(8px 0,100% 0,calc(100% - 8px) 100%,0 100%);white-space:nowrap}
+.chip2 b{color:var(--accent2);font-family:var(--head)}
+.bhero.mini .bin{min-height:0;padding:16px 28px;gap:20px}
+.bhero.mini .lg{width:72px;height:72px}
+.bhero.mini h1{font-size:clamp(1.5rem,3.4vw,2.2rem);margin:0}
+/* tab bar under the hero */
+.tour .tourbar{background:var(--rail);border:1px solid var(--line);border-top:0;border-bottom:2px solid var(--accent);margin:0 0 26px;gap:0;border-radius:0 0 6px 6px}
+.tour .tourbar nav.tabs{margin:0 auto}
+.tour .tourbar nav.tabs button{font-family:var(--head);text-transform:uppercase;letter-spacing:.12em;font-weight:600;font-size:.9rem;padding:14px 20px;border:0;color:#9aa1aa}
+.tour .tourbar nav.tabs button:hover{color:#fff}
+.tour .tourbar nav.tabs button.on{background:var(--accent);color:var(--accent-ink)}
+.tour .tourbar .livest{margin-left:0;padding:6px 14px}
+/* section headings */
+.sech{font-family:var(--head);font-size:1.05rem;letter-spacing:.14em;margin:26px 0 14px;display:flex;align-items:center;gap:12px}
+.sech:after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line2),transparent)}
+.tour > .wrap > .sech:first-of-type{margin-top:4px}
+/* match cards: the VS column has a fixed width so it lines up; long names are cut with … */
+.tick{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:14px}
+.bug{background:var(--card);border:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr);cursor:pointer;border-radius:3px;overflow:hidden}
+.bug:hover{border-color:var(--accent)}
+.bug .bl{grid-column:1/-1;font-family:var(--head);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:6px 14px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--rail) 60%,transparent)}
+.bug .s{display:flex;align-items:center;gap:10px;padding:12px 14px;font-weight:600;font-size:1.02rem;min-width:0}
+.bug .s.r{justify-content:flex-end;text-align:right}
+.bug .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.bug .mid{background:var(--rail);display:grid;place-items:center;font-family:var(--head);white-space:nowrap}
+.bug .mid b{color:var(--accent2);font-size:1.15rem;letter-spacing:.04em}
+.bdg{width:34px;height:34px;display:inline-grid;place-items:center;font-family:var(--head);font-weight:800;font-size:.8rem;background:hsl(var(--h) 55% 30%);color:#fff;clip-path:polygon(0 0,100% 0,100% 75%,50% 100%,0 75%);flex:none}
+.bdg.img{background:none;clip-path:none}
+.bdg.img img{width:34px;height:34px;object-fit:cover;border-radius:4px}
+/* power rankings */
+.prgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:20px}
+.card.prk{padding:0;overflow:hidden}
+.card.prk h3{margin:0;padding:12px 16px;background:linear-gradient(90deg,color-mix(in srgb,var(--accent) 45%,var(--card)),var(--card));display:flex;justify-content:space-between;align-items:baseline}
+.card.prk h3 small{font-family:var(--body);text-transform:none;letter-spacing:0;font-weight:500;color:#c9ced4;font-size:.85rem}
+.card.prk .tablewrap{padding:2px 6px 6px}
+.card.prk td{padding-top:9px;padding-bottom:9px}
+.card.prk tr td:first-child{font-family:var(--head);font-size:1.2rem;font-weight:800;color:#5d646d;width:30px}
+.card.prk tr:nth-child(2) td:first-child,.card.prk tr:nth-child(3) td:first-child{color:var(--accent2)}
+.card.prk .chip{background:none;border:0;padding:0;font-size:1rem}
+.card.prk .muted{padding:10px 16px}
+.infog{display:grid;grid-template-columns:repeat(auto-fit,minmax(340px,1fr));gap:16px;align-items:start}
+/* site menu: on tournament pages it's a slim bar across the top instead of a side rail */
+@media (min-width:861px){
+  body.site.tpage{--railw:0px}
+  body.site.tpage header.top{position:sticky;top:0;bottom:auto;width:auto;flex-direction:row;align-items:center;gap:22px;padding:8px 24px;border-right:0;border-bottom:1px solid var(--line);overflow:visible}
+  body.site.tpage .wm small{display:none}
+  body.site.tpage .railbody{flex-direction:row;align-items:center;gap:18px}
+  body.site.tpage .railnav{flex-direction:row}
+  body.site.tpage .railnav a{border-left:0;padding:6px 10px}
+  body.site.tpage .railorg{margin:0 0 0 auto;border:0;padding:0;display:flex;align-items:center;gap:12px}
+  body.site.tpage .railorg p{display:none}
+  body.site.tpage .railorg .who{margin:0;max-width:220px}
+  body.site.tpage .railorg button.pri{width:auto;padding:6px 14px}
+  body.site.tpage main{padding-top:22px}
+}
+@media (max-width:860px){
+  .bin{flex-direction:column;text-align:center;gap:14px;padding:22px 16px;min-height:0}
+  .bhero .lg{width:140px;height:140px}
+  .chips{justify-content:center}
+  .bhero.mini .bin{flex-direction:row;text-align:left;padding:12px 14px}
+  .bhero.mini .lg{width:48px;height:48px}
+  .tick,.prgrid,.infog{grid-template-columns:minmax(0,1fr)}
+  .bug{grid-template-columns:minmax(0,1fr) 54px minmax(0,1fr)}
+  .bug .s{padding:11px 10px;gap:8px;font-size:.98rem}
+  .bug .bdg{width:26px;height:26px;font-size:.66rem}
+  .tour .tourbar nav.tabs{margin:0}
+  .tour .tourbar nav.tabs button{padding:12px 14px}
+}
+/* stage picker in Fixtures/Standings */
+.tour .stagebar button{font-family:var(--head);text-transform:uppercase;letter-spacing:.08em;font-size:.82rem;font-weight:600;border-radius:3px;background:var(--card);border-color:var(--line);padding:7px 14px}
+.tour .stagebar button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.note.draft{display:flex;gap:12px;align-items:center;flex-wrap:wrap;border-left:4px solid var(--accent2);margin-bottom:18px}
+/* ===== alignment pass ===== */
+.tour table th{text-align:left}
+.tour table th.n,.tour table td.n{text-align:center;width:78px;white-space:nowrap}
+.tour table tr > :first-child{width:40px}
+.tour .bk.rnd .bkcol{flex:0 1 330px;min-width:240px}
+.tour .bk.rnd .bkhead{text-align:left;padding-left:16px}
+.swbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.swbar .swhint{margin-left:auto}
+.swbar button{padding:7px 14px}
+.tour .sub{gap:6px}
+.tour .sub button{font-family:var(--head);text-transform:uppercase;letter-spacing:.08em;font-size:.82rem;font-weight:600;border-radius:3px;background:var(--card);border-color:var(--line);padding:7px 14px}
+.tour .sub button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.tour .stagecard .row:has(> label.f){display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px 14px;align-items:end}
+.tour .stagecard .row:has(> label.f) > label.f{flex:none}
+.tour label.f > span{display:flex;align-items:center;min-height:34px;padding:0 10px;border:1px dashed var(--line);border-radius:6px}
+.tour input[type=text],.tour input[type=number],.tour input[type=date],.tour input[type=url],.tour input[type=search],.tour select{min-height:34px}
+.tour .stagecard .row:has(> label.f) label.f > input,.tour .stagecard .row:has(> label.f) label.f > select{width:100%}
+.tour .stagecard .row:has(> label.f) > button,.tour .stagecard .row:has(> label.f) > span{align-self:end;min-height:34px}
+.tour .stagecard .row:has(> label.f) > span.small{display:flex;align-items:center}
+.tour [data-tql]{display:grid!important;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:4px 14px}
+.tour [data-tql] label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:3px 0}
+.tour .row > button{min-height:34px}
 </style>
 </head>
 <body>
@@ -556,27 +714,26 @@ function firstRun(){
 /* ---------- Home ---------- */
 function pageHome(){
   const t = T(), {done,total} = progress(t), DV = divs(t);
-  const hero = `<div class="hero ${t.banner?'hasbn':''}">${t.banner?`<img class="bn" src="${t.banner}" alt="">`:''}
+  const heroOld = `<div class="hero ${t.banner?'hasbn':''}">${t.banner?`<img class="bn" src="${t.banner}" alt="">`:''}
     <div class="ov">${t.logo?`<img class="lg" src="${t.logo}" alt="">`:''}<div><h1>${esc(t.name)}</h1>${t.sub?`<div>${esc(t.sub)}</div>`:''}
     <div class="small" style="opacity:.85">${esc([dates(t), t.place].filter(Boolean).join(' · '))}</div></div></div></div>`;
-  const info = (t.prize||t.org) ? `<div class="card">${t.prize?`<div><b>Prize pool:</b> ${esc(t.prize)}</div>`:''}${t.org?`<div><b>Organisers:</b> ${esc(t.org)}</div>`:''}</div>` : '';
-  const links = (t.links.length||t.docs.length) ? `<div class="card"><h3>Links</h3><div class="links">${t.links.map(l=>`<a href="${esc(l.url)}" target="_blank" rel="noopener">${esc(l.label||l.url)}</a>`).join('')}
+  const info = t.org ? `<div class="card"><h3>Organisers</h3><div>${esc(t.org)}</div></div>` : '';
+  const links = (t.links.length||t.docs.length) ? `<div class="card"><h3>Links</h3><div class="links">${t.links.map(l=>`<a href="${esc(/^https?:\/\//i.test(String(l.url||'').trim()) ? String(l.url).trim() : '#')}" target="_blank" rel="noopener">${esc(l.label||l.url)}</a>`).join('')}
     ${t.docs.map((d,i)=>`<a class="doc" href="#" data-act="opendoc" data-i="${i}">📄 ${esc(d.name)}</a>`).join('')}</div></div>` : '';
   const pod = DV.map(dv=>{ const fr = finalResult(t,dv); return fr.champ ? `<div class="card"><h3>${dv?esc(dv)+' results':'Results'}</h3><div class="podium">
       <div class="c1"><b>🏆 Champion</b>${sideHtml(fr.champ)}</div>${fr.ru&&fr.ru.length?`<div><b>Runner-up</b>${sideHtml(fr.ru)}</div>`:''}${fr.third&&fr.third.length?`<div><b>Third</b>${sideHtml(fr.third)}</div>`:''}
       ${fr.spoon?`<div><b>🥄 Wooden Spoon</b>${sideHtml(fr.spoon)}</div>`:''}</div></div>` : ''; }).join('');
   const next = [];
-  t.stages.forEach(S=>S.matches.forEach(m=>{ if(next.length>=6) return; const sd = sidesOf(S,m,t); if(sd[0]===null||sd[1]===null) return; if(winnerOf(S,m,sd)==null && sd[0].length && sd[1].length) next.push({S,m,sd}); }));
-  const nextHtml = next.length ? `<div class="card"><h3>Up next</h3>${next.map(({S,m,sd})=>`<div class="match"><div class="mh"><span class="lbl">${esc(S.name)} · ${esc(matchLabel(S,m))}</span>${sideHtml(sd[0])}<span class="vs">v</span>${sideHtml(sd[1])}<span class="sc">${score(m).join(' – ')}</span></div></div>`).join('')}</div>` : '';
+  t.stages.forEach(S=>S.matches.forEach(m=>{ const sd = sidesOf(S,m,t); if(sd[0]===null||sd[1]===null) return; if(winnerOf(S,m,sd)==null && sd[0].length && sd[1].length) next.push({S,m,sd}); }));
+  const nextHtml = next.length ? `<h2 class="sech">Up next</h2><div class="tick">${next.sort((a,b)=>(a.m.r-b.m.r) || (t.stages.indexOf(a.S)-t.stages.indexOf(b.S))).slice(0,6).map(({S,m})=>bugHtml(S,m)).join('')}</div>` : '';
   const lad = DV.map(dv=>{ const kind = hasLadder('t',t,dv) ? 't' : hasLadder('p',t,dv) ? 'p' : null;
-    return kind ? `<div class="card"><h3>${dv?esc(dv)+' · ':''}${kind==='t'?'Team ladder':'Ladder'}</h3>${ladderTable(ladder(kind,t,dv).slice(0,10))}</div>` : ''; }).join('');
+    return kind ? `<div class="card prk"><h3>${dv?esc(dv):(kind==='t'?'Team ladder':'Ladder')}${dv?`<small>${kind==='t'?'Team ladder':'Ladder'}</small>`:''}</h3>${ladderTable(ladder(kind,t,dv).slice(0,10))}</div>` : ''; }).join('');
   const stagesHtml = t.stages.length ? `<div class="card"><h3>Format</h3>${t.stages.map(S=>`<div>• <b>${S.div?esc(S.div)+' · ':''}${esc(S.name)}</b> <span class="muted">– ${esc(stageSummary(S))}</span></div>`).join('')}</div>` : '';
   const gal = t.gallery.length ? `<div class="card"><h3>Gallery</h3><div class="gallery">${t.gallery.map(g=>`<img src="${g}" alt="">`).join('')}</div></div>` : '';
   const setupHint = (!VIEW && !t.stages.length) ? `<div class="note">Next: add players under <b>Setup › Players</b>, then the format on <b>Setup › Stages</b>.</div>` : '';
-  return `${hero}${setupHint}${pod}
-    <div class="grid g2"><div>${nextHtml}${lad}</div><div>${info}${links}${stagesHtml}
-      ${total?`<div class="card"><h3>Progress</h3><div>${done} of ${total} matches played</div></div>`:''}
-      ${t.notes?`<div class="card"><h3>Notes</h3><div style="white-space:pre-wrap">${esc(t.notes)}</div></div>`:''}</div></div>${gal}`;
+  return `${setupHint}${pod}${nextHtml}
+    ${lad?`<h2 class="sech">Power rankings</h2><div class="prgrid">${lad}</div>`:''}
+    <h2 class="sech">About</h2><div class="infog"><div>${stagesHtml}${info}${links}</div><div>${t.notes?`<div class="card"><h3>Notes</h3><div style="white-space:pre-wrap">${esc(t.notes)}</div></div>`:''}</div></div>${gal}`;
 }
 function stageSummary(S){
   const bits = [TYPES[S.type].name];
@@ -606,17 +763,17 @@ function pageFixtures(){
   let body = '';
   const head = `<div class="muted small" style="margin-bottom:10px">${esc(stageSummary(S))}</div>`;
   if(!S.matches.length && S.type!=='swiss' && S.type!=='single') body = `<div class="card empty">Fixtures not made yet.${VIEW?'':` <button class="pri" data-act="gen" data-s="${S.id}">Make fixtures</button>`}</div>`;
-  else if(S.type==='elim') body = bracketHtml(S);
+  else if(S.type==='elim') body = bracketView(S);
   else if(S.type==='spoon') body = seedNote(S) + S.matches.map(m=>matchHtml(S,m)).join('');
   else if(S.type==='single') body = singleHtml(S);
-  else body = roundsHtml(S);
+  else body = roundsView(S);
   return pendCard() + bar + `<h2>${esc(S.name)}</h2>` + head + body;
 }
 function swissEdit(S, m, maxR){
   if(m.r!==maxR || !m.sides || (m.games||[]).length) return '';
   const E = stageEntrants(S, T()), opt = cur => E.map(k=>`<option value="${esc(k)}" ${k===cur?'selected':''}>${esc(sideName([k]))}</option>`).join('');
   const sel = i => m.sides[i] ? `<select data-act="swset" data-s="${S.id}" data-m="${m.id}" data-v="${i}">${opt(m.sides[i][0])}</select>` : '<span>bye</span>';
-  return `<div class="small muted" style="margin:-4px 0 10px">Change pairing: ${sel(0)} v ${sel(1)}</div>`;
+  return `<div class="small muted" style="margin:12px 0 0">Change pairing: ${sel(0)} v ${sel(1)}</div>`;
 }
 function roundsHtml(S){
   const t = T(); let out = '';
@@ -734,7 +891,7 @@ function setupEvent(){
       <label class="f">Where / host<input type="text" data-tf="place" value="${esc(t.place)}"></label>
       <label class="f">Prize pool<input type="text" data-tf="prize" value="${esc(t.prize||'')}"></label>
       <label class="f">Organisers<input type="text" data-tf="org" value="${esc(t.org||'')}"></label>
-      <label class="f" title="0 = no limit">Civ rule: max picks of the same civ per player (0 = no limit)<input type="number" min="0" data-tf="civLimit" value="${+t.civLimit||0}"></label></div>
+      <label class="f" title="0 = no limit">Max picks of one civ per player<input type="number" min="0" data-tf="civLimit" value="${+t.civLimit||0}"></label></div>
     <label class="f" style="margin-top:8px">Notes (shown on Home)<textarea data-tf="notes">${esc(t.notes)}</textarea></label></div>
   <div class="grid g2">${img('logo','Logo','Shown next to the name. Square works best.')}${img('banner','Header banner','Wide image across the top of Home.')}</div>
   ${themeCard()}
@@ -952,7 +1109,9 @@ async function act(el, ev){
   if(LIVE && await siteAct(a, d, el)) return;
   switch(a){
     case 'tab': ui.tab = d.v; ui.player = null; break;
-    case 'stage': ui.stage = d.v; break;
+    case 'stage': ui.stage = d.v; ui.mopen = null; break;
+    case 'mgo': ui.tab = 'fixtures'; ui.stage = d.s; ui.mopen = d.m; render(); { const p = document.getElementById('mpanel'); if(p) p.scrollIntoView({block:'nearest'}); } return;
+    case 'mopen': ui.mopen = ui.mopen===d.m ? null : d.m; render(); if(ui.mopen){ const p = document.getElementById('mpanel'); if(p) p.scrollIntoView({behavior:'smooth', block:'nearest'}); } return;
     case 'setup': ui.setup = d.v; break;
     case 'player': ui.player = d.v || null; window.scrollTo(0,0); render(); return;
     case 'switch': if(el.value==='__new'){ const n = await askText('Tournament name?','New tournament'); if(n){ const x = newTour(n); state.tours.push(x); state.cur = x.id; ui.tab='setup'; ui.setup='event'; } } else state.cur = el.value; break;
@@ -1057,7 +1216,7 @@ function exportView(){
   const data = {app:'tourney-tracker', v:1, players, porder:state.porder.filter(id=>players[id]), tours:[t], cur:t.id, exported:Date.now()};
   const css = $('#tt-css').textContent, app = $('#tt-app').textContent;
   const html = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>${esc(t.name)}</title>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Barlow+Semi+Condensed:wght@400;500;600;700&display=swap" rel="stylesheet"><style id="tt-css">${css}</style></head>
+<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@500;600;700;800&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet"><style id="tt-css">${css}</style></head>
 <body><header class="top" id="top"></header><main id="root"></main><div class="toast" id="toast"></div><input type="file" id="filepick" hidden>
 <script>window.TT_VIEW = ${JSON.stringify(data).replace(/</g,'\\u003c')};<\/script><script id="tt-app">${app}<\/script></body></html>`;
   download('index.html', html, 'text/html'); toast('index.html saved – upload it to GitHub');
@@ -1149,7 +1308,7 @@ function routeChanged(){
 async function loadDir(force){
   if(!live.fb || (!force && live.dir && Date.now()-live.dirAt < 60000)) return;
   try{ const {fs, d} = live.fb, s = await fs.getDocs(fs.query(fs.collection(d,'index'), fs.where('listed','==',true), fs.limit(200)));
-    live.dir = s.docs.map(x=>{ const v = x.data(); return Object.assign({id:x.id}, v, {ts: v.updated && v.updated.toMillis ? v.updated.toMillis() : 0}); }); live.dirAt = Date.now(); live.dirErr = '';
+    live.dir = s.docs.filter(x=>x.data().pub!==false).map(x=>{ const v = x.data(); return Object.assign({id:x.id}, v, {ts: v.updated && v.updated.toMillis ? v.updated.toMillis() : 0}); }); live.dirAt = Date.now(); live.dirErr = '';
   }catch(e){ live.dirErr = e.code||e.message; live.dir = live.dir || []; }
   if(live.route.page==='home'||live.route.page==='browse') render();
 }
@@ -1232,7 +1391,7 @@ async function createTournament(name){
   const tid = newId(), st = blankState(), t = newTour(name); st.tours.push(t); st.cur = t.id;
   const b = fs.writeBatch(d);
   b.set(fs.doc(d,'tournaments',tid), {state:JSON.stringify(st), imgs:{}, admins:[u.uid], owner:u.uid, updated:fs.serverTimestamp(), by:u.uid, app:APP_VERSION});
-  b.set(fs.doc(d,'index',tid), Object.assign(summaryOf(st), {listed:true, owner:u.uid, admins:[u.uid], updated:fs.serverTimestamp()}));
+  b.set(fs.doc(d,'index',tid), Object.assign(summaryOf(st), {listed:true, pub:false, owner:u.uid, admins:[u.uid], updated:fs.serverTimestamp()}));
   try{ await b.commit(); }catch(e){ await say('Could not create the tournament: '+(e.code||e.message)); return; }
   live.dirAt = 0; live.nextTab = 'setup'; location.hash = '#/t/'+tid;
 }
@@ -1311,7 +1470,7 @@ function bracketArt(){
 }
 function tourRow(i){
   const st = tstat(i), when = i.start ? dates(i) : 'Dates to be announced', hosts = i.org || i.place || '';
-  const status = st==='live' ? `<span class="tstat live"><i></i>Running</span>` : st==='soon' ? `<span class="tstat">${i.start ? 'Starts '+esc(fmtDate(i.start)) : 'Not started'}</span>` : `<span class="tstat done">Finished</span>`;
+  const status = i.pub===false ? `<span class="tstat">Draft</span>` : st==='live' ? `<span class="tstat live"><i></i>Running</span>` : st==='soon' ? `<span class="tstat">${i.start ? 'Starts '+esc(fmtDate(i.start)) : 'Not started'}</span>` : `<span class="tstat done">Finished</span>`;
   const bits = [i.teams ? i.teams+' teams' : i.players ? i.players+' players' : '', i.total ? `${i.played||0} of ${i.total} series played` : ''].filter(Boolean);
   return `<a class="trow" href="#/t/${esc(i.id)}"${i.accent && /^#[0-9a-f]{6}$/i.test(i.accent) ? ` style="--accent:${i.accent};--accent-ink:${lumOf(i.accent)>.34?'#15181b':'#fff'}"` : ''}>
     <span class="tmark" aria-hidden="true">${esc((i.name||'?').trim().charAt(0).toUpperCase())}</span>
@@ -1378,12 +1537,24 @@ function pageOrganiser(){
     <div class="card"><h3>Your account</h3><p class="small muted">Signed in as ${esc(u.email)}. To change your password, we email you a link to set a new one.</p>
       <div class="row"><button class="sm" data-act="pwchange">Change password</button><span class="small muted" role="status">${esc(live.pwMsg||'')}</span></div></div></div>`;
 }
+/* Draft / published: new tournaments stay out of search until an organiser publishes them (the link works either way).
+   'pub' is the organiser's switch; 'listed' stays the site owner's moderation switch. */
+function pubState(){
+  if(!live.fb || !live.admin || !live.tid) return null;
+  if(live.pubFor !== live.tid){ live.pubFor = live.tid; live.pub = null; const {fs, d} = live.fb, tid = live.tid;
+    fs.getDoc(fs.doc(d,'index',tid)).then(x=>{ if(live.pubFor!==tid) return; live.pub = x.exists() ? x.data().pub!==false : null; render(); }).catch(()=>{}); }
+  return live.pub;
+}
+function draftNote(){ return pubState()===false ? `<div class="note draft" role="status"><b>Draft.</b> This tournament isn't in the tournament search yet. Anyone with the link can still open it. <button class="pri sm" data-act="spub">Publish</button></div>` : ''; }
+function pubCard(){ const p = pubState(); if(p===null) return '';
+  return `<div class="card"><h3>Visibility</h3><p class="small muted">${p ? 'Published: it shows in the tournament search and on the home page while it runs.' : 'Draft: hidden from the tournament search. Anyone with the link can still open it.'}</p>
+    <button class="${p?'':'pri'}" data-act="spub">${p ? 'Hide from search (back to draft)' : 'Publish'}</button></div>`; }
 function orgCard(){
   const doc = live.doc || {}, list = doc.admins || [], me = live.user && live.user.uid;
-  return `<div class="card"><h3>Organisers</h3><p class="small muted">Everyone here can edit this tournament and confirm games. To add someone, ask them for their organiser ID (it's on their My tournaments page).</p>
+  return pubCard() + `<div class="card"><h3>Organisers</h3><p class="small muted">Everyone here can edit this tournament and confirm games. To add someone, ask them for their organiser ID (it's on their My tournaments page).</p>
     <div>${list.map(id=>`<div class="row orgrow"><span>${id===me?'<b>You</b>':`<code>${esc(id.slice(0,6))}…${esc(id.slice(-4))}</code>`}${id===doc.owner?' <span class="badge">creator</span>':''}</span>${id!==me && id!==doc.owner ? `<button class="sm danger" data-act="orgrem" data-id="${esc(id)}">Remove</button>` : ''}</div>`).join('')}</div>
     <div class="row" style="margin-top:8px"><label class="f" style="flex:3 1 260px">Organiser ID<input type="text" id="orgid" placeholder="Paste their organiser ID" autocomplete="off"></label><button data-act="orgadd">Add organiser</button></div></div>
-  <div class="card"><h3>Delete this tournament</h3><p class="small muted">Removes the tournament, its results, images and replay stats for everyone.</p><button class="danger" data-act="sdel">Delete tournament…</button></div>`;
+  ${(me===doc.owner || live.owner) ? `<div class="card"><h3>Delete this tournament</h3><p class="small muted">Removes the tournament, its results, images and replay stats for everyone.</p><button class="danger" data-act="sdel">Delete tournament…</button></div>` : ''}`;
 }
 function themeCard(){
   const t = T(), th = t.theme || {}, a = th.a || '#d4a64a', b = th.b || '#6f9bd1';
@@ -1401,11 +1572,11 @@ function tourPage(){
   const note = live.user && !live.admin && live.doc ? `<span class="livest">You're signed in, but not as an organiser of this tournament.</span>` : '';
   const canEdit = live.admin ? `<span id="livest" class="livest ${live.bad?'bad':''}">${esc(live.status||'')}</span>` : (live.bad ? `<span id="livest" class="livest bad">${esc(live.status)}</span>` : '');
   return `<div class="tour" style="${themeStyle(t)}"><div class="wrap">
-    <div class="tourbar"><nav class="tabs" aria-label="Tournament">${tabs.map(([k,n])=>`<button data-act="tab" data-v="${k}" class="${ui.tab===k?'on':''}" ${ui.tab===k?'aria-current="page"':''}>${n}</button>`).join('')}</nav>${canEdit}${note}</div>
+    ${heroB(t, ui.tab==='home')}<div class="tourbar"><nav class="tabs" aria-label="Tournament">${tabs.map(([k,n])=>`<button data-act="tab" data-v="${k}" class="${ui.tab===k?'on':''}" ${ui.tab===k?'aria-current="page"':''}>${n}</button>`).join('')}</nav>${canEdit}${note}</div>${draftNote()}
     ${(pages[ui.tab]||pageHome)()}</div></div>`;
 }
 function renderSite(){
-  document.body.classList.add('site'); document.body.classList.toggle('view', VIEW);
+  document.body.classList.add('site'); document.body.classList.toggle('view', VIEW); document.body.classList.toggle('tpage', live.route.page==='t');
   renderRail();
   const r = $('#root'), rt = live.route.page;
   r.innerHTML = rt==='browse' ? pageBrowse() : rt==='organiser' ? pageOrganiser() : rt==='t' ? tourPage() : pageSiteHome();
@@ -1430,6 +1601,9 @@ async function siteAct(a, d, el){
     case 'iverified': await live.user.reload(); await live.user.getIdToken(true); live.authMsg = ''; computeAdmin(); render(); return true;
     case 'copyid': try{ await navigator.clipboard.writeText(live.user.uid); toast('Copied'); }catch(e){ const r = document.createRange(); r.selectNodeContents($('#myid')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Press Ctrl+C to copy'); } return true;
     case 'sdel': await deleteTournament(); return true;
+    case 'spub': { const p = pubState(); if(p===null) return true; const {fs, d} = live.fb;
+      try{ await fs.setDoc(fs.doc(d,'index',live.tid), {pub: !p}, {merge:true}); live.pub = !p; live.dirAt = 0; live.mine = null; }catch(e){ await say('Could not change that: '+(e.code||e.message)); }
+      render(); return true; }
     case 'orgadd': { const v = ($('#orgid').value||'').trim(); if(!/^[A-Za-z0-9]{20,40}$/.test(v)){ await say('That doesn\'t look like an organiser ID. Ask them to copy it from their My tournaments page.'); return true; }
       try{ await setOrganisers([...new Set([...(live.doc.admins||[]), v])]); toast('Organiser added'); }catch(e){ await say('Could not add them: '+(e.code||e.message)); } return true; }
     case 'orgrem': if(await askYes('Remove this organiser? They can still view the tournament.')){ try{ await setOrganisers((live.doc.admins||[]).filter(x=>x!==d.id)); }catch(e){ await say('Could not remove them: '+(e.code||e.message)); } } return true;
@@ -1526,6 +1700,82 @@ function replayAvg(pid, t){ let n = 0, e = 0, f = 0, fn = 0; const sec = v => { 
   allMatches(t).forEach(({m})=>(m.games||[]).forEach(g=>{ const s = g && g.st && g.st[pid]; if(!s) return; if(s.eapm!=null){ n++; e += s.eapm; } const x = sec(s.feudal); if(x!=null){ fn++; f += x; } }));
   if(!n && !fn) return ''; const av = fn ? Math.round(f/fn) : null;
   return `<div class="small muted">Replay stats: ${n?`avg eAPM <b>${Math.round(e/n)}</b> over ${n} game${n>1?'s':''}`:''}${n&&fn?' · ':''}${fn?`avg Feudal click <b>${Math.floor(av/60)}:${String(av%60).padStart(2,'0')}</b>`:''}</div>`; }
+
+/* ---------- Fixtures as compact bracket boxes (seed · logo · name · score), click a box for games / editing ---------- */
+function seedMap(S){ const m = {}; if(S.type==='elim') entrantsFor(S).forEach((k,i)=>{ m[k] = i+1; }); return m; }
+function boxRow(S, side, won, sc, seeds){
+  if(side===null) return `<div class="bxr bye"><span class="bxs"></span><span class="bxn muted">bye</span><span class="bxsc"></span></div>`;
+  const k = side && side.length===1 ? side[0] : null, ph = k ? entPhoto(k) : '';
+  const name = side && side.length ? sideName(side) : 'TBD';
+  return `<div class="bxr ${won?'won':''} ${side&&side.length?'':'tbd'}"><span class="bxs">${k&&seeds[k]?seeds[k]:''}</span>`
+    + `<span class="bxn">${ph?`<img src="${esc(ph)}" alt="">`:''}<span>${esc(name)}</span></span><span class="bxsc">${sc==null?'':sc}</span></div>`;
+}
+function boxHtml(S, m, seeds, label, go){
+  if(!m) return `<div class="bx ghost"></div>`;
+  const sd = sidesOf(S,m), w = winnerOf(S,m,sd), sc = score(m), played = sc[0]+sc[1] > 0;
+  const bye = sd[0]===null || sd[1]===null, open = ui.mopen===m.id;
+  const lt = label || (m.label && S.type!=='elim' ? m.label : ''), lbl = lt ? `<div class="bxl">${esc(lt)}</div>` : '';
+  return `<div class="bx ${w!=null?'done':''} ${open?'sel':''} ${bye?'isbye':''} ${Object.keys(seeds).length?'':'noseed'}" ${bye?'':`data-act="${go?'mgo':'mopen'}" data-s="${S.id}" data-m="${m.id}" role="button" tabindex="0" title="${VIEW?'Show games':'Enter results'}"`}>${lbl}`
+    + boxRow(S, sd[0], w===0, played||w!=null ? (bye?'':sc[0]) : null, seeds) + boxRow(S, sd[1], w===1, played||w!=null ? (bye?'':sc[1]) : null, seeds) + `</div>`;
+}
+/* the open match: full games list (and editing for organisers) under the bracket */
+function matchPanel(S){
+  const m = ui.mopen && S.matches.find(x=>x.id===ui.mopen); if(!m) return '';
+  const maxR = S.matches.reduce((a,x)=>Math.max(a,x.r),0);
+  const extra = VIEW ? '' : S.type==='swiss' ? swissEdit(S,m,maxR)
+    : S.type==='rr' ? `<div class="small muted" style="margin-top:8px">Move to round <select data-act="mround" data-s="${S.id}" data-m="${m.id}">${Array.from({length:maxR+1},(_,k)=>k+1).map(k=>`<option value="${k}" ${k===m.r?'selected':''}>${k}${k===maxR+1?' (new)':''}</option>`).join('')}</select></div>` : '';
+  return `<div class="mpanel card" id="mpanel"><div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0">${esc(matchLabel(S,m))}</h3><button class="sm" data-act="mopen" data-m="${m.id}">Close</button></div>`
+    + matchHtml(S,m) + extra + `</div>`;
+}
+function bracketView(S){
+  const R = S.matches.reduce((a,m)=>Math.max(a,m.r),0), seeds = seedMap(S); let cols = '';
+  for(let r=1;r<=R;r++){
+    const ms = S.matches.filter(m=>m.r===r && m.id!=='e3rd').sort((a,b)=>(+String(a.id).split('_')[1]||0)-(+String(b.id).split('_')[1]||0));
+    cols += `<div class="bkcol ${r===1?'first':''} ${r===R?'last':''}"><div class="bkhead">${esc(roundName(r,R))}</div><div class="bkbody">`
+      + ms.map(m=>`<div class="bkslot">${boxHtml(S,m,seeds)}</div>`).join('') + `</div></div>`;
+  }
+  const third = S.matches.find(m=>m.id==='e3rd');
+  return seedNote(S) + `<div class="bk">${cols}</div>`
+    + (third ? `<div class="bk" style="margin-top:14px"><div class="bkcol first last"><div class="bkhead">3rd place</div><div class="bkbody"><div class="bkslot">${boxHtml(S,third,seeds)}</div></div></div></div>` : '')
+    + matchPanel(S);
+}
+function roundsView(S){
+  const t = T(); let out = '';
+  if(S.type==='swiss' && !VIEW){ const r = S.matches.reduce((a,m)=>Math.max(a,m.r),0);
+    out += `<div class="card edit-only swbar"><b>Round ${r} of ${S.rounds} paired.</b> ${r<S.rounds?`<button class="pri" data-act="swiss" data-s="${S.id}">Pair round ${r+1}</button>`:'All rounds paired.'} ${r?`<button class="danger" data-act="unswiss" data-s="${S.id}">Undo last pairing</button>`:''}${r?' <span class="small muted swhint">Click a match to enter results or change who plays whom.</span>':''}</div>`; }
+  else if(!VIEW && S.matches.length) out += `<div class="small muted" style="margin-bottom:8px">Click a match to enter results${S.type==='rr'?' or move it to another round':''}.</div>`;
+  const groups = {}; S.matches.forEach(m=>{ const k = (S.ent!=='rotate'&&(S.groups||1)>1) ? `Group ${GL(m.g)}` : ''; ((groups[k]=groups[k]||{})[m.r] = (groups[k][m.r]||[])).push(m); });
+  Object.entries(groups).forEach(([g,rounds])=>{ if(g) out += `<h3 style="margin-top:14px">${g}</h3>`;
+    out += `<div class="bk rnd">${Object.entries(rounds).sort((a,b)=>a[0]-b[0]).map(([r,ms])=>`<div class="bkcol"><div class="bkhead">Round ${r}</div><div class="bkbody">${ms.map(m=>`<div class="bkslot">${boxHtml(S,m,{})}</div>`).join('')}</div></div>`).join('')}</div>`; });
+  return out + matchPanel(S);
+}
+
+/* ---------- Broadcast look: big hero, match cards (fixed VS column), team badges ---------- */
+function bHue(n){ return [...String(n)].reduce((a,c)=>a+c.charCodeAt(0),0)*47%360; }
+function bBadge(k){ const ph = entPhoto(k), n = entName(k);
+  if(ph) return `<span class="bdg img"><img src="${esc(ph)}" alt=""></span>`;
+  const ini = n.replace(/^team\s+/i,'').replace(/[^A-Za-z0-9]/g,'').slice(0,2).toUpperCase() || '?';
+  return `<span class="bdg" style="--h:${bHue(n)}">${esc(ini)}</span>`; }
+function bSide(side, right){
+  if(side===null) return `<div class="s ${right?'r':''}"><span class="nm muted">bye</span></div>`;
+  const nm = side && side.length ? sideName(side) : 'TBD', sh = nm.replace(/^team\s+/i,'') || nm, bd = side && side.length===1 ? bBadge(side[0]) : '';
+  return `<div class="s ${right?'r':''}">${right?'':bd}<span class="nm" title="${esc(nm)}">${esc(sh)}</span>${right?bd:''}</div>`; }
+function bugHtml(S, m){
+  const sd = sidesOf(S,m), w = winnerOf(S,m,sd), sc = score(m), played = sc[0]+sc[1] > 0;
+  return `<div class="bug" data-act="mgo" data-s="${S.id}" data-m="${m.id}" role="button" tabindex="0" title="Show this match">`
+    + `<div class="bl">${esc(S.name)} · ${esc(matchLabel(S,m))}</div>${bSide(sd[0])}<div class="mid">${played||w!=null?`<b>${sc[0]}–${sc[1]}</b>`:'<b>VS</b>'}</div>${bSide(sd[1],true)}</div>`; }
+function bDates(t){
+  const f = (s,y) => { const d = new Date(s+'T00:00:00'); return isNaN(d) ? s : d.toLocaleDateString('en-AU', y ? {day:'numeric',month:'short',year:'numeric'} : {day:'numeric',month:'short'}); };
+  if(!t.start) return ''; if(!t.end || t.end===t.start) return f(t.start,true);
+  return `${f(t.start, t.start.slice(0,4)!==t.end.slice(0,4))} – ${f(t.end,true)}`; }
+function heroB(t, full){
+  const {done,total} = progress(t), dt = bDates(t);
+  const chips = [t.prize?`<span class="chip2"><b>${esc(t.prize)}</b> prize pool</span>`:'', dt?`<span class="chip2">${esc(dt)}</span>`:'',
+    t.teams.length?`<span class="chip2">${t.teams.length} teams</span>`:(t.roster.length?`<span class="chip2">${t.roster.length} players</span>`:''),
+    total?`<span class="chip2">${done}/${total} played</span>`:''].join('');
+  return `<div class="bhero ${full?'':'mini'} ${t.banner?'hasbn':''}">${t.banner?`<img class="bn" src="${t.banner}" alt="">`:''}<div class="bin">`
+    + `${t.logo?`<img class="lg" src="${t.logo}" alt="">`:''}<div class="btx">${full&&t.place?`<div class="eyebrow">${esc(t.place)}</div>`:''}<h1>${esc(t.name)}</h1>`
+    + `${full&&t.sub?`<div class="bsub">${esc(t.sub)}</div>`:''}${full&&chips?`<div class="chips">${chips}</div>`:''}</div></div></div>`; }
 
 /* ============ boot ============ */
 document.addEventListener('click', e=>{ const el = e.target.closest('[data-act]'); if(!el || el.tagName==='SELECT' || (el.tagName==='INPUT' && el.type!=='button')) return; act(el, e); });
