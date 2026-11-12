@@ -111,12 +111,54 @@ def tour_pids(state, t):
     return out
 
 
-def is_candidate(summary, pidmap, window):
-    """Finished, inside the dates, 2+ tournament players and they are at least half the lobby."""
+def team_of(t):
+    """tracker player id -> tournament team id (empty when the tournament has no teams)."""
+    return {m: tm.get("id") for tm in t.get("teams") or [] for m in tm.get("members") or []}
+
+
+def sides_fit(players, teamof):
+    """Team tournaments: a real fixture is one tournament team against another. Every tournament player on a side
+    must be from the same team, they must be at least half of that side, and the two sides must be different teams.
+    players: [{"team": lobby side, "id": tracker player id or None}]. Tournaments without teams always fit."""
+    if len(set(teamof.values())) < 2:
+        return True
+    sizes = {}
+    for tm in teamof.values():
+        sizes[tm] = sizes.get(tm, 0) + 1
+    need = 2 if min(sizes.values()) >= 2 else 1     # real teams: a 1v1 between two of their players is not a fixture
+    sides = {}
+    for p in players:
+        sides.setdefault(p.get("team"), []).append(p)
+    if len(sides) != 2:
+        return False
+    found = []
+    for ps in sides.values():
+        tms = [teamof.get(p.get("id")) for p in ps if p.get("id")]
+        tms = [x for x in tms if x]
+        if len(tms) < need or len(set(tms)) != 1 or len(tms) * 2 < len(ps):
+            return False
+        found.append(tms[0])
+    return found[0] != found[1]
+
+
+def ranked(leaderboard):
+    """True for matchmaking ladders (Random Map, Team Random Map, Empire Wars...). Tournament games are lobby games,
+    which aoe2companion labels Unranked; a missing label is given the benefit of the doubt."""
+    lb = str(leaderboard or "").strip().lower()
+    return bool(lb) and "unranked" not in lb
+
+
+def is_candidate(summary, pidmap, window, teamof=None):
+    """Finished, inside the dates, 2+ tournament players and they are at least half the lobby.
+    In a team tournament the two sides must also be two of its teams (keeps ranked games between mates out)."""
     ps = summary.get("players") or []
     ours = [p for p in ps if p.get("profileId") in pidmap]
     st = summary.get("started") or 0
-    return bool(summary.get("finished")) and window[0] <= st <= window[1] and len(ours) >= 2 and len(ours) * 2 >= len(ps)
+    if ranked(summary.get("leaderboard")):
+        return False
+    if not (bool(summary.get("finished")) and window[0] <= st <= window[1] and len(ours) >= 2 and len(ours) * 2 >= len(ps)):
+        return False
+    return sides_fit([{"team": p.get("team"), "id": pidmap.get(p.get("profileId"))} for p in ps], teamof or {})
 
 
 def fill_winner(game):
@@ -170,6 +212,7 @@ def headline(st):
 # ---------- one site ----------
 def run_site(db, site_ref, now=None, get=http_get):
     from firebase_admin import firestore
+    from google.cloud.firestore_v1.base_query import FieldFilter
     now = now or time.time()
     snap = site_ref.get()
     data = snap.to_dict() or {}
@@ -190,12 +233,22 @@ def run_site(db, site_ref, now=None, get=http_get):
             continue
         deep = not (meta.get("caughtUp") or {}).get(t["id"])
         log(f"{site_ref.id} / {t.get('name')}: {len(pidmap)} players with profile IDs{' (catch-up)' if deep else ''}")
+        teamof = team_of(t)
+        # games queued under an older, looser rule (or before teams were entered) that no longer fit: take them out
+        # of the queue, unless an admin has already dealt with them
+        for d in site_ref.collection("pending").where(filter=FieldFilter("status", "==", "new")).stream():
+            pd = d.to_dict() or {}
+            if pd.get("tour") == t["id"] and (ranked(pd.get("leaderboard")) or not sides_fit(pd.get("players") or [], teamof)):
+                d.reference.delete()
+                site_ref.collection("games").document(d.id).delete()
+                known[d.id] = {"stats": True, "tries": MAX_TRIES, "tried": now, "skip": True}
+                log(f"  game {d.id}: ranked or not team v team, removed from the queue")
         matches, failed = fetch_matches(sorted(pidmap), window[0], deep, get)
         for m in matches:
             s = core.summarize_match(m)
             mid = str(s["matchId"])
             old = known.get(mid)
-            if not is_candidate(s, pidmap, window):
+            if not is_candidate(s, pidmap, window, teamof):
                 continue
             tries = (old or {}).get("tries") or 0
             if old and (old.get("stats") or tries >= MAX_TRIES or now - (old.get("tried") or 0) < tries * RETRY_GAP):
