@@ -612,13 +612,19 @@ function pageFixtures(){
   else body = roundsHtml(S);
   return pendCard() + bar + `<h2>${esc(S.name)}</h2>` + head + body;
 }
+function swissEdit(S, m, maxR){
+  if(m.r!==maxR || !m.sides || (m.games||[]).length) return '';
+  const E = stageEntrants(S, T()), opt = cur => E.map(k=>`<option value="${esc(k)}" ${k===cur?'selected':''}>${esc(sideName([k]))}</option>`).join('');
+  const sel = i => m.sides[i] ? `<select data-act="swset" data-s="${S.id}" data-m="${m.id}" data-v="${i}">${opt(m.sides[i][0])}</select>` : '<span>bye</span>';
+  return `<div class="small muted" style="margin:-4px 0 10px">Change pairing: ${sel(0)} v ${sel(1)}</div>`;
+}
 function roundsHtml(S){
   const t = T(); let out = '';
   if(S.type==='swiss'){ const r = S.matches.reduce((a,m)=>Math.max(a,m.r),0);
     out += `<div class="card edit-only">Round ${r} of ${S.rounds} paired. ${r<S.rounds?`<button class="pri" data-act="swiss" data-s="${S.id}">Pair round ${r+1}</button>`:'All rounds paired.'} ${r?`<button class="sm danger" data-act="unswiss" data-s="${S.id}">Undo last pairing</button>`:''}</div>`; }
   const groups = {}; S.matches.forEach(m=>{ const k = (S.ent!=='rotate'&&(S.groups||1)>1) ? `Group ${GL(m.g)}` : ''; (groups[k]=groups[k]||{})[m.r] = ((groups[k]||{})[m.r]||[]).concat(m); });
   Object.entries(groups).forEach(([g,rounds])=>{ if(g) out += `<h3 style="margin-top:14px">${g}</h3>`;
-    const maxR = S.matches.reduce((a,m)=>Math.max(a,m.r),0), mv = m => (S.type==='rr' && !VIEW) ? `<div class="small muted" style="margin:-4px 0 10px">Round <select data-act="mround" data-s="${S.id}" data-m="${m.id}">${Array.from({length:maxR+1},(_,k)=>k+1).map(k=>`<option value="${k}" ${k===m.r?'selected':''}>${k}${k===maxR+1?' (new)':''}</option>`).join('')}</select></div>` : '';
+    const maxR = S.matches.reduce((a,m)=>Math.max(a,m.r),0), mv = m => (S.type==='swiss' && !VIEW) ? swissEdit(S,m,maxR) : (S.type==='rr' && !VIEW) ? `<div class="small muted" style="margin:-4px 0 10px">Round <select data-act="mround" data-s="${S.id}" data-m="${m.id}">${Array.from({length:maxR+1},(_,k)=>k+1).map(k=>`<option value="${k}" ${k===m.r?'selected':''}>${k}${k===maxR+1?' (new)':''}</option>`).join('')}</select></div>` : '';
     out += `<div class="rounds">${Object.entries(rounds).sort((a,b)=>a[0]-b[0]).map(([r,ms])=>`<div><h3 class="small muted">Round ${r}</h3>${ms.map(m=>matchHtml(S,m,true)+mv(m)).join('')}</div>`).join('')}</div>`; });
   return out;
 }
@@ -933,7 +939,7 @@ function readURL(file){ return new Promise((res,rej)=>{ const r = new FileReader
 function readText(file){ return new Promise((res,rej)=>{ const r = new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsText(file); }); }
 async function shrink(file, max, type='image/jpeg', q=.85){
   const url = await readURL(file); if(/svg/.test(file.type)) return url;
-  const img = await new Promise((res,rej)=>{ const i = new Image(); i.onload=()=>res(i); i.onerror=rej; i.src=url; });
+  const img = await new Promise((res,rej)=>{ const i = new Image(); i.onload=()=>res(i); i.onerror=()=>{ say(`“${file.name}” couldn't be opened as an image. If it's a shortcut, pick the actual image file (PNG, JPG, GIF or WebP).`); rej(new Error('not an image')); }; i.src=url; });
   const s = Math.min(1, max/Math.max(img.width,img.height)), c = document.createElement('canvas'); c.width = Math.round(img.width*s); c.height = Math.round(img.height*s);
   c.getContext('2d').drawImage(img,0,0,c.width,c.height); return c.toDataURL(type, q);
 }
@@ -1000,6 +1006,10 @@ async function act(el, ev){
     case 'unswiss': { const S = curStage(d.s); const r = S.matches.reduce((x,m)=>Math.max(x,m.r),0); const ms = S.matches.filter(m=>m.r===r); if(ms.some(m=>(m.games||[]).length) && !await askYes(`Round ${r} has results. Undo the pairing anyway?`)) return; S.matches = S.matches.filter(m=>m.r!==r); break; }
     case 'mround': { const S = curStage(d.s), m = S.matches.find(x=>x.id===d.m); if(!m) return; m.r = +el.value || m.r;
       const used = [...new Set(S.matches.map(x=>x.r))].sort((a,b)=>a-b); S.matches.forEach(x=>{ x.r = used.indexOf(x.r)+1; }); break; }
+    case 'swset': { const S = curStage(d.s), m = S.matches.find(x=>x.id===d.m), i = +d.v, k = el.value; if(!m || !m.sides[i]) return; const old = m.sides[i][0]; if(old===k) return;
+      const other = S.matches.find(x=>x.r===m.r && x.sides && x.sides.some(sd=>sd && sd[0]===k));
+      if(other && (other.games||[]).length){ await say('That team already has results in this round. Clear them first.'); render(); return; }
+      if(other){ other.sides.forEach(sd=>{ if(sd && sd[0]===k) sd[0] = old; }); } m.sides[i] = [k]; break; }
     case 'manual': { const S = curStage(d.s); S.manual = S.manual||{}; S.manual[d.v] = +el.value||0; break; }
     case 'tbup': { const S = curStage(d.s); const tb = tbOf(S).slice(), i = tb.indexOf(d.v); if(i>0) [tb[i-1],tb[i]] = [tb[i],tb[i-1]]; S.tb = tb; break; }
     case 'tbdel': { const S = curStage(d.s); S.tb = tbOf(S).filter(k=>k!==d.v); if(!S.tb.length) S.tb = ['pts']; break; }
