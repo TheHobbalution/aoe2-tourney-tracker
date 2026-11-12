@@ -1374,7 +1374,9 @@ function pageOrganiser(){
     ${ok ? '' : `<div class="note" role="status"><b>Confirm your email to create tournaments.</b> We sent a link to ${esc(u.email)}. ${esc(live.authMsg)}<div class="row" style="margin-top:8px"><button data-act="iverified">I've confirmed it</button><button data-act="resend">Send the email again</button></div></div>`}
     ${mine===null ? `<p class="muted">Loading…</p>` : mine.length ? `<div class="tlist">${mine.map(tourRow).join('')}</div>` : `<div class="card empty">You don't run any tournaments yet.${ok ? ' Choose <b>New tournament</b> to start one.' : ''}</div>`}
     <div class="card"><h3>Your organiser ID</h3><p class="small muted">To be added as a co-organiser, give this ID to the organiser of that tournament. They paste it under Setup, Organisers.</p>
-      <div class="row"><code class="uid" id="myid">${esc(u.uid)}</code><button class="sm" data-act="copyid">Copy</button></div></div></div>`;
+      <div class="row"><code class="uid" id="myid">${esc(u.uid)}</code><button class="sm" data-act="copyid">Copy</button></div></div>
+    <div class="card"><h3>Your account</h3><p class="small muted">Signed in as ${esc(u.email)}. To change your password, we email you a link to set a new one.</p>
+      <div class="row"><button class="sm" data-act="pwchange">Change password</button><span class="small muted" role="status">${esc(live.pwMsg||'')}</span></div></div></div>`;
 }
 function orgCard(){
   const doc = live.doc || {}, list = doc.admins || [], me = live.user && live.user.uid;
@@ -1422,6 +1424,7 @@ async function siteAct(a, d, el){
     case 'authmode': live.authMode = d.v; live.authErr = ''; live.authMsg = ''; render(); return true;
     case 'authgoogle': await authGoogle(); return true;
     case 'authreset': await authReset(); return true;
+    case 'pwchange': try{ await live.fb.au.sendPasswordResetEmail(live.fb.auth, live.user.email); live.pwMsg = 'Link sent to '+live.user.email+'. Check your inbox (and spam).'; }catch(e){ live.pwMsg = AUTH_ERR[e.code] || 'Could not send the email. Try again in a minute.'; } render(); return true;
     case 'snew': { const n = await askText('Tournament name?', ''); if(n) await createTournament(n); return true; }
     case 'resend': try{ await live.fb.au.sendEmailVerification(live.user); live.authMsg = 'Sent again.'; }catch(e){ live.authMsg = 'Could not send the email yet. Try again in a minute.'; } render(); return true;
     case 'iverified': await live.user.reload(); await live.user.getIdToken(true); live.authMsg = ''; computeAdmin(); render(); return true;
