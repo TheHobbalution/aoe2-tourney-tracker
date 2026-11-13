@@ -224,6 +224,127 @@ def headline(st):
     }.items() if v is not None}
 
 
+# ---------- ranked ELOs (shown on the stats pages; ranked games themselves never count as fixtures) ----------
+ELO_EVERY = 6 * 3600          # seconds between refreshes of a tournament's ELOs
+LADDERS = ("rm1", "rmt", "ew1", "ewt")
+
+
+def ladder_key(*labels):
+    """aoe2companion leaderboard id / name -> rm1, rmt, ew1, ewt (None for anything else: unranked, DM, console...)."""
+    s = " ".join(str(x) for x in labels if x).lower().replace("-", "_")
+    if not s or any(w in s for w in ("unranked", "console", "xbox", "playstation", "death", "dm_", "ror", "return of rome", "quick")):
+        return None
+    words = s.replace("_", " ").split()
+    team = "team" in words or "tg" in words
+    if "ew" in words or "empire" in words:
+        return "ewt" if team else "ew1"
+    if "rm" in words or "random" in words:
+        return "rmt" if team else "rm1"
+    return None
+
+
+def _num(v):
+    try:
+        n = int(round(float(v)))
+        return n if 0 < n < 5000 else None
+    except (TypeError, ValueError):
+        return None
+
+
+def parse_profile_elos(data):
+    """Profile reply -> {ladder: {"r": rating, "max": peak}}. Tolerant of the shape, which we can't pin down in tests."""
+    out = {}
+    if isinstance(data, dict) and isinstance(data.get("profile"), dict):
+        data = data["profile"]
+    for lb in (data.get("leaderboards") if isinstance(data, dict) else None) or []:
+        if not isinstance(lb, dict):
+            continue
+        k = ladder_key(lb.get("leaderboardId"), lb.get("leaderboardName") if not lb.get("leaderboardId") else None, lb.get("abbreviation") if not lb.get("leaderboardId") else None)
+        r = _num(lb.get("rating"))
+        if k and r and k not in out:
+            out[k] = {"r": r}
+            mx = _num(lb.get("maxRating"))
+            if mx:
+                out[k]["max"] = max(mx, r)
+    return out
+
+
+def elos_from_matches(matches):
+    """Fallback: each player's rating after their newest ranked game per ladder, from match lists already fetched."""
+    best = {}
+    for m in matches:
+        k = ladder_key(m.get("leaderboardId"), m.get("leaderboardName") if not m.get("leaderboardId") else None)
+        ts = core.iso_ts(m.get("started")) or 0
+        if not k:
+            continue
+        for t in m.get("teams") or []:
+            for p in t.get("players") or []:
+                r = _num(p.get("rating"))
+                if r is None or p.get("profileId") is None:
+                    continue
+                d = p.get("ratingDiff")
+                r = r + int(d) if isinstance(d, (int, float)) else r
+                cur = best.setdefault(p["profileId"], {})
+                if k not in cur or ts > cur[k][0]:
+                    cur[k] = (ts, r)
+    return {pid: {k: {"r": v[1]} for k, v in d.items()} for pid, d in best.items()}
+
+
+def fetch_elos(pids, get=http_get):
+    """profile id -> {ladder: {...}} from each player's aoe2companion profile. Players whose profile can't be read are left out."""
+    out, bad = {}, 0
+    for pid in pids:
+        try:
+            data = json.loads(get(f"https://data.aoe2companion.com/api/profiles/{pid}"))
+            e = parse_profile_elos(data)
+            if e:
+                out[pid] = e
+            elif not bad:
+                keys = sorted(data)[:25] if isinstance(data, dict) else type(data).__name__
+                log(f"  ELO: no ranked ladders read for {pid}; reply had: {keys}")
+                bad += 1
+        except Exception as e:  # noqa: BLE001
+            if not bad:
+                log(f"  ELO: profile for {pid} failed: {e}")
+            bad += 1
+        time.sleep(PAUSE)
+    return out
+
+
+def update_elos(site_ref, state, matches_by_pid, now, get=http_get):
+    """Keep tournaments/<tid>/detector/elo fresh: {at, p: {tracker player id: {ladder: {r, max}}}}."""
+    pidmap = {}
+    for t in state.get("tours") or []:
+        if tour_window(t, now):
+            pidmap.update(tour_pids(state, t))
+    if not pidmap:
+        return
+    ref = site_ref.collection("detector").document("elo")
+    cur = ref.get().to_dict() or {}
+    have = cur.get("p") or {}
+    fresh = now - (cur.get("at") or 0) < ELO_EVERY
+    asked = set(cur.get("asked") or []) if fresh else set()      # players already asked since the last full refresh
+    need = sorted(pid for pid, i in pidmap.items() if not fresh or (i not in have and i not in asked))
+    fallback = elos_from_matches(matches_by_pid)
+    got = fetch_elos(need, get) if need else {}
+    changed = False
+    for pid, i in pidmap.items():
+        e = dict(have.get(i) or {})
+        for k, v in (fallback.get(pid) or {}).items():      # newest ranked game seen this run
+            if k not in got.get(pid, {}):
+                e[k] = {**(e.get(k) or {}), **v}
+                if e[k].get("max") and e[k]["max"] < e[k]["r"]:
+                    e[k]["max"] = e[k]["r"]
+        e.update(got.get(pid) or {})
+        if e and e != have.get(i):
+            have[i] = e
+            changed = True
+    if need or changed:
+        asked.update(pidmap[pid] for pid in need)
+        ref.set({"at": cur.get("at") or 0 if fresh else now, "p": have, "asked": sorted(asked)})
+        log(f"{site_ref.id}: ELOs saved for {len(have)} players ({len(got)} of {len(need)} profiles read)")
+
+
 # ---------- one site ----------
 def run_site(db, site_ref, now=None, get=http_get):
     from firebase_admin import firestore
@@ -241,6 +362,7 @@ def run_site(db, site_ref, now=None, get=http_get):
     # what we already queued lives in the meta record (one read per run instead of one per queued game)
     known = meta.setdefault("known", {})   # matchId -> {"stats": bool, "tries": n, "tried": ts}
     added = 0
+    seen_matches = []
     for t in state.get("tours") or []:
         window = tour_window(t, now)
         pidmap = tour_pids(state, t)
@@ -259,6 +381,7 @@ def run_site(db, site_ref, now=None, get=http_get):
                 known[d.id] = {"stats": True, "tries": MAX_TRIES, "tried": now, "skip": True}
                 log(f"  game {d.id}: ranked or not team v team, removed from the queue")
         matches, failed = fetch_matches(sorted(pidmap), window[0], deep, get)
+        seen_matches += matches
         rep = {"at": now, "players": len(pidmap), "looked": len(matches), "fit": 0, "skipped": {}, "failed": len(failed)}
         meta.setdefault("report", {})[t["id"]] = rep
         left = meta.setdefault("left", {}).setdefault(t["id"], {})
@@ -315,6 +438,10 @@ def run_site(db, site_ref, now=None, get=http_get):
             meta.setdefault("caughtUp", {})[t["id"]] = True
         elif failed:
             meta.setdefault("caughtUp", {})[t["id"]] = False     # page back again next run so nothing is missed
+    try:
+        update_elos(site_ref, state, seen_matches, now, get)
+    except Exception as e:  # noqa: BLE001
+        log(f"{site_ref.id}: ELO update failed: {e}")
     meta["lastRun"] = firestore.SERVER_TIMESTAMP
     meta_ref.set(meta)
     return added

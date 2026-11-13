@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-qHl4T0a4vg6+IshDXK6kXvrkcgKd1hEp4/oy9UvYeZU=' 'sha256-2Skqb8valLReO/gQdpfrhtVhxZeQvXMs6BZH6MD2mV0=' https://www.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-qHl4T0a4vg6+IshDXK6kXvrkcgKd1hEp4/oy9UvYeZU=' 'sha256-3Ofpsgpe9Mt9QZS6XYD5OaHhGLIjPEaj6U1sV4Tts1Y=' https://www.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -325,7 +325,7 @@ body.site main{max-width:none;margin:0 0 0 var(--railw);padding:36px clamp(18px,
 .sech:after{content:'';flex:1;height:1px;background:linear-gradient(90deg,var(--line2),transparent)}
 .tour > .wrap > .sech:first-of-type{margin-top:4px}
 /* match cards: the VS column has a fixed width so it lines up; long names are cut with … */
-.tick{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:14px}
+.tick{display:grid;grid-template-columns:repeat(auto-fill,minmax(480px,1fr));gap:14px}
 .bug{background:var(--card);border:1px solid var(--line);display:grid;grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr);cursor:pointer;border-radius:3px;overflow:hidden}
 .bug:hover{border-color:var(--accent)}
 .bug .bl{grid-column:1/-1;font-family:var(--head);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);padding:6px 14px;border-bottom:1px solid var(--line);background:color-mix(in srgb,var(--rail) 60%,transparent)}
@@ -496,6 +496,23 @@ h2,h3{font-family:var(--head)}
 .card.stat{display:flex;flex-direction:column;gap:2px}
 .card.stat b{font-family:var(--head);font-size:1.7rem;font-weight:800}
 .card.stat i{font-style:normal;font-size:.78rem;color:var(--muted)}
+
+/* ---------- ELOs, fuller player pages, Stats tab ---------- */
+.tcstats.elo{grid-template-columns:repeat(auto-fit,minmax(0,1fr));border-top:0}
+.tcstats span{white-space:nowrap}
+.card.stat{min-width:0}
+.card.stat.txt b{font-size:1.2rem;line-height:1.5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.statrow{margin-bottom:16px}
+.statrow.in{margin:12px 0 0;gap:10px;grid-template-columns:repeat(auto-fit,minmax(120px,1fr))}
+.statrow.in .card.stat{background:var(--rail);padding:10px 12px}
+.statrow.in .card.stat b{font-size:1.3rem}
+.pphoto{width:96px;height:96px;border-radius:4px;object-fit:cover}
+.formbox{margin-left:auto;display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+.formrow{display:inline-flex;gap:4px}
+.formrow i{font-style:normal;font-family:var(--head);font-weight:700;font-size:.8rem;width:24px;height:24px;display:grid;place-items:center;border-radius:3px;color:#fff}
+.formrow i.W{background:var(--win-bg)}
+.formrow i.L{background:color-mix(in srgb,var(--loss) 70%,#000)}
+@media (max-width:700px){ .formbox{margin-left:0;align-items:flex-start} }
 </style>
 </head>
 <body>
@@ -986,6 +1003,7 @@ function setupEvent(){
       <label class="f">Where / host<input type="text" data-tf="place" value="${esc(t.place)}"></label>
       <label class="f">Prize pool<input type="text" data-tf="prize" value="${esc(t.prize||'')}"></label>
       <label class="f">Organisers<input type="text" data-tf="org" value="${esc(t.org||'')}"></label>
+      <label class="f" title="Decides which ranked ELOs show next to each player. 1v1 ELO always shows.">Game type<select data-tf="mode">${MODES.map(([k,n])=>`<option value="${k}" ${modeOf(t)===k?'selected':''}>${n}</option>`).join('')}</select></label>
       <label class="f" title="0 = no limit">Max picks of one civ per player<input type="number" min="0" data-tf="civLimit" value="${+t.civLimit||0}"></label></div>
     <label class="f" style="margin-top:8px">Notes (shown on Home)<textarea data-tf="notes">${esc(t.notes)}</textarea></label></div>
   <div class="grid g2">${img('logo','Logo','Shown next to the name. Square works best.')}${img('banner','Header banner','Wide image across the top of Home.')}</div>
@@ -1122,7 +1140,7 @@ function playerProfile(id, t){
   return `<p><button class="sm" data-act="player" data-v="">‹ All players</button></p>
     <div class="card" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">${p.photo?`<img src="${p.photo}" alt="" style="width:110px;height:110px;border-radius:50%;object-fit:cover">`:''}
       <div><h2 style="margin:0">${esc(p.name)}</h2><div class="muted">${x.team?esc(x.team.name)+(x.team.cap===id?' · captain':''):''}${x.place?` · finished ${ord(x.place.place)}`:''}</div>
-      ${p.pid?`<div class="small"><a href="https://www.aoe2insights.com/user/${encodeURIComponent(p.pid)}/" target="_blank" rel="noopener">AoE2 Insights</a> · <a href="https://www.aoe2companion.com/profile/${encodeURIComponent(p.pid)}" target="_blank" rel="noopener">aoe2companion</a></div>`:''}${replayAvg(id,t)}</div></div>
+      ${p.pid?`<div class="small"><a href="https://www.aoe2insights.com/user/${encodeURIComponent(p.pid)}/" target="_blank" rel="noopener">AoE2 Insights</a> · <a href="https://www.aoe2companion.com/players/${encodeURIComponent(p.pid)}" target="_blank" rel="noopener">aoe2companion</a></div>`:''}${replayAvg(id,t)}</div></div>
     <div class="grid g3">
       <div class="card"><b class="muted small">SERIES</b><div style="font-size:1.6rem;font-weight:700">${x.w}–${x.l}</div></div>
       <div class="card"><b class="muted small">MAPS</b><div style="font-size:1.6rem;font-weight:700">${x.gw}–${x.gl} <span class="small muted">${pct(x.gw,x.gw+x.gl)}</span></div></div>
@@ -1418,7 +1436,7 @@ async function loadMine(force){
 function openTournament(tid){
   closeTournament(); live.tid = tid; live.loading = true; state = null; live.doc = null; live.lastJson = null; live.lastIdx = null; live.imgs = {}; live.stored = new Set();
   live.admin = false; VIEW = true; ui.tab = live.nextTab || 'home'; live.nextTab = null; ui.stage = null; ui.player = null; ui.setup = 'event'; live.status = '';
-  const {fs, d} = live.fb;
+  const {fs, d} = live.fb; eloLoad(tid);
   live.unsubT = fs.onSnapshot(fs.doc(d,'tournaments',tid), snap=>snapHandler(snap, tid), err=>{ if(live.tid!==tid) return; live.loading = false; liveStatus('Could not load this tournament: '+(err.code||err.message), true); render(); });
 }
 function closeTournament(){
@@ -1664,8 +1682,8 @@ function tourPage(){
   if(live.loading) return `<div class="wrap"><p class="muted">Loading tournament…</p></div>`;
   if(!state || !t) return `<div class="wrap"><div class="card empty"><h2>Tournament not found</h2><p>This link may be wrong, or the organiser deleted the tournament.</p><p><a href="#/browse">Browse tournaments</a></p></div></div>`;
   if(VIEW && (ui.tab==='setup' || ui.tab==='data' || ui.tab==='history')) ui.tab = 'home';
-  const tabs = [['home','Overview'],['fixtures','Fixtures' + (pendHere().length ? ` (${pendHere().length})` : '')],['standings','Standings']].concat(t.teams.length ? [['teams','Teams']] : []).concat([['players','Players']]).concat(VIEW ? [] : [['setup','Setup'],['data','Backup']]);
-  const pages = {home:pageHome, fixtures:pageFixtures, standings:pageStandings, setup:pageSetup, players:pagePlayers, teams:pageTeams, data:pageData};
+  const tabs = [['home','Overview'],['fixtures','Fixtures' + (pendHere().length ? ` (${pendHere().length})` : '')],['standings','Standings']].concat(t.teams.length ? [['teams','Teams']] : []).concat([['players','Players'],['stats','Stats']]).concat(VIEW ? [] : [['setup','Setup'],['data','Backup']]);
+  const pages = {home:pageHome, fixtures:pageFixtures, standings:pageStandings, setup:pageSetup, players:pagePlayers, teams:pageTeams, stats:pageStats, data:pageData};
   const note = live.user && !live.admin && live.doc ? `<span class="livest">You're signed in, but not as an organiser of this tournament.</span>` : '';
   const canEdit = live.admin ? `<span id="livest" class="livest ${live.bad?'bad':''}">${esc(live.status||'')}</span>` : (live.bad ? `<span id="livest" class="livest bad">${esc(live.status)}</span>` : '');
   return `<div class="tour" style="${themeStyle(t)}"><div class="wrap">
@@ -1869,7 +1887,7 @@ function bBadge(k){ const ph = entPhoto(k), n = entName(k);
   return `<span class="bdg" style="--h:${bHue(n)}">${esc(ini)}</span>`; }
 function bSide(side, right){
   if(side===null) return `<div class="s ${right?'r':''}"><span class="nm muted">bye</span></div>`;
-  const nm = side && side.length ? sideName(side) : 'TBD', sh = nm.replace(/^team\s+/i,'') || nm, bd = side && side.length===1 ? bBadge(side[0]) : '';
+  const nm = side && side.length ? sideName(side) : 'TBD', sh = nm, bd = side && side.length===1 ? bBadge(side[0]) : '';
   return `<div class="s ${right?'r':''}">${right?'':bd}<span class="nm" title="${esc(nm)}">${esc(sh)}</span>${right?bd:''}</div>`; }
 function bugHtml(S, m){
   const sd = sidesOf(S,m), w = winnerOf(S,m,sd), sc = score(m), played = sc[0]+sc[1] > 0;
@@ -1913,22 +1931,130 @@ function pageTeams(){
   const card = x => { const tm = x.tm;
     return `<div class="tcard" data-act="team" data-v="${tm.id}" role="button" tabindex="0" title="Show ${esc(tm.name)}">
       <div class="tchead">${teamBadge(tm)}<div class="tcname"><b title="${esc(tm.name)}">${esc(tm.name)}</b><span class="small muted">${tm.cap&&state.players[tm.cap]?'Captain: '+esc(P(tm.cap).name):tm.members.length+' players'}</span></div><div class="tcrec" title="Series won and lost">${x.w}<i>–</i>${x.l}</div></div>
-      <div class="tcstats"><div><span>Maps</span><b>${x.gw}–${x.gl}</b></div><div><span>Map win</span><b>${pct(x.gw,x.gw+x.gl)}</b></div><div><span>Avg eAPM</span><b>${x.en?Math.round(x.e/x.en):'–'}</b></div></div>
+      <div class="tcstats"><div><span>Maps</span><b>${x.gw}–${x.gl}</b></div><div><span>Map win</span><b>${pct(x.gw,x.gw+x.gl)}</b></div><div><span>Avg eAPM</span><b>${x.en?Math.round(x.e/x.en):'–'}</b></div></div>${hasElo(t)?`<div class="tcstats elo">${eloCols(t).map(k=>`<div><span>Avg ${LADDER[k]}</span><b>${eloAvg(tm.members,k)||'–'}</b></div>`).join('')}</div>`:''}
       <div class="tcroster">${tm.members.filter(id=>state.players[id]).map(id=>`<span class="${id===tm.cap?'cap':''}">${esc(P(id).name)}</span>`).join('')}</div></div>`; };
   return Object.entries(groups).map(([dv,list])=>`${dv||Object.keys(groups).length>1?`<h2 class="sech">${esc(dv||'Other teams')}</h2>`:''}<div class="tgrid">${list.map(card).join('')}</div>`).join('');
 }
 function teamProfile(tm, t){
-  const x = teamStats(tm,t);
+  const x = teamStats(tm,t), ec = hasElo(t) ? eloCols(t) : [];
   const roster = tm.members.filter(id=>state.players[id]).map(id=>{ const p = playerStats(id,t), top = Object.entries(p.civs).sort((a,b)=>b[1].n-a[1].n)[0];
-    return `<tr style="cursor:pointer" data-act="tplayer" data-v="${id}"><td>${chip('p:'+id,t)}${id===tm.cap?' <span class="badge">captain</span>':''}</td><td class="n">${p.gw}–${p.gl}</td><td class="n">${pct(p.gw,p.gw+p.gl)}</td><td class="small">${top?esc(top[0])+` (${top[1].n})`:''}</td></tr>`; }).join('');
+    return `<tr style="cursor:pointer" data-act="tplayer" data-v="${id}"><td>${chip('p:'+id,t)}${id===tm.cap?' <span class="badge">captain</span>':''}</td>${ec.map(k=>`<td class="n">${eloTxt(id,k)}</td>`).join('')}<td class="n">${p.gw}–${p.gl}</td><td class="n">${pct(p.gw,p.gw+p.gl)}</td><td class="small">${top?esc(top[0])+` (${top[1].n})`:''}</td></tr>`; }).join('');
   const games = x.list.map(({S,m,si,sd,w,sc})=>`<tr><td class="small">${esc(S.name)}<div class="muted">${esc(matchLabel(S,m))}</div></td><td>${sideHtml(sd[1-si])}</td><td class="n">${sc[si]}–${sc[1-si]}</td><td>${w==null?'<span class="muted small">to play</span>':w===si?'<b style="color:var(--win)">Won</b>':'<span style="color:var(--loss)">Lost</span>'}</td></tr>`).join('');
-  const tile = (k,v,sub) => `<div class="card stat"><span>${k}</span><b>${v}</b>${sub?`<i>${sub}</i>`:''}</div>`;
   return `<p><button class="sm" data-act="team" data-v="">‹ All teams</button></p>
     <div class="card thead">${teamBadge(tm,true)}<div><h2 style="margin:0">${esc(tm.name)}</h2><div class="muted">${[x.div, tm.cap&&state.players[tm.cap]?'Captain: '+P(tm.cap).name:'', x.place?'finished '+ord(x.place.place):''].filter(Boolean).map(esc).join(' · ')}</div></div></div>
-    <div class="statrow">${tile('Series', `${x.w}–${x.l}`)}${tile('Maps', `${x.gw}–${x.gl}`)}${tile('Map win', pct(x.gw,x.gw+x.gl))}${tile('Avg eAPM', x.en?Math.round(x.e/x.en):'–', x.en?'from replays':'no replays yet')}</div>
-    <div class="card"><h3>Roster</h3><div class="small muted">Click a player for their full stats.</div><div class="tablewrap"><table><tr><th>Player</th><th class="n">Maps W–L</th><th class="n">Map win %</th><th>Most played civ</th></tr>${roster}</table></div></div>
+    <div class="statrow">${tile('Series', `${x.w}–${x.l}`)}${tile('Maps', `${x.gw}–${x.gl}`)}${tile('Map win', pct(x.gw,x.gw+x.gl))}${tile('Avg eAPM', x.en?Math.round(x.e/x.en):'–', x.en?'from replays':'no replays yet')}${ec.map(k=>tile('Avg '+LADDER[k], eloAvg(tm.members,k)||'–', 'ranked ladder')).join('')}</div>
+    <div class="card"><h3>Roster</h3><div class="small muted">Click a player for their full stats.</div><div class="tablewrap"><table><tr><th>Player</th>${ec.map(k=>`<th class="n">${LADDER[k]}</th>`).join('')}<th class="n">Maps W–L</th><th class="n">Map win %</th><th>Most played civ</th></tr>${roster}</table></div></div>
     <div class="grid g2"><div class="card"><h3>Maps</h3>${wlTable(x.maps,'Map')}</div><div class="card"><h3>Civs</h3>${wlTable(x.civs,'Civ')}</div></div>
     <div class="card"><h3>Matches</h3>${games?`<div class="tablewrap"><table><tr><th>Stage</th><th>Against</th><th class="n">Maps</th><th></th></tr>${games}</table></div>`:'<div class="muted">None yet.</div>'}</div>`;
+}
+
+/* ---------- Ranked ELOs (saved by the game finder), fuller player pages, tournament Stats tab ---------- */
+const LADDER = {rm1:'1v1 ELO', rmt:'Team ELO', ew1:'EW ELO', ewt:'Team EW ELO'};
+const MODES = [['rm1','1v1 Random Map'],['rmt','Team Random Map'],['ew1','1v1 Empire Wars'],['ewt','Team Empire Wars']];
+const modeOf = t => LADDER[t.mode] ? t.mode : (t.teams.length ? 'rmt' : 'rm1');
+const eloCols = t => modeOf(t)==='rm1' ? ['rm1'] : ['rm1', modeOf(t)];
+function eloLoad(tid){ live.elo = null; if(!live.fb) return; const {fs, d} = live.fb;
+  fs.getDoc(fs.doc(d,'tournaments',tid,'detector','elo')).then(s=>{ if(live.tid!==tid || !s.exists()) return; live.elo = s.data(); if(state) liveRender(); }).catch(()=>{}); }
+const eloOf = (id,k) => { const e = LIVE && live.elo && live.elo.p && live.elo.p[id] && live.elo.p[id][k]; return e && e.r ? e : null; };
+const eloTxt = (id,k) => { const e = eloOf(id,k); return e ? String(e.r) : '–'; };
+const hasElo = t => t.roster.concat(t.teams.flatMap(x=>x.members)).some(id=>eloCols(t).some(k=>eloOf(id,k)));
+function eloAvg(ids, k){ const v = ids.map(id=>eloOf(id,k)).filter(Boolean).map(e=>e.r); return v.length ? Math.round(v.reduce((a,b)=>a+b,0)/v.length) : null; }
+const eloNote = () => live.elo && live.elo.at ? `Ranked ELOs from aoe2companion, updated ${new Date(live.elo.at*1000).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}.` : '';
+
+const tsec = v => { const m = /^(?:(\d+):)?(\d+):(\d\d)$/.exec(String(v||'').trim()); return m ? (+(m[1]||0))*3600 + +m[2]*60 + +m[3] : null; };
+const mmss = s => s==null ? '–' : (s>=3600 ? Math.floor(s/3600)+':'+String(Math.floor(s%3600/60)).padStart(2,'0') : Math.floor(s/60)) + ':' + String(Math.round(s%60)).padStart(2,'0');
+/* every decided map of the tournament, with who actually played it on each side */
+function mapGames(t){ const out = [];
+  allMatches(t).forEach(({S,m})=>{ const sd = sidesOf(S,m,t); if(!sd[0]||!sd[1]||!sd[0].length||!sd[1].length) return;
+    (m.games||[]).forEach((g,gi)=>{ if(!g || (g.w!==0&&g.w!==1)) return; const civs = g.civs||{}, any = Object.values(civs).some(Boolean);
+      const on = sd.map(side=>side.flatMap(k=>entMembers(k,t)).filter(id=>!any || civs[id]));
+      out.push({S, m, g, gi, sd, on, civs, len:tsec(g.len)}); }); });
+  return out; }
+function playerGames(id, t){ return mapGames(t).filter(x=>x.on[0].includes(id)||x.on[1].includes(id)).map(x=>{ const si = x.on[0].includes(id)?0:1; return {...x, si, won:x.g.w===si, st:(x.g.st||{})[id]||null}; }); }
+const avgOf = a => { a = a.filter(v=>v!=null && !isNaN(v)); return a.length ? a.reduce((x,y)=>x+y,0)/a.length : null; };
+function replayNums(list){ const st = list.map(x=>x.st).filter(Boolean), op = {};
+  st.forEach(s=>{ if(s.opening) op[s.opening] = (op[s.opening]||0)+1; });
+  return {n:st.length, eapm:avgOf(st.map(s=>s.eapm)), apm:avgOf(st.map(s=>s.apm)), feudal:avgOf(st.map(s=>tsec(s.feudal))), castle:avgOf(st.map(s=>tsec(s.castle))), imp:avgOf(st.map(s=>tsec(s.imp))),
+    tcIdle:avgOf(st.map(s=>s.tcIdle)), opening:(Object.entries(op).sort((a,b)=>b[1]-a[1])[0]||[])[0]||''}; }
+const tile = (k,v,sub,txt) => `<div class="card stat ${txt?'txt':''}"><span>${k}</span><b title="${esc(String(v).replace(/<[^>]+>/g,''))}">${v}</b>${sub?`<i>${sub}</i>`:''}</div>`;
+const formStrip = list => `<span class="formrow">${list.map(x=>`<i class="${x.won?'W':'L'}" title="${esc((x.g.map||'Map')+' v '+sideName(x.sd[1-x.si]))}">${x.won?'W':'L'}</i>`).join('')}</span>`;
+const plLinks = p => p.pid ? `<div class="small"><a href="https://www.aoe2insights.com/user/${encodeURIComponent(p.pid)}/" target="_blank" rel="noopener">AoE2 Insights</a> · <a href="https://www.aoe2companion.com/players/${encodeURIComponent(p.pid)}" target="_blank" rel="noopener">aoe2companion</a></div>` : '';
+
+function pagePlayers(){
+  const t = T();
+  if(ui.player && t.roster.concat(t.teams.flatMap(x=>x.members)).includes(ui.player)) return playerProfile(ui.player, t);
+  if(!t.roster.length) return `<div class="card empty">No players in this tournament yet.${VIEW?'':' Add them under <b>Setup › Players</b>.'}</div>`;
+  const all = t.roster.map(id=>playerStats(id,t)).sort((a,b)=>(a.place?a.place.place:99)-(b.place?b.place.place:99) || (b.w-b.l)-(a.w-a.l) || (b.gw-b.gl)-(a.gw-a.gl) || P(a.id).name.localeCompare(P(b.id).name));
+  const fin = all.some(x=>x.place), ec = hasElo(t) ? eloCols(t) : [], rp = all.map(x=>replayNums(playerGames(x.id,t))), anyRp = rp.some(r=>r.n);
+  return `<div class="card"><h3>Players</h3><div class="small muted">Click a player for their full stats. ${ec.length?esc(eloNote()):''}</div><div class="tablewrap"><table><tr><th>Player</th>${t.teams.length?'<th>Team</th>':''}${ec.map(k=>`<th class="n">${LADDER[k]}</th>`).join('')}<th class="n">Series W–L</th><th class="n">Maps W–L</th><th class="n">Map win %</th>${anyRp?'<th class="n">Avg eAPM</th>':''}<th>Most played civ</th>${fin?'<th class="n">Finish</th>':''}</tr>
+    ${all.map((x,i)=>{ const top = Object.entries(x.civs).sort((a,b)=>b[1].n-a[1].n)[0];
+      return `<tr style="cursor:pointer" data-act="player" data-v="${x.id}"><td>${chip('p:'+x.id,t)}</td>${t.teams.length?`<td class="small">${x.team?esc(x.team.name)+(x.team.cap===x.id?' (c)':''):''}</td>`:''}${ec.map(k=>`<td class="n">${eloTxt(x.id,k)}</td>`).join('')}<td class="n">${x.w}–${x.l}</td><td class="n">${x.gw}–${x.gl}</td><td class="n">${pct(x.gw,x.gw+x.gl)}</td>${anyRp?`<td class="n">${rp[i].eapm!=null?Math.round(rp[i].eapm):'–'}</td>`:''}<td class="small">${top?esc(top[0])+` (${top[1].n})`:''}</td>${fin?`<td class="n">${x.place?ord(x.place.place):''}</td>`:''}</tr>`; }).join('')}</table></div></div>`;
+}
+function playerProfile(id, t){
+  const p = P(id), x = playerStats(id,t), mine = playerGames(id,t), rp = replayNums(mine);
+  let streak = 0, sT = null; for(let k=mine.length-1;k>=0;k--){ if(sT===null) sT = mine[k].won; if(mine[k].won===sT) streak++; else break; }
+  const opp = {}, mates = {}, civ = {}, map = {};
+  const bump = (o,k,won) => { const r = o[k] = o[k]||{w:0,l:0}; won ? r.w++ : r.l++; };
+  mine.forEach(g=>{ bump(opp, sideName(g.sd[1-g.si]), g.won); g.on[g.si].filter(o=>o!==id&&state.players[o]).forEach(o=>bump(mates,o,g.won));
+    if(g.civs[id]) bump(civ, g.civs[id], g.won); if(g.g.map) bump(map, g.g.map, g.won); });
+  const pick = (o,sc) => { const e = Object.entries(o); if(!e.length) return null; e.sort((a,b)=>sc(b[1])-sc(a[1])); return e[0]; };
+  const nem = pick(opp, r=>r.l*10-r.w), vic = pick(opp, r=>r.w*10-r.l), bc = pick(civ, r=>r.w*10-r.l), bm = pick(map, r=>r.w*10-r.l), bp = pick(mates, r=>r.w*10-r.l);
+  const fun = [bc&&bc[1].w?tile('Best civ', esc(bc[0]), `${bc[1].w}–${bc[1].l}`, 1):'', bm&&bm[1].w?tile('Best map', esc(bm[0]), `${bm[1].w}–${bm[1].l}`, 1):'',
+    nem&&nem[1].l?tile('Toughest opponent', esc(nem[0]), `lost ${nem[1].l} of ${nem[1].w+nem[1].l} maps`, 1):'', vic&&vic[1].w?tile('Best record against', esc(vic[0]), `won ${vic[1].w} of ${vic[1].w+vic[1].l} maps`, 1):'',
+    bp&&bp[1].w&&Object.keys(mates).length>1?tile('Best team-mate', esc(P(bp[0]).name), `${bp[1].w}–${bp[1].l} together`, 1):''].join('');
+  const elo = eloCols(t).filter(k=>eloOf(id,k)).map(k=>{ const e = eloOf(id,k); return tile(LADDER[k], e.r, e.max?`peak ${e.max}`:'ranked ladder'); }).join('');
+  const rep = rp.n ? `<div class="card"><h3>Replay averages</h3><div class="small muted">From ${rp.n} game${rp.n>1?'s':''} with a replay.</div><div class="statrow in">
+      ${tile('eAPM', rp.eapm!=null?Math.round(rp.eapm):'–')}${rp.apm!=null?tile('APM', Math.round(rp.apm)):''}${tile('Feudal', mmss(rp.feudal))}${tile('Castle', mmss(rp.castle))}${tile('Imperial', mmss(rp.imp))}${rp.tcIdle!=null?tile('TC idle', mmss(rp.tcIdle), 'per game'):''}${rp.opening?tile('Usual opening', esc(rp.opening), '', 1):''}</div></div>` : '';
+  const h2h = Object.entries(opp).sort((a,b)=>(b[1].w+b[1].l)-(a[1].w+a[1].l)).map(([k,r])=>`<tr><td>${esc(k)}</td><td class="n">${r.w}</td><td class="n">${r.l}</td><td class="n">${pct(r.w,r.w+r.l)}</td></tr>`).join('');
+  const withT = Object.entries(mates).sort((a,b)=>(b[1].w+b[1].l)-(a[1].w+a[1].l)).map(([k,r])=>`<tr><td>${esc(P(k).name)}</td><td class="n">${r.w}</td><td class="n">${r.l}</td><td class="n">${pct(r.w,r.w+r.l)}</td></tr>`).join('');
+  const anySt = mine.some(g=>g.st), anyLen = mine.some(g=>g.len!=null);
+  const games = mine.map(g=>`<tr><td class="small">${esc(g.S.name)}<div class="muted">${esc(matchLabel(g.S,g.m))} · map ${g.gi+1}</div></td><td>${sideHtml(g.sd[1-g.si])}</td><td>${esc(g.civs[id]||'–')}</td><td>${esc(g.g.map||'–')}</td>
+    ${anyLen?`<td class="n">${esc(g.g.len||'–')}</td>`:''}${anySt?`<td class="n">${g.st&&g.st.eapm!=null?g.st.eapm:'–'}</td><td class="n">${g.st&&g.st.feudal?esc(g.st.feudal):'–'}</td>`:''}<td>${g.won?'<b style="color:var(--win)">Won</b>':'<span style="color:var(--loss)">Lost</span>'}${typeof statsBtn==='function'?statsBtn(g.g):''}</td></tr>`).join('');
+  const series = x.list.map(({S,m,si,sd,w,sc})=>`<tr><td class="small">${esc(S.name)}<div class="muted">${esc(matchLabel(S,m))}</div></td><td>${sideHtml(sd[1-si])}</td><td class="n">${sc[si]}–${sc[1-si]}</td><td>${w==null?'<span class="muted small">to play</span>':w===si?'<b style="color:var(--win)">Won</b>':'<span style="color:var(--loss)">Lost</span>'}</td></tr>`).join('');
+  return `<p><button class="sm" data-act="player" data-v="">‹ All players</button></p>
+    <div class="card thead">${p.photo?`<img class="pphoto" src="${p.photo}" alt="">`:''}
+      <div><h2 style="margin:0">${esc(p.name)}</h2><div class="muted">${[x.team?x.team.name+(x.team.cap===id?' · captain':''):'', x.place?'finished '+ord(x.place.place):''].filter(Boolean).map(esc).join(' · ')}</div>${plLinks(p)}</div>
+      ${mine.length?`<div class="formbox"><span class="small muted">Last ${Math.min(5,mine.length)} map${mine.length>1?'s':''}</span>${formStrip(mine.slice(-5))}</div>`:''}</div>
+    <div class="statrow">${tile('Series', `${x.w}–${x.l}`)}${tile('Maps', `${x.gw}–${x.gl}`, pct(x.gw,x.gw+x.gl)+' won')}${tile('Streak', streak?(sT?'W':'L')+streak:'–', streak?(sT?'maps won in a row':'maps lost in a row'):'no maps yet')}${elo}</div>
+    ${fun?`<div class="statrow">${fun}</div>`:''}
+    ${rep}
+    <div class="grid g2"><div class="card"><h3>Civs</h3>${wlTable(x.civs,'Civ')}</div><div class="card"><h3>Maps</h3>${wlTable(x.maps,'Map')}</div></div>
+    ${h2h||withT?`<div class="grid g2"><div class="card"><h3>Against</h3>${h2h?`<table><tr><th>Opponent</th><th class="n">Maps won</th><th class="n">Lost</th><th class="n">Win %</th></tr>${h2h}</table>`:'<div class="muted small">None yet.</div>'}</div>
+      ${withT?`<div class="card"><h3>Played with</h3><table><tr><th>Team-mate</th><th class="n">Maps won</th><th class="n">Lost</th><th class="n">Win %</th></tr>${withT}</table></div>`:''}</div>`:''}
+    <div class="card"><h3>Every map</h3>${games?`<div class="tablewrap"><table><tr><th>Stage</th><th>Against</th><th>Civ</th><th>Map</th>${anyLen?'<th class="n">Length</th>':''}${anySt?'<th class="n">eAPM</th><th class="n">Feudal</th>':''}<th></th></tr>${games}</table></div>`:'<div class="muted">No maps played yet.</div>'}</div>
+    <div class="card"><h3>Series</h3>${series?`<div class="tablewrap"><table><tr><th>Stage</th><th>Against</th><th class="n">Maps</th><th></th></tr>${series}</table></div>`:'<div class="muted">None yet.</div>'}</div>`;
+}
+
+/* Stats tab: the whole tournament's civs, maps and replay records */
+function pageStats(){
+  const t = T(), gs = mapGames(t);
+  if(!gs.length) return `<div class="card empty">No maps have been played yet. Civ, map and replay stats show here once results are in.</div>`;
+  const civ = {}, map = {}, recs = [];
+  gs.forEach(x=>{ if(x.g.map){ const r = map[x.g.map] = map[x.g.map]||{n:0,len:[]}; r.n++; if(x.len!=null) r.len.push(x.len); }
+    [0,1].forEach(si=>x.on[si].forEach(id=>{ const c = x.civs[id]; if(c){ const r = civ[c] = civ[c]||{n:0,w:0,by:{}}; r.n++; if(x.g.w===si) r.w++; r.by[id] = (r.by[id]||0)+1; }
+      const s = (x.g.st||{})[id]; if(s) recs.push({id, x, s}); })); });
+  const civs = Object.entries(civ).sort((a,b)=>b[1].n-a[1].n||b[1].w-a[1].w), maps = Object.entries(map).sort((a,b)=>b[1].n-a[1].n);
+  const minC = gs.length>=20 ? 3 : 2, q = civs.filter(c=>c[1].n>=minC), best = q.slice().sort((a,b)=>b[1].w/b[1].n-a[1].w/a[1].n||b[1].n-a[1].n)[0], worst = q.slice().sort((a,b)=>a[1].w/a[1].n-b[1].w/b[1].n||b[1].n-a[1].n)[0];
+  const timed = gs.filter(x=>x.len!=null).sort((a,b)=>b.len-a.len), gl = x => `${sideName(x.sd[0])} v ${sideName(x.sd[1])}, ${x.g.map||'map '+(x.gi+1)}`;
+  const top = (f,low) => { const v = recs.map(r=>({r, v:f(r.s)})).filter(o=>o.v!=null && !isNaN(o.v)).sort((a,b)=>low?a.v-b.v:b.v-a.v)[0]; return v||null; };
+  const rt = (k,o,fmt) => o ? tile(k, fmt(o.v), `${esc(P(o.r.id).name)} · ${esc(o.r.x.g.map||'')}`) : '';
+  const hi = top(s=>s.eapm), fe = top(s=>tsec(s.feudal),1), ca = top(s=>tsec(s.castle),1), im = top(s=>tsec(s.imp),1);
+  const cards = [civs.length?tile('Most picked civ', esc(civs[0][0]), `${civs[0][1].n} picks`, 1):'', best?tile(`Best civ (${minC}+ picks)`, esc(best[0]), `${best[1].w}–${best[1].n-best[1].w} · ${pct(best[1].w,best[1].n)}`, 1):'',
+    worst&&worst!==best?tile(`Worst civ (${minC}+ picks)`, esc(worst[0]), `${worst[1].w}–${worst[1].n-worst[1].w} · ${pct(worst[1].w,worst[1].n)}`, 1):'', maps.length?tile('Most played map', esc(maps[0][0]), `${maps[0][1].n} games`, 1):'',
+    timed.length?tile('Longest game', mmss(timed[0].len), esc(gl(timed[0]))):'', timed.length>1?tile('Quickest game', mmss(timed[timed.length-1].len), esc(gl(timed[timed.length-1]))):''].join('');
+  const rcards = [rt('Highest eAPM',hi,v=>Math.round(v)), rt('Fastest Feudal',fe,mmss), rt('Fastest Castle',ca,mmss), rt('Fastest Imperial',im,mmss)].join('');
+  const ids = [...new Set(t.roster.concat(t.teams.flatMap(x=>x.members)))].filter(id=>state.players[id]), ec = hasElo(t) ? eloCols(t) : [];
+  const prow = ids.map(id=>{ const l = playerGames(id,t); return {id, l, w:l.filter(g=>g.won).length, r:replayNums(l)}; }).filter(o=>o.l.length || ec.some(k=>eloOf(o.id,k)))
+    .sort((a,b)=>(b.r.eapm||0)-(a.r.eapm||0) || b.w-a.w || P(a.id).name.localeCompare(P(b.id).name));
+  const anyRp = prow.some(o=>o.r.n);
+  return `<h2 class="sech">Tournament stats</h2><div class="statrow">${tile('Maps played', gs.length)}${cards}</div>
+    ${rcards?`<h2 class="sech">Replay records</h2><div class="statrow">${rcards}</div>`:''}
+    <div class="grid g2"><div class="card"><h3>Civs</h3><div class="tablewrap"><table><tr><th>Civ</th><th class="n">Picks</th><th class="n">Won</th><th class="n">Win %</th><th>Most by</th></tr>
+      ${civs.map(([k,r])=>{ const by = Object.entries(r.by).sort((a,b)=>b[1]-a[1])[0]; return `<tr><td>${esc(k)}</td><td class="n">${r.n}</td><td class="n">${r.w}</td><td class="n">${pct(r.w,r.n)}</td><td class="small">${by&&state.players[by[0]]?esc(P(by[0]).name)+(by[1]>1?` (${by[1]})`:''):''}</td></tr>`; }).join('')}</table></div></div>
+    <div class="card"><h3>Maps</h3><div class="tablewrap"><table><tr><th>Map</th><th class="n">Games</th><th class="n">Avg length</th></tr>
+      ${maps.map(([k,r])=>`<tr><td>${esc(k)}</td><td class="n">${r.n}</td><td class="n">${r.len.length?mmss(avgOf(r.len)):'–'}</td></tr>`).join('')}</table></div></div></div>
+    <div class="card"><h3>Players</h3><div class="small muted">Click a player for their full stats. ${ec.length?esc(eloNote()):''}</div><div class="tablewrap"><table><tr><th>Player</th>${ec.map(k=>`<th class="n">${LADDER[k]}</th>`).join('')}<th class="n">Maps W–L</th><th class="n">Win %</th>${anyRp?'<th class="n">eAPM</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">Imperial</th><th>Usual opening</th>':''}</tr>
+      ${prow.map(o=>`<tr style="cursor:pointer" data-act="tplayer" data-v="${o.id}"><td>${chip('p:'+o.id,t)}</td>${ec.map(k=>`<td class="n">${eloTxt(o.id,k)}</td>`).join('')}<td class="n">${o.w}–${o.l.length-o.w}</td><td class="n">${pct(o.w,o.l.length)}</td>${anyRp?`<td class="n">${o.r.eapm!=null?Math.round(o.r.eapm):'–'}</td><td class="n">${mmss(o.r.feudal)}</td><td class="n">${mmss(o.r.castle)}</td><td class="n">${mmss(o.r.imp)}</td><td class="small">${esc(o.r.opening)}</td>`:''}</tr>`).join('')}</table></div></div>`;
 }
 
 /* ============ boot ============ */
