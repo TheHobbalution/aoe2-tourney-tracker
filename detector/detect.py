@@ -97,6 +97,15 @@ def tour_window(t, now):
     return (start, end) if start <= now <= end + 2 * DAY else None
 
 
+def elo_window(t, now):
+    """ELOs are wanted before a tournament starts too (seeding, predictions): from 21 days before the start."""
+    start = day_ts(t.get("start"))
+    if start is None:
+        return False
+    end = day_ts(t.get("end")) or (start + 60 * DAY)
+    return start - 21 * DAY <= now <= end + 2 * DAY
+
+
 def tour_pids(state, t):
     """profile id (int) -> tracker player id, for everyone in the tournament (roster and team members)."""
     ids = set(t.get("roster") or [])
@@ -320,7 +329,7 @@ def update_elos(site_ref, state, matches_by_pid, now, get=http_get):
     """Keep tournaments/<tid>/detector/elo fresh: {at, p: {tracker player id: {ladder: {r, max}}}}."""
     pidmap = {}
     for t in state.get("tours") or []:
-        if tour_window(t, now):
+        if elo_window(t, now):
             pidmap.update(tour_pids(state, t))
     if not pidmap:
         return
