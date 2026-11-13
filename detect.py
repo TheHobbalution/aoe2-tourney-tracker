@@ -216,11 +216,16 @@ def headline(st):
     if not st:
         return None
     ages = st.get("ages") or {}
+    idle, det = st.get("tcIdle") or {}, st.get("detail") or {}
     return {k: v for k, v in {
         "eapm": st.get("eapm"), "apm": st.get("apm"), "opening": st.get("opening"),
         "feudal": ages.get("Feudal"), "castle": ages.get("Castle"), "imp": ages.get("Imperial"),
         "vils": st.get("vils"), "mil": st.get("military"),
         "tcIdle": sum((st.get("tcIdle") or {}).values()) if st.get("tcIdle") else None,
+        # TC idle from the start until Castle Age is clicked (Dark Age + Feudal Age idle)
+        "idleC": (idle.get("dark") or 0) + (idle.get("feudal") or 0) if idle and ("dark" in idle or "feudal" in idle) else None,
+        "peak": det.get("eapmPeak"), "milPct": det.get("focusMilPct"), "ecoPct": det.get("focusEcoPct"),
+        "flt": st.get("floatAvg"), "fltPk": st.get("floatPeak"),
     }.items() if v is not None}
 
 

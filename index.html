@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-qHl4T0a4vg6+IshDXK6kXvrkcgKd1hEp4/oy9UvYeZU=' 'sha256-Xxk8RxctJVmdVpLKU0De6rmtFhOFr9yxRGx9M8zwipQ=' https://www.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-qHl4T0a4vg6+IshDXK6kXvrkcgKd1hEp4/oy9UvYeZU=' 'sha256-VR1Bfoyyo8+7X7qt9LewIMjuQNXzPozys0r0Z+r3rs4=' https://www.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -531,6 +531,27 @@ h2,h3{font-family:var(--head)}
 .ptag.up{background:color-mix(in srgb,var(--loss) 22%,transparent);color:var(--loss)}
 .bug .bpr{grid-column:1/-1;display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:0 14px 8px;font-family:var(--head);font-size:.8rem;color:var(--muted)}
 .bug .bpr .ptrack{height:5px;margin:0}
+
+/* slight accent edge on tournament cards and brackets */
+.tour .card,.tour .bk,.tour .bx{border-color:color-mix(in srgb,var(--accent) 38%,var(--line))}
+.tour .card:not(.stat){border-top:2px solid color-mix(in srgb,var(--accent) 75%,var(--line))}
+.statsnote{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin:4px 0 14px;padding:14px 18px;border:1px solid var(--accent);border-left:4px solid var(--accent);background:color-mix(in srgb,var(--accent) 14%,var(--card));border-radius:4px;font-size:1.02rem}
+/* big screens: use the width instead of a narrow centre column */
+@media (min-width:1500px){
+  .wrap,.tour .wrap{max-width:min(1640px,92vw)}
+  .feat{grid-template-columns:repeat(4,minmax(0,1fr))}
+}
+@media (min-width:2200px){
+  html{font-size:17px}
+  .wrap,.tour .wrap{max-width:min(1900px,90vw)}
+}
+
+/* bracket scores: winner green, loser red, tie yellow */
+.bx .bxr.won .bxsc{background:#2f8f46;color:#fff}
+.bx .bxr.lost .bxsc{background:#b8433a;color:#fff}
+.bx .bxr.tie .bxsc{background:#d8a72a;color:#1b1b1b}
+
+.sxseg{margin:0 0 6px}
 </style>
 </head>
 <body>
@@ -706,7 +727,8 @@ function swissPair(S){
   const played = new Set(S.matches.filter(m=>m.sides[1]).map(m=>[m.sides[0][0],m.sides[1][0]].sort().join('|')));
   const hadBye = new Set(S.matches.filter(m=>m.sides[1]===null).map(m=>m.sides[0][0]));
   let list = r===1 ? E.slice().sort(()=>0).map(x=>x) : rank.filter(k=>E.includes(k));
-  if(r===1){ const rr = rng(S.id); list = E.slice().map(k=>[rr(),k]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]); }
+  if(r===1 && S.r1!=='seed'){ const rr = rng(S.id); list = E.slice().map(k=>[rr(),k]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]); }
+  if(r===1 && S.r1==='seed'){ const h = Math.ceil(E.length/2), top = E.slice(0,h), bot = E.slice(h); list = []; top.forEach((k,i)=>{ list.push(k); if(bot[i]) list.push(bot[i]); }); }
   let bye = null;
   if(list.length%2){ for(let i=list.length-1;i>=0;i--) if(!hadBye.has(list[i])){ bye=list[i]; break; } if(bye==null) bye=list[list.length-1]; list = list.filter(k=>k!==bye); }
   const pairUp = l => { if(!l.length) return []; const a=l[0]; for(let i=1;i<l.length;i++){ const b=l[i]; if(played.has([a,b].sort().join('|'))) continue; const rest = pairUp(l.filter((x,j)=>j!==0&&j!==i)); if(rest) return [[a,b],...rest]; } return null; };
@@ -861,9 +883,10 @@ function pageHome(){
   const stagesHtml = t.stages.length ? `<div class="card"><h3>Format</h3>${t.stages.map(S=>`<div>• <b>${S.div?esc(S.div)+' · ':''}${esc(S.name)}</b> <span class="muted">– ${esc(stageSummary(S))}</span></div>`).join('')}</div>` : '';
   const gal = t.gallery.length ? `<div class="card"><h3>Gallery</h3><div class="gallery">${t.gallery.map(g=>`<img src="${g}" alt="">`).join('')}</div></div>` : '';
   const setupHint = (!VIEW && !t.stages.length) ? `<div class="note">Next: add players under <b>Setup › Players</b>, then the format on <b>Setup › Stages</b>.</div>` : '';
-  return `${setupHint}${pod}${nextHtml}
-    ${lad?`<h2 class="sech">Power rankings</h2><div class="prgrid">${lad}</div>`:''}
-    <h2 class="sech">About</h2><div class="infog"><div>${stagesHtml}${info}${links}</div><div>${t.notes?`<div class="card"><h3>Notes</h3><div style="white-space:pre-wrap">${esc(t.notes)}</div></div>`:''}</div></div>${gal}`;
+  return `${setupHint}${pod}
+    <h2 class="sech">About</h2><div class="infog"><div>${links}${stagesHtml}${info}</div><div>${t.notes?`<div class="card"><h3>Notes</h3><div style="white-space:pre-wrap">${esc(t.notes)}</div></div>`:''}</div></div>
+    ${nextHtml}
+    ${lad?`<h2 class="sech">Standings</h2><div class="prgrid">${lad}</div>`:''}${gal}`;
 }
 function stageSummary(S){
   const bits = [TYPES[S.type].name];
@@ -1091,9 +1114,9 @@ function stageForm(S, i){
       ${tb.includes('manual')?`<div class="small muted">Manual: type a number per entrant on the Standings tab (higher ranks first), e.g. the micro challenge winner = 1.</div>`:''}</details>`; }
   // entrants
   const allE = S.ent==='teams' ? t.teams.map(x=>'t:'+x.id) : t.roster.map(id=>'p:'+id);
-  if(S.type!=='spoon' && !(S.type==='elim'&&S.seedFrom!=='manual')) f += `<details class="box" data-k="ent-${S.id}"><summary>Entrants (${E.length})${(S.groups||1)>1&&S.type==='rr'&&S.ent!=='rotate'?' and groups':''}</summary><div class="small muted">Untick anyone not in this stage.${S.type==='elim'?' Order = seeding (use ▲▼).':''}</div>
-      ${(S.type==='elim'?seedSource(S,t):allE).map((k,j)=>`<div class="row" style="align-items:center;margin-top:4px"><label class="small"><input type="checkbox" data-act="stageent" data-s="${S.id}" value="${k}" ${E.includes(k)?'checked':''}> ${esc(entName(k))}</label>
-        ${S.type==='elim'?`<button class="sm" data-act="seedup" data-s="${S.id}" data-v="${k}">▲</button><span class="small muted">seed ${j+1}</span>`:''}
+  if(S.type!=='spoon' && !(S.type==='elim'&&S.seedFrom!=='manual')) f += `<details class="box" data-k="ent-${S.id}"><summary>Entrants (${E.length})${(S.groups||1)>1&&S.type==='rr'&&S.ent!=='rotate'?' and groups':''}</summary><div class="small muted">Untick anyone not in this stage.${seedTools(S,t)}</div>
+      ${(seedable(S)?seedOrder(S,t).concat(allE.filter(k=>!seedOrder(S,t).includes(k))):allE).map((k,j)=>`<div class="row" style="align-items:center;margin-top:4px"><label class="small"><input type="checkbox" data-act="stageent" data-s="${S.id}" value="${k}" ${E.includes(k)?'checked':''}> ${esc(entName(k))}</label>
+        ${E.includes(k)?seedRow(S,k,j):''}
         ${S.type==='rr'&&S.ent!=='rotate'&&(S.groups||1)>1?`<select data-act="stagegrp" data-s="${S.id}" data-v="${k}">${Array.from({length:S.groups},(_,g)=>`<option value="${g}" ${groupsOf(S,E).findIndex(x=>x.includes(k))===g?'selected':''}>Group ${GL(g)}</option>`).join('')}</select>`:''}</div>`).join('')}</details>`;
   const has = S.matches.some(m=>(m.games||[]).some(g=>g.w===0||g.w===1));
   return `<div class="card stagecard"><div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0">${i+1}. ${esc(S.name)} <span class="badge">${TYPES[S.type].name}</span>${S.matches.length?`<span class="badge">${S.matches.length} matches</span>`:''}</h3>
@@ -1289,7 +1312,9 @@ async function act(el, ev){
     case 'stageent': { const S = curStage(d.s); const all = S.ent==='teams' ? t.teams.map(x=>'t:'+x.id) : t.roster.map(id=>'p:'+id); let cur = S.entrants ? S.entrants.slice() : all.slice();
       if(el.checked){ if(!cur.includes(el.value)) cur.push(el.value); } else cur = cur.filter(x=>x!==el.value); S.entrants = cur; if(S.type==='elim'){ S.manualSeeds = (S.manualSeeds||[]).filter(x=>cur.includes(x)); } break; }
     case 'stagegrp': { const S = curStage(d.s); S.gmap = S.gmap||{}; S.gmap[d.v] = +el.value; break; }
-    case 'seedup': { const S = curStage(d.s); const order = seedSource(S); const i = order.indexOf(d.v); if(i>0){ [order[i-1],order[i]] = [order[i],order[i-1]]; } S.manualSeeds = order; break; }
+    case 'seedup': case 'seeddn': { const S = curStage(d.s); const order = seedOrder(S,t).slice(), i = order.indexOf(d.v), j = a==='seedup' ? i-1 : i+1; if(i>=0 && j>=0 && j<order.length){ [order[i],order[j]] = [order[j],order[i]]; } seedSet(S,t,order); break; }
+    case 'seedelo': { const S = curStage(d.s); const order = seedOrder(S,t).slice(), e = Object.fromEntries(order.map(k=>[k, entElo(k,t)])); order.sort((x,y)=>(e[y]??-1)-(e[x]??-1)); seedSet(S,t,order); toast('Seeded by ranked ELO'); break; }
+    case 'swr1': { const S = curStage(d.s); S.r1 = el.value==='seed' ? 'seed' : 'rand'; break; }
     case 'gen': { const S = curStage(d.s); const has = S.matches.some(m=>(m.games||[]).some(g=>g.w===0||g.w===1)); if(has && !await askYes(`Remake fixtures for "${S.name}"? Its results will be cleared.`)) return;
       if(has) await addBackup(JSON.stringify(state),'before remake'); const err = generate(S); if(err){ await say(err); return; } ui.tab='fixtures'; ui.stage=S.id; toast(`${S.matches.length} matches made`); break; }
     case 'swiss': { const S = curStage(d.s); const err = swissPair(S); if(err) toast(err); break; }
@@ -1739,6 +1764,7 @@ async function siteAct(a, d, el){
     case 'iverified': await live.user.reload(); await live.user.getIdToken(true); live.authMsg = ''; computeAdmin(); render(); return true;
     case 'copyid': try{ await navigator.clipboard.writeText(live.user.uid); toast('Copied'); }catch(e){ const r = document.createRange(); r.selectNodeContents($('#myid')); const s = getSelection(); s.removeAllRanges(); s.addRange(r); toast('Press Ctrl+C to copy'); } return true;
     case 'sdel': await deleteTournament(); return true;
+    case 'sdiv': ui.sdiv = d.v || ''; render(); return true;
     case 'team': ui.team = d.v || null; window.scrollTo(0,0); render(); return true;
     case 'tplayer': ui.tab = 'players'; ui.player = d.v; ui.team = null; window.scrollTo(0,0); render(); return true;
     case 'spub': { const p = pubState(); if(p===null) return true; const {fs, d} = live.fb;
@@ -1859,16 +1885,17 @@ function boxRow(S, side, won, sc, seeds){
   if(side===null) return `<div class="bxr bye"><span class="bxs"></span><span class="bxn muted">bye</span><span class="bxsc"></span></div>`;
   const k = side && side.length===1 ? side[0] : null, ph = k ? entPhoto(k) : '';
   const name = side && side.length ? sideName(side) : 'TBD';
-  return `<div class="bxr ${won?'won':''} ${side&&side.length?'':'tbd'}"><span class="bxs">${k&&seeds[k]?seeds[k]:''}</span>`
+  return `<div class="bxr ${won||''} ${side&&side.length?'':'tbd'}"><span class="bxs">${k&&seeds[k]?seeds[k]:''}</span>`
     + `<span class="bxn">${ph?`<img src="${esc(ph)}" alt="">`:''}<span>${esc(name)}</span></span><span class="bxsc">${sc==null?'':sc}</span></div>`;
 }
 function boxHtml(S, m, seeds, label, go){
   if(!m) return `<div class="bx ghost"></div>`;
   const sd = sidesOf(S,m), w = winnerOf(S,m,sd), sc = score(m), played = sc[0]+sc[1] > 0;
   const bye = sd[0]===null || sd[1]===null, open = ui.mopen===m.id;
+  const tie = w==null && !bye && sc[0]===sc[1] && sc[0]+sc[1]>=matchBo(S,m) && sc[0]>0, rs = i => w!=null ? (w===i ? 'won' : 'lost') : tie ? 'tie' : '';
   const lt = label || (m.label && S.type!=='elim' ? m.label : ''), lbl = lt ? `<div class="bxl">${esc(lt)}</div>` : '';
   return `<div class="bx ${w!=null?'done':''} ${open?'sel':''} ${bye?'isbye':''} ${Object.keys(seeds).length?'':'noseed'}" ${bye?'':`data-act="${go?'mgo':'mopen'}" data-s="${S.id}" data-m="${m.id}" role="button" tabindex="0" title="${VIEW?'Show games':'Enter results'}"`}>${lbl}`
-    + boxRow(S, sd[0], w===0, played||w!=null ? (bye?'':sc[0]) : null, seeds) + boxRow(S, sd[1], w===1, played||w!=null ? (bye?'':sc[1]) : null, seeds) + `</div>`;
+    + boxRow(S, sd[0], rs(0), played||w!=null ? (bye?'':sc[0]) : null, seeds) + boxRow(S, sd[1], rs(1), played||w!=null ? (bye?'':sc[1]) : null, seeds) + `</div>`;
 }
 /* the open match: full games list (and editing for organisers) under the bracket */
 function matchPanel(S){
@@ -1967,6 +1994,7 @@ function teamProfile(tm, t){
     <div class="card thead">${teamBadge(tm,true)}<div><h2 style="margin:0">${esc(tm.name)}</h2><div class="muted">${[x.div, tm.cap&&state.players[tm.cap]?'Captain: '+P(tm.cap).name:'', x.place?'finished '+ord(x.place.place):''].filter(Boolean).map(esc).join(' · ')}</div></div></div>
     <div class="statrow">${tile('Series', `${x.w}–${x.l}`)}${tile('Maps', `${x.gw}–${x.gl}`)}${tile('Map win', pct(x.gw,x.gw+x.gl))}${tile('Avg eAPM', x.en?Math.round(x.e/x.en):'–', x.en?'from replays':'no replays yet')}${ec.map(k=>tile('Avg '+LADDER[k], eloAvg(tm.members,k)||'–', 'ranked ladder')).join('')}</div>
     <div class="card"><h3>Roster</h3><div class="small muted">Click a player for their full stats.</div><div class="tablewrap"><table><tr><th>Player</th>${ec.map(k=>`<th class="n">${LADDER[k]}</th>`).join('')}<th class="n">Maps W–L</th><th class="n">Map win %</th><th>Most played civ</th></tr>${roster}</table></div></div>
+    ${sxTeamCards(tm,t)}
     <div class="grid g2"><div class="card"><h3>Maps</h3>${wlTable(x.maps,'Map')}</div><div class="card"><h3>Civs</h3>${wlTable(x.civs,'Civ')}</div></div>
     <div class="card"><h3>Matches</h3>${games?`<div class="tablewrap"><table><tr><th>Stage</th><th>Against</th><th class="n">Maps</th><th></th></tr>${games}</table></div>`:'<div class="muted">None yet.</div>'}</div>`;
 }
@@ -1985,7 +2013,7 @@ function eloAvg(ids, k){ const v = ids.map(id=>eloOf(id,k)).filter(Boolean).map(
 const eloNote = () => live.elo && live.elo.at ? `Ranked ELOs from aoe2companion, updated ${new Date(live.elo.at*1000).toLocaleDateString('en-AU',{day:'numeric',month:'short'})}.` : '';
 
 const tsec = v => { const m = /^(?:(\d+):)?(\d+):(\d\d)$/.exec(String(v||'').trim()); return m ? (+(m[1]||0))*3600 + +m[2]*60 + +m[3] : null; };
-const mmss = s => s==null ? '–' : (s>=3600 ? Math.floor(s/3600)+':'+String(Math.floor(s%3600/60)).padStart(2,'0') : Math.floor(s/60)) + ':' + String(Math.round(s%60)).padStart(2,'0');
+const mmss = s => s==null || isNaN(s) ? '–' : (s = Math.round(s), s>=3600 ? Math.floor(s/3600)+':'+String(Math.floor(s%3600/60)).padStart(2,'0') : Math.floor(s/60)) + ':' + String(Math.round(s%60)).padStart(2,'0');
 /* every decided map of the tournament, with who actually played it on each side */
 function mapGames(t){ const out = [];
   allMatches(t).forEach(({S,m})=>{ const sd = sidesOf(S,m,t); if(!sd[0]||!sd[1]||!sd[0].length||!sd[1].length) return;
@@ -2040,7 +2068,7 @@ function playerProfile(id, t){
       ${mine.length?`<div class="formbox"><span class="small muted">Last ${Math.min(5,mine.length)} map${mine.length>1?'s':''}</span>${formStrip(mine.slice(-5))}</div>`:''}</div>
     <div class="statrow">${tile('Series', `${x.w}–${x.l}`)}${tile('Maps', `${x.gw}–${x.gl}`, pct(x.gw,x.gw+x.gl)+' won')}${tile('Streak', streak?(sT?'W':'L')+streak:'–', streak?(sT?'maps won in a row':'maps lost in a row'):'no maps yet')}${elo}${predRatingTile(id,t)}</div>
     ${fun?`<div class="statrow">${fun}</div>`:''}
-    ${rep}
+    ${sxPlayerCards(id,t,mine)}
     <div class="grid g2"><div class="card"><h3>Civs</h3>${wlTable(x.civs,'Civ')}</div><div class="card"><h3>Maps</h3>${wlTable(x.maps,'Map')}</div></div>
     ${h2h||withT?`<div class="grid g2"><div class="card"><h3>Against</h3>${h2h?`<table><tr><th>Opponent</th><th class="n">Maps won</th><th class="n">Lost</th><th class="n">Win %</th></tr>${h2h}</table>`:'<div class="muted small">None yet.</div>'}</div>
       ${withT?`<div class="card"><h3>Played with</h3><table><tr><th>Team-mate</th><th class="n">Maps won</th><th class="n">Lost</th><th class="n">Win %</th></tr>${withT}</table></div>`:''}</div>`:''}
@@ -2048,37 +2076,6 @@ function playerProfile(id, t){
     <div class="card"><h3>Series</h3>${series?`<div class="tablewrap"><table><tr><th>Stage</th><th>Against</th><th class="n">Maps</th><th></th></tr>${series}</table></div>`:'<div class="muted">None yet.</div>'}</div>`;
 }
 
-/* Stats tab: the whole tournament's civs, maps and replay records */
-function pageStats(){
-  const t = T(), gs = mapGames(t);
-  if(!gs.length) return `<div class="card empty">No maps have been played yet. Civ, map and replay stats show here once results are in.</div>`;
-  const civ = {}, map = {}, recs = [];
-  gs.forEach(x=>{ if(x.g.map){ const r = map[x.g.map] = map[x.g.map]||{n:0,len:[]}; r.n++; if(x.len!=null) r.len.push(x.len); }
-    [0,1].forEach(si=>x.on[si].forEach(id=>{ const c = x.civs[id]; if(c){ const r = civ[c] = civ[c]||{n:0,w:0,by:{}}; r.n++; if(x.g.w===si) r.w++; r.by[id] = (r.by[id]||0)+1; }
-      const s = (x.g.st||{})[id]; if(s) recs.push({id, x, s}); })); });
-  const civs = Object.entries(civ).sort((a,b)=>b[1].n-a[1].n||b[1].w-a[1].w), maps = Object.entries(map).sort((a,b)=>b[1].n-a[1].n);
-  const minC = gs.length>=20 ? 3 : 2, q = civs.filter(c=>c[1].n>=minC), best = q.slice().sort((a,b)=>b[1].w/b[1].n-a[1].w/a[1].n||b[1].n-a[1].n)[0], worst = q.slice().sort((a,b)=>a[1].w/a[1].n-b[1].w/b[1].n||b[1].n-a[1].n)[0];
-  const timed = gs.filter(x=>x.len!=null).sort((a,b)=>b.len-a.len), gl = x => `${sideName(x.sd[0])} v ${sideName(x.sd[1])}, ${x.g.map||'map '+(x.gi+1)}`;
-  const top = (f,low) => { const v = recs.map(r=>({r, v:f(r.s)})).filter(o=>o.v!=null && !isNaN(o.v)).sort((a,b)=>low?a.v-b.v:b.v-a.v)[0]; return v||null; };
-  const rt = (k,o,fmt) => o ? tile(k, fmt(o.v), `${esc(P(o.r.id).name)} · ${esc(o.r.x.g.map||'')}`) : '';
-  const hi = top(s=>s.eapm), fe = top(s=>tsec(s.feudal),1), ca = top(s=>tsec(s.castle),1), im = top(s=>tsec(s.imp),1);
-  const cards = [civs.length?tile('Most picked civ', esc(civs[0][0]), `${civs[0][1].n} picks`, 1):'', best?tile(`Best civ (${minC}+ picks)`, esc(best[0]), `${best[1].w}–${best[1].n-best[1].w} · ${pct(best[1].w,best[1].n)}`, 1):'',
-    worst&&worst!==best?tile(`Worst civ (${minC}+ picks)`, esc(worst[0]), `${worst[1].w}–${worst[1].n-worst[1].w} · ${pct(worst[1].w,worst[1].n)}`, 1):'', maps.length?tile('Most played map', esc(maps[0][0]), `${maps[0][1].n} games`, 1):'',
-    timed.length?tile('Longest game', mmss(timed[0].len), esc(gl(timed[0]))):'', timed.length>1?tile('Quickest game', mmss(timed[timed.length-1].len), esc(gl(timed[timed.length-1]))):''].join('');
-  const rcards = [rt('Highest eAPM',hi,v=>Math.round(v)), rt('Fastest Feudal',fe,mmss), rt('Fastest Castle',ca,mmss), rt('Fastest Imperial',im,mmss)].join('');
-  const ids = [...new Set(t.roster.concat(t.teams.flatMap(x=>x.members)))].filter(id=>state.players[id]), ec = hasElo(t) ? eloCols(t) : [];
-  const prow = ids.map(id=>{ const l = playerGames(id,t); return {id, l, w:l.filter(g=>g.won).length, r:replayNums(l)}; }).filter(o=>o.l.length || ec.some(k=>eloOf(o.id,k)))
-    .sort((a,b)=>(b.r.eapm||0)-(a.r.eapm||0) || b.w-a.w || P(a.id).name.localeCompare(P(b.id).name));
-  const anyRp = prow.some(o=>o.r.n);
-  return `<h2 class="sech">Tournament stats</h2><div class="statrow">${tile('Maps played', gs.length)}${cards}${predTile(t)}</div>
-    ${rcards?`<h2 class="sech">Replay records</h2><div class="statrow">${rcards}</div>`:''}
-    <div class="grid g2"><div class="card"><h3>Civs</h3><div class="tablewrap"><table><tr><th>Civ</th><th class="n">Picks</th><th class="n">Won</th><th class="n">Win %</th><th>Most by</th></tr>
-      ${civs.map(([k,r])=>{ const by = Object.entries(r.by).sort((a,b)=>b[1]-a[1])[0]; return `<tr><td>${esc(k)}</td><td class="n">${r.n}</td><td class="n">${r.w}</td><td class="n">${pct(r.w,r.n)}</td><td class="small">${by&&state.players[by[0]]?esc(P(by[0]).name)+(by[1]>1?` (${by[1]})`:''):''}</td></tr>`; }).join('')}</table></div></div>
-    <div class="card"><h3>Maps</h3><div class="tablewrap"><table><tr><th>Map</th><th class="n">Games</th><th class="n">Avg length</th></tr>
-      ${maps.map(([k,r])=>`<tr><td>${esc(k)}</td><td class="n">${r.n}</td><td class="n">${r.len.length?mmss(avgOf(r.len)):'–'}</td></tr>`).join('')}</table></div></div></div>
-    <div class="card"><h3>Players</h3><div class="small muted">Click a player for their full stats. ${ec.length?esc(eloNote()):''}</div><div class="tablewrap"><table><tr><th>Player</th>${ec.map(k=>`<th class="n">${LADDER[k]}</th>`).join('')}<th class="n">Maps W–L</th><th class="n">Win %</th>${anyRp?'<th class="n">eAPM</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">Imperial</th><th>Usual opening</th>':''}</tr>
-      ${prow.map(o=>`<tr style="cursor:pointer" data-act="tplayer" data-v="${o.id}"><td>${chip('p:'+o.id,t)}</td>${ec.map(k=>`<td class="n">${eloTxt(o.id,k)}</td>`).join('')}<td class="n">${o.w}–${o.l.length-o.w}</td><td class="n">${pct(o.w,o.l.length)}</td>${anyRp?`<td class="n">${o.r.eapm!=null?Math.round(o.r.eapm):'–'}</td><td class="n">${mmss(o.r.feudal)}</td><td class="n">${mmss(o.r.castle)}</td><td class="n">${mmss(o.r.imp)}</td><td class="small">${esc(o.r.opening)}</td>`:''}</tr>`).join('')}</table></div></div>`;
-}
 
 /* ---------- Match predictions ----------
    Every player starts at their ranked ELO (the event's ladder, else 1v1; players with none start at the median).
@@ -2176,6 +2173,145 @@ function predTile(t){ const M = predModel(t); let n = 0, c = 0;
 /* player page: the rating the predictions use */
 function predRatingTile(id, t){ const M = predModel(t); if(!M.any || !(id in M.r)) return ''; const d = Math.round(M.r[id]-M.base[id]);
   return tile('Prediction rating', Math.round(M.r[id]), M.cnt[id] ? `${d>=0?'+':''}${d} from ${M.cnt[id]} map${M.cnt[id]>1?'s':''} this event` : 'starts at ranked ELO'); }
+
+/* ---------- Fuller replay stats: player and team cards, Stats tab for the whole tournament or one division ----------
+   Each confirmed game keeps a few replay numbers per player (g.st[id], from the game finder's headline()):
+   eapm, apm, peak (busiest minute's eAPM), feudal/castle/imp (age click times), tcIdle (whole game, s),
+   idleC (TC idle from the start to the Castle click, s), flt/fltPk (average / peak banked resources, experimental),
+   milPct/ecoPct (share of actions on army vs economy), opening. Games confirmed before a number existed just lack it. */
+const MET = [
+  {k:'eapm',   n:'eAPM',               f:s=>s.eapm,          fmt:v=>Math.round(v)},
+  {k:'peak',   n:'Peak eAPM',          f:s=>s.peak,          fmt:v=>Math.round(v), max:1, sub:'busiest minute'},
+  {k:'apm',    n:'APM',                f:s=>s.apm,           fmt:v=>Math.round(v)},
+  {k:'feudal', n:'Feudal click',       f:s=>tsec(s.feudal),  fmt:mmss},
+  {k:'castle', n:'Castle click',       f:s=>tsec(s.castle),  fmt:mmss},
+  {k:'imp',    n:'Imperial click',     f:s=>tsec(s.imp),     fmt:mmss},
+  {k:'idleC',  n:'TC idle to Castle',  f:s=>s.idleC,         fmt:mmss},
+  {k:'tcIdle', n:'TC idle, whole game',f:s=>s.tcIdle,        fmt:mmss},
+  {k:'flt',    n:'Avg float',          f:s=>s.flt,           fmt:v=>Math.round(v), sub:'banked resources'},
+  {k:'milPct', n:'Military focus',     f:s=>s.milPct,        fmt:v=>Math.round(v)+'%'},
+  {k:'ecoPct', n:'Eco focus',          f:s=>s.ecoPct,        fmt:v=>Math.round(v)+'%'}];
+const numOk = v => v!=null && v!=='' && !isNaN(v);
+/* one record per player per decided map */
+function sxRecs(gs){ const out = []; gs.forEach(x=>[0,1].forEach(si=>x.on[si].forEach(id=>{ if(!state.players[id]) return;
+  out.push({id, x, si, won:x.g.w===si, s:(x.g.st||{})[id]||null, civ:x.civs[id]||''}); }))); return out; }
+function sxAgg(recs){ const o = {n:recs.filter(r=>r.s).length};
+  MET.forEach(m=>{ const v = recs.filter(r=>r.s).map(r=>m.f(r.s)).filter(numOk).map(Number); o[m.k] = v.length ? (m.max ? Math.max(...v) : v.reduce((a,b)=>a+b,0)/v.length) : null; });
+  const op = {}; recs.forEach(r=>{ if(r.s&&r.s.opening) op[r.s.opening] = (op[r.s.opening]||0)+1; }); o.opening = (Object.entries(op).sort((a,b)=>b[1]-a[1])[0]||[])[0]||'';
+  return o; }
+const sxVal = (o,m) => o && numOk(o[m.k]) ? m.fmt(o[m.k]) : '–';
+/* game lengths for a list of {x, won} (one entry per map, from one side's view; won undefined = neutral) */
+function sxLen(list){ const L = list.filter(o=>o.x.len!=null), all = L.map(o=>o.x.len), side = L.some(o=>o.won!==undefined);
+  return {n:L.length, avg:avgOf(all), min:all.length?Math.min(...all):null, max:all.length?Math.max(...all):null,
+    win:side?avgOf(L.filter(o=>o.won).map(o=>o.x.len)):null, loss:side?avgOf(L.filter(o=>o.won===false).map(o=>o.x.len)):null, side}; }
+function sxLenTiles(L){ return tile('Avg game', mmss(L.avg)) + tile('Shortest', mmss(L.min)) + tile('Longest', mmss(L.max))
+  + (L.side ? tile('Avg win', mmss(L.win)) + tile('Avg loss', mmss(L.loss)) : ''); }
+function sxRepTiles(o){ return MET.map(m=>tile(m.n, sxVal(o,m), m.sub||'')).join('') + tile('Usual opening', o&&o.opening?esc(o.opening):'–', '', 1); }
+/* openings: overall and by map, from player-game records */
+function sxOpen(recs){ const op = {}, byMap = {};
+  recs.forEach(r=>{ const o = r.s && r.s.opening; if(!o) return; const e = op[o] = op[o]||{n:0,w:0,maps:{}}; e.n++; if(r.won) e.w++; const mp = r.x.g.map||'?'; e.maps[mp] = (e.maps[mp]||0)+1;
+    const b = byMap[mp] = byMap[mp]||{}; b[o] = (b[o]||0)+1; });
+  return {op:Object.entries(op).sort((a,b)=>b[1].n-a[1].n), byMap:Object.entries(byMap).sort((a,b)=>Object.values(b[1]).reduce((x,y)=>x+y,0)-Object.values(a[1]).reduce((x,y)=>x+y,0))}; }
+function sxOpenCards(recs){ const {op, byMap} = sxOpen(recs), none = '<div class="muted small">No replays yet.</div>';
+  const t1 = op.length ? `<div class="tablewrap"><table><tr><th>Opening</th><th class="n">Used</th><th class="n">W–L</th><th class="n">Win %</th><th>Most on</th></tr>${op.map(([k,e])=>{ const mm = Object.entries(e.maps).sort((a,b)=>b[1]-a[1])[0];
+    return `<tr><td>${esc(k)}</td><td class="n">${e.n}</td><td class="n">${e.w}–${e.n-e.w}</td><td class="n">${pct(e.w,e.n)}</td><td class="small">${mm?esc(mm[0]):''}</td></tr>`; }).join('')}</table></div>` : none;
+  const t2 = byMap.length ? `<div class="tablewrap"><table><tr><th>Map</th><th>Openings used</th></tr>${byMap.map(([mp,o])=>`<tr><td>${esc(mp)}</td><td class="small">${Object.entries(o).sort((a,b)=>b[1]-a[1]).map(([k,n])=>`${esc(k)} <span class="muted">×${n}</span>`).join(', ')}</td></tr>`).join('')}</table></div>` : none;
+  return `<div class="grid g2"><div class="card"><h3>Openings</h3>${t1}</div><div class="card"><h3>Openings by map</h3>${t2}</div></div>`; }
+function sxCivRank(recs){ const c = {}; recs.forEach(r=>{ if(!r.civ) return; const e = c[r.civ] = c[r.civ]||{n:0,w:0}; e.n++; if(r.won) e.w++; }); const e = Object.entries(c);
+  const by = f => e.slice().sort(f)[0] || null;
+  return {all:e, most:by((a,b)=>b[1].n-a[1].n||b[1].w-a[1].w), best:by((a,b)=>b[1].w-a[1].w||(a[1].n-a[1].w)-(b[1].n-b[1].w)), worst:by((a,b)=>(b[1].n-b[1].w)-(a[1].n-a[1].w)||a[1].w-b[1].w)}; }
+
+/* player page */
+function sxPlayerCards(id, t, mine){
+  const recs = mine.map(g=>({id, x:g, si:g.si, won:g.won, s:g.st, civ:g.civs[id]||''})), o = sxAgg(recs), L = sxLen(mine.map(g=>({x:g, won:g.won})));
+  return `<div class="card"><h3>Replay averages</h3><div class="small muted">${o.n ? `From ${o.n} game${o.n>1?'s':''} with a replay. Peak eAPM is the busiest single minute.` : 'Fills in from each game\'s replay.'}</div><div class="statrow in">${sxRepTiles(o)}</div></div>
+    <div class="card"><h3>Game lengths</h3><div class="statrow in">${sxLenTiles(L)}</div></div>${sxOpenCards(recs)}`; }
+/* team page */
+function sxTeamCards(tm, t){
+  const k = 't:'+tm.id, gs = mapGames(t).filter(x=>x.sd[0].includes(k)||x.sd[1].includes(k));
+  const recs = sxRecs(gs).filter(r=>r.x.sd[r.si].includes(k)), o = sxAgg(recs), L = sxLen(gs.map(x=>({x, won:x.g.w===(x.sd[0].includes(k)?0:1)})));
+  const cv = sxCivRank(recs);
+  const civT = [cv.most?tile('Most used civ', esc(cv.most[0]), `${cv.most[1].n} picks`, 1):tile('Most used civ','–'), cv.best&&cv.best[1].w?tile('Best civ', esc(cv.best[0]), `${cv.best[1].w} wins`, 1):tile('Best civ','–'), cv.worst&&cv.worst[1].n-cv.worst[1].w?tile('Worst civ', esc(cv.worst[0]), `${cv.worst[1].n-cv.worst[1].w} losses`, 1):tile('Worst civ','–')].join('');
+  return `<div class="card"><h3>Team replay averages</h3><div class="small muted">${o.n ? `Every member's games for the team, ${o.n} player-game${o.n>1?'s':''} with a replay.` : 'Fills in from each game\'s replay.'}</div><div class="statrow in">${sxRepTiles(o)}</div></div>
+    <div class="card"><h3>Games</h3><div class="statrow in">${sxLenTiles(L)}${civT}</div></div>${sxOpenCards(recs)}`; }
+
+/* Stats tab */
+function pageStats(){
+  const t = T(), dvs = divs(t).filter(Boolean), sd = dvs.includes(ui.sdiv) ? ui.sdiv : '';
+  const all = mapGames(t), gs = sd ? all.filter(x=>(x.S.div||'')===sd) : all, none = !gs.length, recs = sxRecs(gs), o = sxAgg(recs), L = sxLen(gs.map(x=>({x})));
+  const dash = (k,sub) => tile(k, '–', sub||'');
+  const seg = dvs.length > 1 ? `<div class="seg sxseg" role="group" aria-label="Show stats for"><button data-act="sdiv" data-v="" aria-pressed="${!sd}" class="${!sd?'on':''}">Whole tournament</button>${dvs.map(d=>`<button data-act="sdiv" data-v="${esc(d)}" aria-pressed="${sd===d}" class="${sd===d?'on':''}">${esc(d)}</button>`).join('')}</div>` : '';
+  const scope = sd ? esc(sd) : 'Whole tournament';
+  /* civs and maps */
+  const cv = sxCivRank(recs), civ = {}, map = {};
+  recs.forEach(r=>{ if(!r.civ) return; const e = civ[r.civ] = civ[r.civ]||{n:0,w:0,by:{}}; e.n++; if(r.won) e.w++; e.by[r.id] = (e.by[r.id]||0)+1; });
+  gs.forEach(x=>{ if(!x.g.map) return; const e = map[x.g.map] = map[x.g.map]||{n:0,len:[]}; e.n++; if(x.len!=null) e.len.push(x.len); });
+  const civs = Object.entries(civ).sort((a,b)=>b[1].n-a[1].n||b[1].w-a[1].w), maps = Object.entries(map).sort((a,b)=>b[1].n-a[1].n);
+  const timed = gs.filter(x=>x.len!=null).sort((a,b)=>b.len-a.len), gl = x => `${sideName(x.sd[0])} v ${sideName(x.sd[1])}, ${x.g.map||'map '+(x.gi+1)}`;
+  const overview = none ? ['Most used civ','Best civ','Worst civ','Most played map','Avg game','Longest game','Shortest game'].map(k=>dash(k)).join('') + dash('Predictions','favourite won the match')
+    : [cv.most?tile('Most used civ', esc(cv.most[0]), `${cv.most[1].n} picks`, 1):'', cv.best&&cv.best[1].w?tile('Best civ', esc(cv.best[0]), `most wins: ${cv.best[1].w}–${cv.best[1].n-cv.best[1].w}`, 1):'',
+       cv.worst&&cv.worst[1].n-cv.worst[1].w?tile('Worst civ', esc(cv.worst[0]), `most losses: ${cv.worst[1].w}–${cv.worst[1].n-cv.worst[1].w}`, 1):'', maps.length?tile('Most played map', esc(maps[0][0]), `${maps[0][1].n} games`, 1):'',
+       tile('Avg game', mmss(L.avg)), timed.length?tile('Longest game', mmss(timed[0].len), esc(gl(timed[0]))):'', timed.length>1?tile('Shortest game', mmss(timed[timed.length-1].len), esc(gl(timed[timed.length-1]))):'', predTile(t)].join('');
+  /* player awards (averages over the scope) and single-game records */
+  const per = {}; recs.forEach(r=>{ (per[r.id] = per[r.id]||[]).push(r); });
+  const pav = Object.entries(per).map(([id,rs])=>({id, o:sxAgg(rs)})).filter(p=>p.o.n);
+  const minN = pav.some(p=>p.o.n>=2) ? 2 : 1, q = pav.filter(p=>p.o.n>=minN);
+  const award = (title, k, low, fmt) => { const c = q.filter(p=>numOk(p.o[k])).sort((a,b)=>low?a.o[k]-b.o[k]:b.o[k]-a.o[k])[0];
+    return c ? tile(title, fmt(c.o[k]), `${esc(P(c.id).name)} · ${c.o.n} game${c.o.n>1?'s':''}`) : dash(title); };
+  const awards = [award('Highest avg eAPM','eapm',0,v=>Math.round(v)), award('Highest peak eAPM','peak',0,v=>Math.round(v)), award('Lowest avg eAPM','eapm',1,v=>Math.round(v)),
+    award('Lowest avg TC idle to Castle','idleC',1,mmss), award('Lowest avg float','flt',1,v=>Math.round(v)), award('Highest avg float','flt',0,v=>Math.round(v)),
+    award('Most military-focused','milPct',0,v=>Math.round(v)+'%'), award('Most eco-focused','ecoPct',0,v=>Math.round(v)+'%')].join('');
+  const rec1 = (title, f, low, fmt) => { const c = recs.filter(r=>r.s).map(r=>({r, v:f(r.s)})).filter(o=>numOk(o.v)).sort((a,b)=>low?a.v-b.v:b.v-a.v)[0];
+    return c ? tile(title, fmt(c.v), `${esc(P(c.r.id).name)} · ${esc(c.r.x.g.map||'')}`) : dash(title); };
+  const records = [rec1('Fastest Feudal', s=>tsec(s.feudal), 1, mmss), rec1('Fastest Castle', s=>tsec(s.castle), 1, mmss), rec1('Fastest Imperial', s=>tsec(s.imp), 1, mmss),
+    rec1('Highest game eAPM', s=>s.eapm, 0, v=>Math.round(v)), rec1('Highest peak minute', s=>s.peak, 0, v=>Math.round(v))].join('');
+  /* division comparison */
+  const divRows = dvs.length > 1 ? dvs.map(d=>{ const g2 = all.filter(x=>(x.S.div||'')===d), r2 = sxRecs(g2), o2 = sxAgg(r2), L2 = sxLen(g2.map(x=>({x})));
+    return `<tr><td>${esc(d)}</td><td class="n">${g2.length}</td><td class="n">${sxVal(o2,MET[0])}</td><td class="n">${sxVal(o2,MET[3])}</td><td class="n">${sxVal(o2,MET[4])}</td><td class="n">${sxVal(o2,MET[6])}</td><td class="n">${sxVal(o2,MET[8])}</td><td class="n">${mmss(L2.avg)}</td></tr>`; }).join('') : '';
+  /* teams */
+  const teams = t.teams.filter(tm=>!sd || (t.stages.find(S=>S.div && stageEntrants(S,t).includes('t:'+tm.id))||{}).div===sd);
+  const teamRows = teams.map(tm=>{ const k = 't:'+tm.id, g2 = gs.filter(x=>x.sd[0].includes(k)||x.sd[1].includes(k)), r2 = recs.filter(r=>r.x.sd[r.si].includes(k)), o2 = sxAgg(r2);
+      const w = g2.filter(x=>x.g.w===(x.sd[0].includes(k)?0:1)).length, L2 = sxLen(g2.map(x=>({x}))), c2 = sxCivRank(r2);
+      return {tm, n:g2.length, w, o2, L2, c2}; }).sort((a,b)=>(b.w-(b.n-b.w))-(a.w-(a.n-a.w)) || (b.o2.eapm||0)-(a.o2.eapm||0))
+    .map(({tm,n,w,o2,L2,c2})=>`<tr style="cursor:pointer" data-act="team" data-v="${tm.id}"><td>${esc(tm.name)}</td><td class="n">${w}–${n-w}</td><td class="n">${sxVal(o2,MET[0])}</td><td class="n">${sxVal(o2,MET[3])}</td><td class="n">${sxVal(o2,MET[4])}</td><td class="n">${sxVal(o2,MET[6])}</td><td class="n">${sxVal(o2,MET[8])}</td><td class="n">${sxVal(o2,MET[9])}</td><td class="n">${mmss(L2.avg)}</td><td class="small">${c2.most?esc(c2.most[0]):'–'}</td><td class="small">${c2.best&&c2.best[1].w?esc(c2.best[0]):'–'}</td></tr>`).join('');
+  /* players */
+  const ids = [...new Set((sd ? t.teams.filter(tm=>teams.includes(tm)).flatMap(x=>x.members) : t.roster.concat(t.teams.flatMap(x=>x.members))))].filter(id=>state.players[id]);
+  const ec = hasElo(t) ? eloCols(t) : [];
+  const prow = ids.map(id=>{ const rs = per[id]||[]; return {id, n:rs.length, w:rs.filter(r=>r.won).length, o:sxAgg(rs)}; })
+    .filter(p=>none || p.n || ec.some(k=>eloOf(p.id,k))).sort((a,b)=>(b.o.eapm||0)-(a.o.eapm||0) || b.w-a.w || P(a.id).name.localeCompare(P(b.id).name));
+  const pcols = [0,1,2,3,4,5,6,8,9];
+  const noRow = n => `<tr><td colspan="${n}" class="muted small">No games yet.</td></tr>`;
+  return `${none?`<div class="note statsnote" role="status"><b>No games played yet${sd?' in '+esc(sd):''}.</b> These stats fill in automatically as games are played and confirmed.</div>`:''}${seg}
+    <h2 class="sech">${scope}</h2><div class="statrow">${tile('Maps played', gs.length)}${overview}</div>
+    <h2 class="sech">Replay averages</h2><div class="small muted" style="margin:-6px 0 10px">Average of every player in every game with a replay${o.n?` (${o.n} player-games)`:''}. Float is an estimate from the replay.</div><div class="statrow">${sxRepTiles(o)}</div>
+    <h2 class="sech">Player awards</h2><div class="small muted" style="margin:-6px 0 10px">From each player's averages${minN>1?' (2 or more games with a replay)':''}.</div><div class="statrow">${awards}</div>
+    <h2 class="sech">Single-game records</h2><div class="statrow">${records}</div>
+    ${divRows?`<div class="card"><h3>Divisions</h3><div class="tablewrap"><table><tr><th>Division</th><th class="n">Maps</th><th class="n">Avg eAPM</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">TC idle to Castle</th><th class="n">Float</th><th class="n">Avg game</th></tr>${divRows}</table></div></div>`:''}
+    ${t.teams.length?`<div class="card"><h3>Teams</h3><div class="small muted">Click a team for its page.</div><div class="tablewrap"><table><tr><th>Team</th><th class="n">Maps W–L</th><th class="n">eAPM</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">TC idle to Castle</th><th class="n">Float</th><th class="n">Mil focus</th><th class="n">Avg game</th><th>Most used civ</th><th>Best civ</th></tr>${teamRows}</table></div></div>`:''}
+    <div class="grid g2"><div class="card"><h3>Civs</h3><div class="tablewrap"><table><tr><th>Civ</th><th class="n">Picks</th><th class="n">Won</th><th class="n">Lost</th><th class="n">Win %</th><th>Most by</th></tr>
+      ${none?noRow(6):''}${civs.map(([k,r])=>{ const by = Object.entries(r.by).sort((a,b)=>b[1]-a[1])[0]; return `<tr><td>${esc(k)}</td><td class="n">${r.n}</td><td class="n">${r.w}</td><td class="n">${r.n-r.w}</td><td class="n">${pct(r.w,r.n)}</td><td class="small">${by&&state.players[by[0]]?esc(P(by[0]).name)+(by[1]>1?` (${by[1]})`:''):''}</td></tr>`; }).join('')}</table></div></div>
+    <div class="card"><h3>Maps</h3><div class="tablewrap"><table><tr><th>Map</th><th class="n">Games</th><th class="n">Avg length</th><th class="n">Shortest</th><th class="n">Longest</th></tr>
+      ${none?noRow(5):''}${maps.map(([k,r])=>`<tr><td>${esc(k)}</td><td class="n">${r.n}</td><td class="n">${r.len.length?mmss(avgOf(r.len)):'–'}</td><td class="n">${r.len.length?mmss(Math.min(...r.len)):'–'}</td><td class="n">${r.len.length?mmss(Math.max(...r.len)):'–'}</td></tr>`).join('')}</table></div></div></div>
+    ${sxOpenCards(recs)}
+    <div class="card"><h3>Players</h3><div class="small muted">Click a player for their full stats. ${ec.length?esc(eloNote()):''}</div><div class="tablewrap"><table><tr><th>Player</th>${ec.map(k=>`<th class="n">${LADDER[k]}</th>`).join('')}<th class="n">Maps W–L</th><th class="n">Win %</th>${pcols.map(i=>`<th class="n">${MET[i].n}</th>`).join('')}<th>Usual opening</th></tr>
+      ${prow.map(p=>`<tr style="cursor:pointer" data-act="tplayer" data-v="${p.id}"><td>${chip('p:'+p.id,t)}</td>${ec.map(k=>`<td class="n">${eloTxt(p.id,k)}</td>`).join('')}<td class="n">${p.w}–${p.n-p.w}</td><td class="n">${pct(p.w,p.n)}</td>${pcols.map(i=>`<td class="n">${sxVal(p.o,MET[i])}</td>`).join('')}<td class="small">${esc(p.o.opening||'–')}</td></tr>`).join('')}</table></div></div>`;
+}
+
+/* ---------- Seeding: order entrants by hand (▲▼) or by ranked ELO (saved by the game finder) ----------
+   Knockout stages "By hand" store the order in S.manualSeeds. Swiss stages store it in S.entrants and can pair
+   round 1 by seed (S.r1 = 'seed': 1 v N/2+1, 2 v N/2+2, ...) instead of at random. */
+const seedable = S => (S.type==='elim' && S.seedFrom==='manual') || S.type==='swiss';
+function seedOrder(S, t){ return S.type==='elim' ? seedSource(S,t) : stageEntrants(S,t); }
+function seedSet(S, t, order){ if(S.type==='elim') S.manualSeeds = order; else S.entrants = order.concat((S.entrants||[]).filter(k=>!order.includes(k) && !stageEntrants(S,t).includes(k))); }
+function entElo(k, t){ const lad = modeOf(t), ids = entMembers(k,t);
+  const v = ids.map(id=>{ const e = eloOf(id, k.startsWith('t:') ? lad : 'rm1') || eloOf(id, lad) || eloOf(id, 'rm1'); return e ? +e.r : null; }).filter(x=>x!=null);
+  return v.length ? v.reduce((a,b)=>a+b,0)/v.length : null; }
+function seedTools(S, t){ if(!seedable(S)) return '';
+  const any = seedOrder(S,t).some(k=>entElo(k,t)!=null);
+  return ` Order = seeding (use ▲▼).</div><div class="row" style="margin:6px 0;align-items:center"><button class="sm" data-act="seedelo" data-s="${S.id}" ${any?'':'disabled'}>Seed by ranked ELO</button>`
+    + `<span class="small muted">${any ? (S.ent==='teams'?'Teams by their players\' average ELO. ':'')+'You can still move anyone after.' : 'No ranked ELOs yet. The game finder fetches them on its next run (every 10 minutes), then this button works.'}</span>`
+    + (S.type==='swiss' ? `<label class="small" style="margin-left:auto">Round 1 pairs <select data-act="swr1" data-s="${S.id}"><option value="rand" ${S.r1!=='seed'?'selected':''}>at random</option><option value="seed" ${S.r1==='seed'?'selected':''}>by seed (top half v bottom half)</option></select></label>` : ''); }
+function seedRow(S, k, j){ return seedable(S) ? `<button class="sm" data-act="seedup" data-s="${S.id}" data-v="${k}" title="Move up">▲</button><button class="sm" data-act="seeddn" data-s="${S.id}" data-v="${k}" title="Move down">▼</button><span class="small muted">seed ${j+1}${(()=>{ const e = entElo(k,T()); return e!=null?' · '+Math.round(e):''; })()}</span>` : ''; }
 
 /* ============ boot ============ */
 document.addEventListener('click', e=>{ const el = e.target.closest('[data-act]'); if(!el || el.tagName==='SELECT' || (el.tagName==='INPUT' && el.type!=='button')) return; act(el, e); });
