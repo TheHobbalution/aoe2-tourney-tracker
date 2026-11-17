@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-qHl4T0a4vg6+IshDXK6kXvrkcgKd1hEp4/oy9UvYeZU=' 'sha256-ggeipM/0iL50K1199E7+Hlgw1EYhF5aoU5x24IERLvI=' https://www.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-qHl4T0a4vg6+IshDXK6kXvrkcgKd1hEp4/oy9UvYeZU=' 'sha256-e/Xngf0xIm80TsCfefUndbunb6Vs92qW73JhTqeaLN8=' https://www.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -1826,7 +1826,10 @@ function pendListen(on){
     snap=>{ live.pend = snap.docs.map(x=>x.data()).sort((a,b)=>(a.started||0)-(b.started||0)); if(state) liveRender(); }, ()=>{});
   live.detOff = fs.onSnapshot(fs.doc(d,'tournaments',live.tid,'detector','meta'), x=>{ live.det = x.exists() ? x.data() : null; if(state) liveRender(); }, ()=>{});
 }
-const pendHere = () => { const t = T(); return LIVE && live.admin && t ? live.pend.filter(g=>g.tour===t.id) : []; };
+/* match each player to the tournament by profile ID as it is now, so fixing an ID in Players fixes games already queued */
+function pendFix(g){ const by = {}; Object.entries(state.players||{}).forEach(([k,p])=>{ const v = String(p.pid||'').trim(); if(v) by[v] = k; });
+  return Object.assign({}, g, {players:(g.players||[]).map(p=>{ const k = by[String(p.profileId||'')]; return k ? Object.assign({}, p, {id:k}) : p; })}); }
+const pendHere = () => { const t = T(); return LIVE && live.admin && t ? live.pend.filter(g=>g.tour===t.id).map(pendFix) : []; };
 /* the two sides of a detected game, or null when it isn't a two-sided game */
 function pendSides(g){ const by = {}; (g.players||[]).forEach(p=>{ (by[p.team] = by[p.team]||[]).push(p); }); const k = Object.keys(by); return k.length===2 ? k.map(x=>by[x]) : null; }
 /* open fixtures whose two sides contain this game's known players; flip = the game's first side is the fixture's second */
@@ -1874,7 +1877,7 @@ function pendCard(){
 }
 async function pendSet(mid, patch){ const {fs, d} = live.fb; await fs.updateDoc(fs.doc(d,'tournaments',live.tid,'pending',String(mid)), Object.assign({by:live.user.uid, at:fs.serverTimestamp()}, patch)); }
 async function pendConfirm(mid){
-  const g = live.pend.find(x=>String(x.matchId)===String(mid)), sel = document.getElementById('pf-'+mid); if(!g || !sel) return false;
+  const g0 = live.pend.find(x=>String(x.matchId)===String(mid)), g = g0 && pendFix(g0), sel = document.getElementById('pf-'+mid); if(!g || !sel) return false;
   const [sid, matchId, fl] = sel.value.split('|'), [S, m] = curMatch(sid, matchId), flip = fl==='1', ps = pendSides(g); if(!m || !ps) return false;
   let w = ps.findIndex(s=>s.some(p=>p.won===true));
   if(w<0){ const ws = document.getElementById('pw-'+mid); if(!ws || ws.value===''){ await say('Pick who won first.'); return false; } w = +ws.value; }

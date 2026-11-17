@@ -376,6 +376,11 @@ def auto_confirm(db, site_ref, tour_id, mid):
         t = next((x for x in state.get("tours") or [] if x.get("id") == tour_id), None)
         if not t or not t.get("autoConfirm"):
             return "auto-confirm is off"
+        by = {str(p.get("pid") or "").strip(): k for k, p in (state.get("players") or {}).items() if str(p.get("pid") or "").strip()}
+        for pl in pd.get("players") or []:      # profile IDs as they are now (an organiser may have fixed one)
+            k = by.get(str(pl.get("profileId") or ""))
+            if k:
+                pl["id"] = k
         why, fit = auto_pick(t, pd)
         if not fit:
             return f"left for an organiser ({why})"
