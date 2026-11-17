@@ -34,27 +34,53 @@ def http_get(url, timeout=30):
         return r.read()
 
 
-def fetch_matches(pids, start_ts, deep, get=http_get):
-    """Newest matches of each profile id, one entry per match id. deep=True pages back to start_ts."""
-    seen, failed = {}, []
+RUN_START = time.time()
+FETCH_BUDGET = 9 * 60      # stop paging back after this many seconds of a run; the rest carries on next run
+WORK_BUDGET = 15 * 60      # stop downloading replays after this (the Action is killed at 20 minutes, losing everything)
+
+
+def over(budget):
+    return time.time() - RUN_START > budget
+
+
+def get_retry(get, url):
+    """aoe2companion sometimes refuses when called a lot: wait and try again before giving up on a player."""
+    for i in range(3):
+        try:
+            return get(url)
+        except Exception:  # noqa: BLE001
+            if i == 2 or over(FETCH_BUDGET):
+                raise
+            time.sleep(4 * (i + 1))
+
+
+def fetch_matches(pids, start_ts, deep, get=http_get, deep_done=None):
+    """Newest matches of each profile id, one entry per match id. deep=True pages back to start_ts for players
+    not in deep_done yet. Returns (matches, failed, caught): caught = players fully paged back this run."""
+    seen, failed, caught = {}, [], []
+    deep_done = set(deep_done or [])
     for pid in pids:
-        for page in range(1, (MAX_PAGES if deep else 1) + 1):
+        go_deep = deep and pid not in deep_done and not over(FETCH_BUDGET)
+        for page in range(1, (MAX_PAGES if go_deep else 1) + 1):
             try:
-                data = json.loads(get(f"https://data.aoe2companion.com/api/matches?profile_ids={pid}&page={page}"))
+                data = json.loads(get_retry(get, f"https://data.aoe2companion.com/api/matches?profile_ids={pid}&page={page}"))
             except Exception as e:  # noqa: BLE001
                 log(f"match list for {pid} (page {page}) failed: {e}")
                 failed.append(pid)
+                go_deep = False
                 break
             ms = data.get("matches", [])
             for m in ms:
                 if m.get("matchId") is not None:
                     seen[str(m["matchId"])] = m
             oldest = min((core.iso_ts(m.get("started")) or 0 for m in ms), default=0)
-            if not ms or oldest < start_ts:
+            if not ms or oldest < start_ts or page == MAX_PAGES:
+                if go_deep:
+                    caught.append(pid)
                 break
             time.sleep(PAUSE)
         time.sleep(PAUSE)
-    return list(seen.values()), failed
+    return list(seen.values()), failed, caught
 
 
 def download_replay(match_id, pids, folder, get=http_get):
@@ -238,6 +264,147 @@ def headline(st):
     }.items() if v is not None}
 
 
+# ---------- auto-confirm (optional per tournament: t["autoConfirm"]) ----------
+AUTO_MIN_SECS = 5 * 60      # shorter games are often restarts: leave them for an organiser
+
+
+def secs(v):
+    try:
+        parts = [int(x) for x in str(v or "").split(":")]
+    except ValueError:
+        return None
+    if not parts or len(parts) > 3:
+        return None
+    n = 0
+    for x in parts:
+        n = n * 60 + x
+    return n
+
+
+def norm_map(v):
+    return "".join(ch for ch in str(v or "").lower() if ch.isalnum())
+
+
+def ent_members(k, t):
+    kind, _, i = str(k).partition(":")
+    if kind == "p":
+        return [i]
+    tm = next((x for x in t.get("teams") or [] if x.get("id") == i), None)
+    return list(tm.get("members") or []) if tm else []
+
+
+def series_done(S, m):
+    """True when the series already has its winner (or every map of a play-all series is in)."""
+    bo = m.get("bo") or S.get("bo") or 1
+    ws = [g.get("w") for g in m.get("games") or [] if g and g.get("w") in (0, 1)]
+    if S.get("playAll"):
+        return len(ws) >= bo
+    return max(ws.count(0), ws.count(1)) >= bo // 2 + 1
+
+
+def auto_pick(t, pdoc):
+    """(reason, fit): fit = (stage, match, flip, winner side of the game) when this detected game belongs to exactly
+    one open round-robin / Swiss fixture with a known winner; otherwise reason says why it waits for an organiser."""
+    if secs(pdoc.get("gameTime")) is not None and secs(pdoc.get("gameTime")) < AUTO_MIN_SECS:
+        return "short", None
+    sides = {}
+    for pl in pdoc.get("players") or []:
+        sides.setdefault(pl.get("team"), []).append(pl)
+    if len(sides) != 2:
+        return "sides", None
+    ps = list(sides.values())
+    won = [any(pl.get("won") is True for pl in side) for side in ps]
+    lost = [all(pl.get("won") is False for pl in side) for side in ps]
+    if won[0] == won[1] or not (lost[0] or lost[1]):
+        return "winner", None
+    w = 0 if won[0] else 1
+    ids = [[pl.get("id") for pl in side if pl.get("id")] for side in ps]
+    if not ids[0] or not ids[1]:
+        return "players", None
+    fits = []
+    for S in t.get("stages") or []:
+        if S.get("type") not in ("rr", "swiss"):
+            continue
+        for m in S.get("matches") or []:
+            sd = m.get("sides") or []
+            if len(sd) != 2 or not sd[0] or not sd[1] or series_done(S, m):
+                continue
+            played = {norm_map(g.get("map")) for g in m.get("games") or [] if g and g.get("w") in (0, 1) and g.get("map")}
+            if norm_map(pdoc.get("map")) in played:
+                continue   # same map again in this series: likely a restart or a mistake, so leave it for an organiser
+            mem = [[x for k in side for x in ent_members(k, t)] for side in sd]
+            if all(x in mem[0] for x in ids[0]) and all(x in mem[1] for x in ids[1]):
+                fits.append((S, m, False, w))
+            elif all(x in mem[1] for x in ids[0]) and all(x in mem[0] for x in ids[1]):
+                fits.append((S, m, True, w))
+    if len(fits) != 1:
+        return ("none" if not fits else "several"), None
+    return None, fits[0]
+
+
+def auto_game(S, m, flip, w, pdoc):
+    """The game record the tracker stores (same shape as an organiser's Confirm)."""
+    mp = pdoc.get("map") or ""
+    pool = next((x for x in S.get("maps") or [] if norm_map(x) == norm_map(mp)), None)
+    g = {"w": (1 - w) if flip else w, "map": pool or mp, "civs": {}, "mid": str(pdoc.get("matchId")), "auto": True}
+    if pdoc.get("gameTime"):
+        g["len"] = pdoc["gameTime"]
+    for pl in pdoc.get("players") or []:
+        i = pl.get("id")
+        if not i:
+            continue
+        if pl.get("civ"):
+            g["civs"][i] = pl["civ"]
+        if pl.get("sum"):
+            g.setdefault("st", {})[i] = pl["sum"]
+    return g
+
+
+def auto_confirm(db, site_ref, tour_id, mid):
+    """Put the game into its fixture inside a transaction, and mark the queued game confirmed. Returns a log line."""
+    from firebase_admin import firestore
+    pref = site_ref.collection("pending").document(mid)
+
+    @firestore.transactional
+    def run(tx):
+        snap = site_ref.get(transaction=tx)
+        pd = pref.get(transaction=tx).to_dict() or {}
+        if pd.get("status") != "new":
+            return "already handled"
+        data = snap.to_dict() or {}
+        state = json.loads(data.get("state") or "{}")
+        t = next((x for x in state.get("tours") or [] if x.get("id") == tour_id), None)
+        if not t or not t.get("autoConfirm"):
+            return "auto-confirm is off"
+        by = {str(p.get("pid") or "").strip(): k for k, p in (state.get("players") or {}).items() if str(p.get("pid") or "").strip()}
+        for pl in pd.get("players") or []:      # profile IDs as they are now (an organiser may have fixed one)
+            k = by.get(str(pl.get("pid") or pl.get("profileId") or ""))
+            if k:
+                pl["id"] = k
+        why, fit = auto_pick(t, pd)
+        if not fit:
+            return f"left for an organiser ({why})"
+        S, m, flip, w = fit
+        games = m.setdefault("games", [])
+        if any(str((g or {}).get("mid")) == str(mid) for g in games):
+            return "already in the fixture"
+        i = next((k for k, g in enumerate(games) if not g or g.get("w") not in (0, 1)), len(games))
+        had = games[i] if i < len(games) else {}
+        g = auto_game(S, m, flip, w, pd)
+        if (had or {}).get("map") and not g.get("map"):
+            g["map"] = had["map"]
+        merged = dict(had or {})
+        merged.update(g)
+        if i < len(games):
+            games[i] = merged
+        else:
+            games.append(merged)
+        tx.update(site_ref, {"state": json.dumps(state, separators=(",", ":"), ensure_ascii=False), "updated": firestore.SERVER_TIMESTAMP})
+        tx.update(pref, {"status": "confirmed", "by": "auto", "at": firestore.SERVER_TIMESTAMP, "fixture": {"stage": S.get("id"), "match": m.get("id"), "game": i}})
+        return f"auto-confirmed into {S.get('name')} / {m.get('id')} map {i + 1}"
+    return run(db.transaction())
+
+
 # ---------- ranked ELOs (shown on the stats pages; ranked games themselves never count as fixtures) ----------
 ELO_EVERY = 6 * 3600          # seconds between refreshes of a tournament's ELOs
 LADDERS = ("rm1", "rmt", "ew1", "ewt")
@@ -394,7 +561,12 @@ def run_site(db, site_ref, now=None, get=http_get):
                 site_ref.collection("games").document(d.id).delete()
                 known[d.id] = {"stats": True, "tries": MAX_TRIES, "tried": now, "skip": True}
                 log(f"  game {d.id}: ranked or not team v team, removed from the queue")
-        matches, failed = fetch_matches(sorted(pidmap), window[0], deep, get)
+        done_before = ((meta.get("deepDone") or {}).get(t["id"])) or []
+        matches, failed, caught = fetch_matches(sorted(pidmap), window[0], deep, get, done_before)
+        if deep:
+            dd = sorted(set(done_before) | set(caught))
+            meta.setdefault("deepDone", {})[t["id"]] = dd
+            log(f"  catch-up: {len(dd)} of {len(pidmap)} players paged back so far")
         seen_matches += matches
         rep = {"at": now, "players": len(pidmap), "looked": len(matches), "fit": 0, "skipped": {}, "failed": len(failed)}
         meta.setdefault("report", {})[t["id"]] = rep
@@ -416,6 +588,9 @@ def run_site(db, site_ref, now=None, get=http_get):
             tries = (old or {}).get("tries") or 0
             if old and (old.get("stats") or tries >= MAX_TRIES or now - (old.get("tried") or 0) < tries * RETRY_GAP):
                 continue                     # done, given up, or too soon to try the replay again
+            if over(WORK_BUDGET):
+                log(f"  game {mid}: out of time this run, next run picks it up")
+                continue
             log(f"  game {mid} {s.get('map')}: downloading replay (try {tries + 1})")
             stats = None
             with tempfile.TemporaryDirectory() as tmp:
@@ -444,15 +619,23 @@ def run_site(db, site_ref, now=None, get=http_get):
                 added += 1
             known[mid] = {"stats": bool(stats), "tries": tries + 1, "tried": now}
             log(f"  {'full stats' if stats else 'result only, will retry'}")
+            if t.get("autoConfirm") and (stats or tries + 1 >= MAX_TRIES):   # wait for the replay so the stats go in too
+                try:
+                    log(f"  {auto_confirm(db, site_ref, t['id'], mid)}")
+                except Exception as e:  # noqa: BLE001
+                    log(f"  auto-confirm failed, left in the queue: {e}")
         for k in sorted(left, key=lambda x: int(x) if str(x).isdigit() else 0)[:-300]:
             del left[k]                      # keep the list small
         for w in left.values():
             rep["skipped"][w] = rep["skipped"].get(w, 0) + 1
-        if deep and not failed:
+        if deep and set(pidmap) <= set((meta.get("deepDone") or {}).get(t["id"]) or []):
             meta.setdefault("caughtUp", {})[t["id"]] = True
+            (meta.get("deepDone") or {}).pop(t["id"], None)
         elif failed:
-            meta.setdefault("caughtUp", {})[t["id"]] = False     # page back again next run so nothing is missed
+            meta.setdefault("caughtUp", {})[t["id"]] = False     # page back again next run (only the players not done yet)
     try:
+        if over(WORK_BUDGET):
+            raise RuntimeError("skipped, out of time this run")
         update_elos(site_ref, state, seen_matches, now, get)
     except Exception as e:  # noqa: BLE001
         log(f"{site_ref.id}: ELO update failed: {e}")
