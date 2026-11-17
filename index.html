@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-qHl4T0a4vg6+IshDXK6kXvrkcgKd1hEp4/oy9UvYeZU=' 'sha256-iwrZ+MFkYb4PfeHFwnliaOvfFK7JV66SKDxBHZ9N2aA=' https://www.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-qHl4T0a4vg6+IshDXK6kXvrkcgKd1hEp4/oy9UvYeZU=' 'sha256-tZeaFqThdXqAGoIqMznDG4SVMwu3bvSxQpTDTKz8zBE=' https://www.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -1828,7 +1828,7 @@ function pendListen(on){
 }
 /* match each player to the tournament by profile ID as it is now, so fixing an ID in Players fixes games already queued */
 function pendFix(g){ const by = {}; Object.entries(state.players||{}).forEach(([k,p])=>{ const v = String(p.pid||'').trim(); if(v) by[v] = k; });
-  return Object.assign({}, g, {players:(g.players||[]).map(p=>{ const k = by[String(p.profileId||'')]; return k ? Object.assign({}, p, {id:k}) : p; })}); }
+  return Object.assign({}, g, {players:(g.players||[]).map(p=>{ const k = by[String(p.pid ?? p.profileId ?? '')]; return k ? Object.assign({}, p, {id:k}) : p; })}); }
 const pendHere = () => { const t = T(); return LIVE && live.admin && t ? live.pend.filter(g=>g.tour===t.id).map(pendFix) : []; };
 /* the two sides of a detected game, or null when it isn't a two-sided game */
 function pendSides(g){ const by = {}; (g.players||[]).forEach(p=>{ (by[p.team] = by[p.team]||[]).push(p); }); const k = Object.keys(by); return k.length===2 ? k.map(x=>by[x]) : null; }
