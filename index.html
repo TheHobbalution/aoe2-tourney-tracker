@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-qHl4T0a4vg6+IshDXK6kXvrkcgKd1hEp4/oy9UvYeZU=' 'sha256-e/Xngf0xIm80TsCfefUndbunb6Vs92qW73JhTqeaLN8=' https://www.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-qHl4T0a4vg6+IshDXK6kXvrkcgKd1hEp4/oy9UvYeZU=' 'sha256-iwrZ+MFkYb4PfeHFwnliaOvfFK7JV66SKDxBHZ9N2aA=' https://www.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -1314,11 +1314,11 @@ async function act(el, ev){
     case 'padd': { const id = uid(); state.players[id] = {id, name:'New player', pid:'', photo:''}; state.porder.push(id); if(t) t.roster.push(id); break; }
     case 'pdel': { const used = state.tours.filter(x=>x.roster.includes(d.p)); if(used.length && !await askYes(`${P(d.p).name} is in ${used.map(x=>x.name).join(', ')}. Remove them from those too?`)) return; if(!used.length && !await askYes(`Delete ${P(d.p).name}?`)) return;
       used.forEach(x=>{ x.roster = x.roster.filter(r=>r!==d.p); x.teams.forEach(tm=>tm.members = tm.members.filter(r=>r!==d.p)); }); delete state.players[d.p]; state.porder = state.porder.filter(x=>x!==d.p); break; }
-    case 'pall': if(!t) return; if(d.v==='1'){ state.porder.forEach(id=>{ if(state.players[id] && !t.roster.includes(id)) t.roster.push(id); }); } else { t.roster = []; t.teams.forEach(tm=>tm.members = []); } break;
+    case 'pall': if(!t) return; if(d.v==='1'){ state.porder.forEach(id=>{ if(state.players[id] && !t.roster.includes(id)) t.roster.push(id); }); } else { const n = t.teams.reduce((a,tm)=>a+tm.members.length,0); if(n && !await askYes(`Untick all players? This also empties every team (${n} players taken out of their teams).`)) return; t.roster = []; t.teams.forEach(tm=>tm.members = []); } break;
     case 'pdelall': { const n = state.porder.filter(id=>state.players[id]).length; if(!await askYes(`Delete all ${n} players? They are also taken out of every team.`)) return;
       state.tours.forEach(x=>{ x.roster = []; x.teams.forEach(tm=>tm.members = []); }); state.players = {}; state.porder = []; break; }
     case 'pphoto': { const [f] = await pickFile('image/*'); if(!f) return; state.players[d.p].photo = await shrink(f, 360, 'image/jpeg', .85); break; }
-    case 'roster': if(el.checked){ if(!t.roster.includes(el.value)) t.roster.push(el.value); } else { t.roster = t.roster.filter(x=>x!==el.value); t.teams.forEach(tm=>tm.members = tm.members.filter(r=>r!==el.value)); } break;
+    case 'roster': if(el.checked){ if(!t.roster.includes(el.value)) t.roster.push(el.value); } else { const ot = t.teams.find(tm=>tm.members.includes(el.value)); if(ot && !await askYes(`Take ${P(el.value).name} out of this tournament? They are also taken out of ${ot.name}.`)){ el.checked = true; return; } t.roster = t.roster.filter(x=>x!==el.value); t.teams.forEach(tm=>tm.members = tm.members.filter(r=>r!==el.value)); } break;
     case 'bulkadd': { const lines = $('#bulk').value.split(/\n/).map(s=>s.trim()).filter(Boolean); let n=0, up=0;
       lines.forEach(l=>{ const parts = l.split(/\s*[,\t]\s*/), name = parts[0], pid = (()=>{ for(const x of parts.slice(1)){ if(/^\d+$/.test(x)) return x; const mm = x.match(/(?:user|profile|players?)\/(\d+)/i); if(mm) return mm[1]; } return ''; })(); if(!name) return; let id = state.porder.find(x=>state.players[x] && state.players[x].name.toLowerCase()===name.toLowerCase());
         if(!id){ id = uid(); state.players[id] = {id, name, pid, photo:''}; state.porder.push(id); n++; }
