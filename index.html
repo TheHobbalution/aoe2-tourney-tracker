@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-qHl4T0a4vg6+IshDXK6kXvrkcgKd1hEp4/oy9UvYeZU=' 'sha256-VR1Bfoyyo8+7X7qt9LewIMjuQNXzPozys0r0Z+r3rs4=' https://www.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-qHl4T0a4vg6+IshDXK6kXvrkcgKd1hEp4/oy9UvYeZU=' 'sha256-ggeipM/0iL50K1199E7+Hlgw1EYhF5aoU5x24IERLvI=' https://www.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -552,6 +552,32 @@ h2,h3{font-family:var(--head)}
 .bx .bxr.tie .bxsc{background:#d8a72a;color:#1b1b1b}
 
 .sxseg{margin:0 0 6px}
+
+.bkcol.future .bkbody{justify-content:center}
+.bkfuture{margin:10px 20px;padding:18px 16px;border:1px dashed color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:6px;color:var(--muted);text-align:center;font-size:.95rem;line-height:1.45}
+
+.pgroup{border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:6px;padding:8px 10px;margin:10px 0;background:color-mix(in srgb,var(--accent) 6%,transparent)}
+.pgroup .pgh{margin:2px 2px 6px}
+.pgroup .match{margin-bottom:6px}
+
+/* confirm-games queue drawn like fixture boxes */
+.qgame{margin:0 0 12px}
+.qbx{cursor:default;max-width:720px}
+.qbx:hover{border-color:var(--line)}
+.qbx .bxl{font-size:.8rem;padding:4px 8px}
+.qbx .bxl b{color:var(--ink)}
+.qbx .bxr{height:auto;min-height:32px}
+.qbx .bxn span{white-space:normal}
+.qbx .bxr:not(.won):not(.lost) .bxsc{color:var(--muted)}
+.qciv{font-weight:500;font-size:.78rem;color:var(--muted);margin-left:2px}
+.qact{margin-top:6px;gap:6px;flex-wrap:wrap}
+.pgroup .qgame:last-child{margin-bottom:4px}
+.qbadge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;padding:0 6px;margin-left:6px;border-radius:11px;background:#d23b2e;color:#fff;font-weight:800;font-size:.82rem;line-height:1;box-shadow:0 0 0 2px rgba(210,59,46,.35);animation:qpulse 1.6s ease-in-out infinite;vertical-align:middle}
+@keyframes qpulse{50%{box-shadow:0 0 0 6px rgba(210,59,46,0)}}
+@media (prefers-reduced-motion:reduce){.qbadge{animation:none}}
+#pendcard h3 .qbadge{animation:none}
+.warn{color:#e8a33a}
+.autotag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:8px;border:1px solid var(--accent);color:var(--accent);vertical-align:middle}
 </style>
 </head>
 <body>
@@ -1045,6 +1071,7 @@ function setupEvent(){
       <label class="f">Prize pool<input type="text" data-tf="prize" value="${esc(t.prize||'')}"></label>
       <label class="f">Organisers<input type="text" data-tf="org" value="${esc(t.org||'')}"></label>
       <label class="f" title="Decides which ranked ELOs show next to each player. 1v1 ELO always shows.">Game type<select data-tf="mode">${MODES.map(([k,n])=>`<option value="${k}" ${modeOf(t)===k?'selected':''}>${n}</option>`).join('')}</select></label>
+      ${LIVE?`<label class="f" title="Games that fit exactly one open round-robin or Swiss fixture, have a known winner and last over 5 minutes count without waiting. Everything else still waits in Confirm games.">Found games<select data-tf="autoConfirm"><option value="" ${t.autoConfirm?'':'selected'}>Wait for an organiser to confirm</option><option value="1" ${t.autoConfirm?'selected':''}>Confirm clear games automatically</option></select></label>`:''}
       <label class="f" title="0 = no limit">Max picks of one civ per player<input type="number" min="0" data-tf="civLimit" value="${+t.civLimit||0}"></label></div>
     <label class="f" style="margin-top:8px">Notes (shown on Home)<textarea data-tf="notes">${esc(t.notes)}</textarea></label></div>
   <div class="grid g2">${img('logo','Logo','Shown next to the name. Square works best.')}${img('banner','Header banner','Wide image across the top of Home.')}</div>
@@ -1730,7 +1757,7 @@ function tourPage(){
   if(live.loading) return `<div class="wrap"><p class="muted">Loading tournament…</p></div>`;
   if(!state || !t) return `<div class="wrap"><div class="card empty"><h2>Tournament not found</h2><p>This link may be wrong, or the organiser deleted the tournament.</p><p><a href="#/browse">Browse tournaments</a></p></div></div>`;
   if(VIEW && (ui.tab==='setup' || ui.tab==='data' || ui.tab==='history')) ui.tab = 'home';
-  const tabs = [['home','Overview'],['fixtures','Fixtures' + (pendHere().length ? ` (${pendHere().length})` : '')],['standings','Standings']].concat(t.teams.length ? [['teams','Teams']] : []).concat([['players','Players'],['stats','Stats']]).concat(VIEW ? [] : [['setup','Setup'],['data','Backup']]);
+  const tabs = [['home','Overview'],['fixtures','Fixtures' + (pendHere().length ? ` <span class="qbadge" title="Games waiting to be confirmed">${pendHere().length}</span>` : '')],['standings','Standings']].concat(t.teams.length ? [['teams','Teams']] : []).concat([['players','Players'],['stats','Stats']]).concat(VIEW ? [] : [['setup','Setup'],['data','Backup']]);
   const pages = {home:pageHome, fixtures:pageFixtures, standings:pageStandings, setup:pageSetup, players:pagePlayers, teams:pageTeams, stats:pageStats, data:pageData};
   const note = live.user && !live.admin && live.doc ? `<span class="livest">You're signed in, but not as an organiser of this tournament.</span>` : '';
   const canEdit = live.admin ? `<span id="livest" class="livest ${live.bad?'bad':''}">${esc(live.status||'')}</span>` : (live.bad ? `<span id="livest" class="livest bad">${esc(live.status)}</span>` : '');
@@ -1825,16 +1852,25 @@ function detLine(){
 }
 function pendCard(){
   const list = pendHere(), t = T(); if(!list.length) return detLine();
-  const side = (ps, won) => `<span class="${won?'won':''}">${ps.map(p=>`${esc(p.id&&state.players[p.id]?P(p.id).name:(p.name||'?'))}${p.id&&state.players[p.id]?'':' <span class="muted small">(not in this tournament)</span>'} <span class="muted small">${esc(p.civ||'')}</span>`).join(', ')}${won?' 🏆':''}</span>`;
-  const rows = list.map(g=>{ const ps = pendSides(g), fits = pendFits(g,t), when = g.started ? new Date(g.started*1000).toLocaleString(undefined,{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}) : '';
-    const w = ps ? ps.findIndex(s=>s.some(p=>p.won===true)) : -1;
-    const body = !ps ? `<div class="small muted">Not a two-sided game.</div>` : `<div>${side(ps[0],w===0)} <span class="vs">v</span> ${side(ps[1],w===1)}</div>`;
+  const pname = p => p.id&&state.players[p.id] ? esc(P(p.id).name) : `${esc(p.name||'?')} <i class="muted small">(not in this tournament)</i>`;
+  /* one detected game drawn like a fixture box: a row per side, W/L in the score cell */
+  const qrow = (ps, res) => { const one = ps.length===1 && ps[0].id && state.players[ps[0].id] ? ps[0].id : null, ph = one ? entPhoto(one) : '';
+    return `<div class="bxr ${res}"><span class="bxn">${ph?`<img src="${esc(ph)}" alt="">`:''}<span>${ps.map(p=>`${pname(p)}${p.civ?` <span class="qciv">${esc(p.civ)}</span>`:''}`).join(', ')}</span></span><span class="bxsc">${res==='won'?'W':res==='lost'?'L':'?'}</span></div>`; };
+  const row1 = g=>{ const ps = pendSides(g), fits = pendFits(g,t), when = g.started ? new Date(g.started*1000).toLocaleString(undefined,{weekday:'short',day:'numeric',month:'short',hour:'numeric',minute:'2-digit'}) : '';
+    const w = ps ? ps.findIndex(s=>s.some(p=>p.won===true)) : -1, short = (tsec(g.gameTime)??999)<300;
+    const head = `<div class="bxl"><b>${esc(g.map||'?')}</b> · ${esc(when)}${g.gameTime?' · '+esc(g.gameTime)+' long':''} · Game #${esc(g.matchId)}${short?' · <b class="warn">very short: a restart?</b>':''}${g.stats?'':' · replay stats not in yet'}</div>`;
+    const body = !ps ? `<div class="bxr"><span class="bxn muted">Not a two-sided game.</span></div>` : qrow(ps[0], w<0?'':w===0?'won':'lost') + qrow(ps[1], w<0?'':w===1?'won':'lost');
     const pick = fits.length ? `<select id="pf-${esc(g.matchId)}">${fits.map(f=>`<option value="${f.S.id}|${f.m.id}|${f.flip?1:0}">${esc(f.S.name)}: ${esc(sideName(sidesOf(f.S,f.m,t)[0]))} v ${esc(sideName(sidesOf(f.S,f.m,t)[1]))}</option>`).join('')}</select>
         ${ps && w<0 ? `<select id="pw-${esc(g.matchId)}"><option value="">who won?…</option><option value="0">${esc(ps[0].map(p=>p.name).join(', '))}</option><option value="1">${esc(ps[1].map(p=>p.name).join(', '))}</option></select>` : ''}
         <button class="pri sm" data-act="pconf" data-mid="${esc(g.matchId)}">Confirm</button>` : `<span class="small muted">No open fixture has these players on opposite sides.</span>`;
-    return `<div class="match"><div class="small muted">${esc(when)} · ${esc(g.map||'?')}${g.gameTime?' · '+esc(g.gameTime):''}${g.stats?'':' · replay stats not in yet'}</div>${body}
-      <div class="row" style="margin-top:6px">${pick} <button class="sm" data-act="pskip" data-mid="${esc(g.matchId)}">Not a tourney game</button></div></div>`; }).join('');
-  return detLine() + `<div class="card edit-only" id="pendcard"><h3>Confirm games (${list.length})</h3><div class="small muted" style="margin-bottom:8px">Found automatically, oldest first. A game only counts once you confirm it.</div>${rows}</div>`;
+    return `<div class="qgame"><div class="bx done qbx">${head}${body}</div><div class="row qact">${pick} <button class="sm" data-act="pskip" data-mid="${esc(g.matchId)}">Not a tourney game</button></div></div>`; };
+  /* games that could belong to the same fixture are listed together, so a restart or an extra game stands out */
+  const groups = new Map(); list.forEach(g=>{ const f = pendFits(g,t), k = f.length===1 ? f[0].S.id+'|'+f[0].m.id : f.length ? 'many' : 'none'; if(!groups.has(k)) groups.set(k, {f:f[0], gs:[]}); groups.get(k).gs.push(g); });
+  const rows = [...groups.entries()].map(([k,{f,gs}])=>{
+    if(gs.length<2 || !f) return gs.map(row1).join('');
+    const sd = sidesOf(f.S,f.m,t), bo = matchBo(f.S,f.m), sc = score(f.m), left = f.S.playAll ? bo-(sc[0]+sc[1]) : Math.max(0, need(bo)*2-1-(sc[0]+sc[1]));
+    return `<div class="pgroup"><div class="pgh"><b>${esc(sideName(sd[0]))} v ${esc(sideName(sd[1]))}</b> <span class="small muted">${esc(f.S.name)} · ${gs.length} possible games · ${f.S.playAll?'play all '+bo:'best of '+bo}, ${sc[0]}–${sc[1]} so far${gs.length>left?` · <b class="warn">more games than maps left (${left}): check for restarts</b>`:''}</span></div>${gs.map(row1).join('')}</div>`; }).join('');
+  return detLine() + `<div class="card edit-only" id="pendcard"><h3>Confirm games <span class="qbadge">${list.length}</span></h3><div class="small muted" style="margin-bottom:8px">Found automatically, oldest first. ${t.autoConfirm?'Clear games are confirmed automatically; these ones need you.':'A game only counts once you confirm it.'}</div>${rows}</div>`;
 }
 async function pendSet(mid, patch){ const {fs, d} = live.fb; await fs.updateDoc(fs.doc(d,'tournaments',live.tid,'pending',String(mid)), Object.assign({by:live.user.uid, at:fs.serverTimestamp()}, patch)); }
 async function pendConfirm(mid){
@@ -1872,7 +1908,7 @@ async function gameStats(mid){
     <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="pri" data-r="1">Close</button></div></div>`;
   document.body.appendChild(w); w.addEventListener('click', e=>{ if(e.target===w || e.target.closest('[data-r]')) w.remove(); });
 }
-const statsBtn = g => LIVE && g && g.mid ? ` <button class="sm" data-act="gstats" data-mid="${esc(g.mid)}">Stats</button>` : '';
+const statsBtn = g => (LIVE && !VIEW && g && g.auto ? ` <span class="autotag" title="Confirmed automatically by the game finder. If it's wrong, remove it with ✕.">auto</span>` : '') + (LIVE && g && g.mid ? ` <button class="sm" data-act="gstats" data-mid="${esc(g.mid)}">Stats</button>` : '');
 /* averages from the headline numbers saved with each confirmed game */
 function replayAvg(pid, t){ let n = 0, e = 0, f = 0, fn = 0; const sec = v => { const m = /^(\d+):(\d\d)$/.exec(v||''); return m ? +m[1]*60 + +m[2] : null; };
   allMatches(t).forEach(({m})=>(m.games||[]).forEach(g=>{ const s = g && g.st && g.st[pid]; if(!s) return; if(s.eapm!=null){ n++; e += s.eapm; } const x = sec(s.feudal); if(x!=null){ fn++; f += x; } }));
@@ -1924,8 +1960,12 @@ function roundsView(S){
     out += `<div class="card edit-only swbar"><b>Round ${r} of ${S.rounds} paired.</b> ${r<S.rounds?`<button class="pri" data-act="swiss" data-s="${S.id}">Pair round ${r+1}</button>`:'All rounds paired.'} ${r?`<button class="danger" data-act="unswiss" data-s="${S.id}">Undo last pairing</button>`:''}${r?' <span class="small muted swhint">Click a match to enter results or change who plays whom.</span>':''}</div>`; }
   else if(!VIEW && S.matches.length) out += `<div class="small muted" style="margin-bottom:8px">Click a match to enter results${S.type==='rr'?' or move it to another round':''}.</div>`;
   const groups = {}; S.matches.forEach(m=>{ const k = (S.ent!=='rotate'&&(S.groups||1)>1) ? `Group ${GL(m.g)}` : ''; ((groups[k]=groups[k]||{})[m.r] = (groups[k][m.r]||[])).push(m); });
+  const maxR = S.matches.reduce((a,m)=>Math.max(a,m.r),0);
+  /* Swiss: later rounds are paired from earlier results, so show where they'll go */
+  const future = S.type==='swiss' ? Array.from({length:Math.max(0,(S.rounds||0)-maxR)},(_,i)=>maxR+1+i).map(r=>`<div class="bkcol future"><div class="bkhead">Round ${r}</div><div class="bkbody"><div class="bkfuture">${r===1?'Round 1 fixtures appear once the organiser pairs them.':`Round ${r} fixtures depend on round ${r-1} results.`}</div></div></div>`).join('') : '';
+  if(!S.matches.length && future) out += `<div class="bk rnd">${future}</div>`;
   Object.entries(groups).forEach(([g,rounds])=>{ if(g) out += `<h3 style="margin-top:14px">${g}</h3>`;
-    out += `<div class="bk rnd">${Object.entries(rounds).sort((a,b)=>a[0]-b[0]).map(([r,ms])=>`<div class="bkcol"><div class="bkhead">Round ${r}</div><div class="bkbody">${ms.map(m=>`<div class="bkslot">${boxHtml(S,m,{})}</div>`).join('')}</div></div>`).join('')}</div>`; });
+    out += `<div class="bk rnd">${Object.entries(rounds).sort((a,b)=>a[0]-b[0]).map(([r,ms])=>`<div class="bkcol"><div class="bkhead">Round ${r}</div><div class="bkbody">${ms.map(m=>`<div class="bkslot">${boxHtml(S,m,{})}</div>`).join('')}</div></div>`).join('')}${future}</div>`; });
   return out + matchPanel(S);
 }
 
