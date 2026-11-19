@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-8Icj7n8sy8HPn9YOvVy9/mabRpFA+bAMvZd95P4YvlQ=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-29zhO/5Uz26z0rtW+ZZiKc5Uu4hiMKPIYNOd5ybF4/k=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -657,11 +657,13 @@ tr[data-act]:hover td{background:color-mix(in srgb,var(--accent) 8%,transparent)
 .mvhead .s.win{background:linear-gradient(90deg,color-mix(in srgb,var(--win-bg) 35%,transparent),transparent)}
 .mvhead .s.r.win{background:linear-gradient(270deg,color-mix(in srgb,var(--win-bg) 35%,transparent),transparent)}
 .mvhead .s.loss a{color:var(--muted)}
+.mvhead .s.loss{background:linear-gradient(90deg,color-mix(in srgb,var(--loss) 22%,transparent),transparent)}
+.mvhead .s.r.loss{background:linear-gradient(270deg,color-mix(in srgb,var(--loss) 22%,transparent),transparent)}
 .mvhead .mid{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--rail);padding:8px}
 .mvhead .mid b{font-family:var(--head);font-size:1.9rem;color:var(--accent);line-height:1.1}
 .mvhead .mid small{color:var(--muted);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase}
 .mvgames{display:grid;gap:8px;margin-top:10px}
-.mvg{display:grid;grid-template-columns:150px minmax(0,1fr) 80px minmax(0,1fr) 130px;gap:12px;align-items:center;padding:10px 14px;border:1px solid var(--line);border-radius:6px;background:var(--raised)}
+.mvg{display:grid;grid-template-columns:150px minmax(0,1fr) minmax(0,1fr) 130px;gap:12px;align-items:center;padding:10px 14px;border:1px solid var(--line);border-radius:6px;background:var(--raised)}
 .mvg.has{cursor:pointer;transition:border-color .12s,background .12s}
 .mvg.has:hover,.mvg.has:focus-visible{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--raised));outline:none}
 .mvgn{display:flex;flex-direction:column;gap:1px}.mvgn b{font-family:var(--head);color:var(--accent);font-size:.8rem;letter-spacing:.1em}.mvgn span{font-weight:700}.mvgn small{color:var(--muted)}
@@ -687,6 +689,40 @@ tr[data-act]:hover td{background:color-mix(in srgb,var(--accent) 8%,transparent)
 .gslooks button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
 .gslooks button:hover:not(.on){color:var(--ink);border-color:var(--line2)}
 @media (max-width:700px){.gslooks{padding:10px 12px 0}}
+
+/* each game: winning side tinted green, losing side red, with W / L cells like the bracket boxes */
+.mvps{display:flex;align-items:stretch;gap:0;border-radius:5px;overflow:hidden;border:1px solid var(--line);opacity:1}
+.mvps.win{background:linear-gradient(90deg,color-mix(in srgb,var(--win-bg) 34%,transparent),color-mix(in srgb,var(--win-bg) 10%,transparent));border-color:color-mix(in srgb,var(--win-bg) 60%,var(--line))}
+.mvps.loss{background:linear-gradient(90deg,color-mix(in srgb,var(--loss) 16%,transparent),color-mix(in srgb,var(--loss) 4%,transparent));border-color:color-mix(in srgb,var(--loss) 35%,var(--line))}
+.mvps.r{flex-direction:row-reverse}
+.mvps.r.win{background:linear-gradient(270deg,color-mix(in srgb,var(--win-bg) 34%,transparent),color-mix(in srgb,var(--win-bg) 10%,transparent))}
+.mvps.r.loss{background:linear-gradient(270deg,color-mix(in srgb,var(--loss) 16%,transparent),color-mix(in srgb,var(--loss) 4%,transparent))}
+.mvwl{flex:0 0 26px;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.8rem;color:#fff}
+.mvps.win .mvwl{background:var(--win-bg)}.mvps.loss .mvwl{background:color-mix(in srgb,var(--loss) 70%,#000)}
+.mvpl{flex:1;display:flex;flex-wrap:wrap;gap:4px 12px;padding:7px 10px;min-width:0}
+.mvps.loss .mvp a{color:var(--muted)}
+@media (max-width:860px){.mvps{flex-direction:row}.mvps.r{flex-direction:row}.mvpl{flex-direction:column;gap:6px}}
+
+.mvsc{display:flex;gap:4px;margin-bottom:3px}
+.mvsc span{min-width:38px;padding:2px 8px;border-radius:4px;text-align:center;font-family:var(--head);font-size:1.6rem;font-weight:800;line-height:1.25;color:#fff;background:var(--raised)}
+.mvsc span.win{background:var(--win-bg)}.mvsc span.loss{background:color-mix(in srgb,var(--loss) 70%,#000)}
+@media (max-width:860px){.mvsc span{min-width:28px;font-size:1.2rem;padding:1px 6px}}
+
+.mvseries{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;padding:12px 14px;border:1px dashed color-mix(in srgb,var(--accent) 55%,var(--line));border-radius:6px;background:color-mix(in srgb,var(--accent) 6%,var(--raised));cursor:pointer}
+.mvseries>div{display:flex;flex-direction:column;gap:2px}
+.mvseries:hover,.mvseries:focus-visible{border-style:solid;border-color:var(--accent);outline:none}
+.gsth.loss{background:color-mix(in srgb,var(--loss) 16%,var(--raised))}
+.gsteam.loss{border-color:color-mix(in srgb,var(--loss) 35%,var(--line))}
+.gstop .mvsc{margin:0 auto}
+/* stats unfolded under a game / the series */
+.gsinline{border:1px solid color-mix(in srgb,var(--accent) 45%,var(--line));border-top:0;border-radius:0 0 6px 6px;margin-top:-9px;background:var(--card);padding-bottom:4px}
+.gsinline .gslooks{padding:12px 16px 0}.gsinline .gsbody{padding:0 16px}.gsinline .gsfoot{margin-top:10px;padding:10px 16px}
+.gsinline .gssvg{width:100%}
+.mvg.open{border-color:color-mix(in srgb,var(--accent) 45%,var(--line));border-radius:6px 6px 0 0;background:color-mix(in srgb,var(--accent) 8%,var(--raised))}
+.mvseries.open{border-style:solid;border-radius:6px 6px 0 0}
+.ssinline{margin-top:0}
+.mvg,.mvseries{scroll-margin-top:70px}
+@media (max-width:700px){.gsinline .gsbody{padding:0 10px}.gsinline .gslooks{padding:10px 10px 0}.gsinline .gsfoot{flex-direction:column;align-items:flex-start;gap:8px;padding:10px}}
 </style>
 </head>
 <body>
@@ -1929,6 +1965,10 @@ async function siteAct(a, d, el){
     case 'sdiv': ui.sdiv = d.v || ''; render(); return true;
     case 'team': ui.team = d.v || null; window.scrollTo(0,0); render(); return true;
     case 'tplayer': ui.tab = 'players'; ui.player = d.v; ui.team = null; window.scrollTo(0,0); render(); return true;
+    case 'ssinline': ui.ssOpen = ui.ssOpen===d.m ? null : d.m; ui.gsOpen = null; render(); { const x = document.querySelector('.mvseries'); if(x && ui.ssOpen) x.scrollIntoView({behavior:'smooth', block:'start'}); } return true;
+    case 'gsinline': { const mid = String(d.mid); if(ui.gsOpen===mid){ ui.gsOpen = null; render(); return true; }
+      const g = await gsLoad(mid); if(!g){ await say('Replay stats for this game aren\'t available.'); return true; }
+      ui.gsOpen = mid; ui.ssOpen = null; render(); const x = document.querySelector(`.mvg[data-mid="${CSS.escape(mid)}"]`); if(x) x.scrollIntoView({behavior:'smooth', block:'start'}); return true; }
     case 'tteam': ui.tab = 'teams'; ui.team = d.v || null; ui.player = null; window.scrollTo(0,0); render(); return true;
     case 'spub': { const p = pubState(); if(p===null) return true; const {fs, d} = live.fb;
       try{ await fs.setDoc(fs.doc(d,'index',live.tid), {pub: !p}, {merge:true}); live.pub = !p; live.dirAt = 0; live.mine = null; }catch(e){ await say('Could not change that: '+(e.code||e.message)); }
@@ -2106,22 +2146,34 @@ function gsLookC(g, TT){
     <h4 class="gsh4">Ages <span class="muted small">faint = Dark, then Feudal, Castle, Imperial</span></h4>${lanesSvg}${chart}
     <div class="tablewrap"><table class="gstab"><tr><th></th><th>Player</th><th>Civ</th><th class="n">eAPM</th><th>Opening</th><th class="n">Mil. queued</th><th class="n">TC idle</th></tr>${ps.map(row).join('')}</table></div>`; }
 
-async function gameStats(mid){
-  let g = live.games[mid];
+async function gsLoad(mid){ let g = live.games[mid];
   if(!g){ try{ const {fs, d} = live.fb, s = await fs.getDoc(fs.doc(d,'tournaments',live.tid,'games',String(mid))); if(s.exists()) g = live.games[mid] = JSON.parse(s.data().json); }catch(e){} }
-  if(!g){ await say('Replay stats for this game aren\'t available.'); return; }
-  const TT = gsTeams(g), looks = [['b','Cards'],['a','Table'],['c','Timeline']];
-  let look = window.GS_LOOK || GS_LOOK; try{ const v = localStorage.getItem('tt-gslook'); if(v && 'abc'.includes(v)) look = v; }catch(e){}
-  const body = L => L==='b' ? gsLookB(g,TT) : L==='c' ? gsLookC(g,TT) : gsLookA(g,TT);
+  return g || null; }
+const GS_LOOKS = [['b','Cards'],['a','Table'],['c','Timeline']];
+function gsLookNow(){ let look = window.GS_LOOK || GS_LOOK; try{ const v = localStorage.getItem('tt-gslook'); if(v && 'abc'.includes(v)) look = v; }catch(e){} return look; }
+const gsBody = (g, TT, L) => L==='b' ? gsLookB(g,TT) : L==='c' ? gsLookC(g,TT) : gsLookA(g,TT);
+const gsTabs = L => GS_LOOKS.map(([k,n])=>`<button class="${k===L?'on':''}" data-gsl="${k}" ${k===L?'aria-current="true"':''}>${n}</button>`).join('');
+const gsLink = mid => `<a href="https://www.aoe2insights.com/match/${encodeURIComponent(mid)}/" target="_blank" rel="noopener">Match on AoE2 Insights ↗</a>`;
+/* the stats unfolded under a game in the match panel (needs the game already loaded into live.games) */
+function gsInlineHtml(mid){ const g = live.games[mid]; if(!g) return ''; const L = gsLookNow();
+  return `<div class="gsinline" data-mid="${esc(mid)}"><nav class="gslooks" aria-label="View">${gsTabs(L)}</nav><div class="gsbody">${gsBody(g, gsTeams(g), L)}</div>
+    <div class="gsfoot"><span class="small muted">${esc(g.gameTime||'')} game time${g.realTime?` · ${esc(g.realTime)} real time`:''} · ${gsLink(mid)}</span><button class="sm" data-act="gsinline" data-mid="${esc(mid)}">Hide stats ▴</button></div></div>`; }
+/* tabs and row toggles inside unfolded stats (the panel is re-rendered often, so listen on the document) */
+document.addEventListener('click', e=>{ const box = e.target.closest('.gsinline'); if(!box) return;
+  const t = e.target.closest('[data-gsl]'); if(t){ try{ localStorage.setItem('tt-gslook', t.dataset.gsl); }catch(x){} window.GS_LOOK = t.dataset.gsl; const g = live.games[box.dataset.mid];
+    box.querySelector('.gslooks').innerHTML = gsTabs(t.dataset.gsl); box.querySelector('.gsbody').innerHTML = gsBody(g, gsTeams(g), t.dataset.gsl); return; }
+  const r = e.target.closest('.gsrow[data-gs]'); if(r && !e.target.closest('a')){ const d = document.getElementById(r.dataset.gs); d.hidden = !d.hidden; r.classList.toggle('open', !d.hidden); } });
+async function gameStats(mid){
+  const g = await gsLoad(mid); if(!g){ await say('Replay stats for this game aren\'t available.'); return; }
+  const TT = gsTeams(g); let look = gsLookNow();
   const res = `<div class="gsvs">${TT.map(T_=>`<span class="${T_.won?'win':'loss'}">${esc(T_.name)}</span>`).join('<b>def.</b>')}</div>`;
-  const tabs = L => looks.map(([k,n])=>`<button class="${k===L?'on':''}" data-gsl="${k}" ${k===L?'aria-current="true"':''}>${n}</button>`).join('');
   const w = document.createElement('div'); w.className = 'modal gsmodal';
   w.innerHTML = `<div class="mbox gsbox"><div class="gstop"><div><div class="gsmap">${esc(g.map||'Game')}</div><div class="small muted">${esc(g.gameTime||'')} game time${g.realTime?` · ${esc(g.realTime)} real time`:''}</div></div>
-    ${res}<button class="gsclose" data-r="1" aria-label="Close">✕</button></div><nav class="gslooks" aria-label="View">${tabs(look)}</nav><div class="gsbody">${body(look)}</div>
-    <div class="gsfoot"><a href="https://www.aoe2insights.com/match/${encodeURIComponent(mid)}/" target="_blank" rel="noopener">Match on AoE2 Insights ↗</a><button class="pri" data-r="1">Close</button></div></div>`;
+    ${res}<button class="gsclose" data-r="1" aria-label="Close">✕</button></div><nav class="gslooks" aria-label="View">${gsTabs(look)}</nav><div class="gsbody">${gsBody(g,TT,look)}</div>
+    <div class="gsfoot">${gsLink(mid)}<button class="pri" data-r="1">Close</button></div></div>`;
   document.body.appendChild(w);
-  w.addEventListener('click', e=>{ const t = e.target.closest('[data-gsl]'); if(t){ look = t.dataset.gsl; try{ localStorage.setItem('tt-gslook', look); }catch(x){}
-      w.querySelector('.gslooks').innerHTML = tabs(look); w.querySelector('.gsbody').innerHTML = body(look); return; }
+  w.addEventListener('click', e=>{ const t = e.target.closest('[data-gsl]'); if(t){ look = t.dataset.gsl; window.GS_LOOK = look; try{ localStorage.setItem('tt-gslook', look); }catch(x){}
+      w.querySelector('.gslooks').innerHTML = gsTabs(look); w.querySelector('.gsbody').innerHTML = gsBody(g,TT,look); return; }
     const r = e.target.closest('.gsrow[data-gs]'); if(r && !e.target.closest('a')){ const d = document.getElementById(r.dataset.gs); d.hidden = !d.hidden; r.classList.toggle('open', !d.hidden); return; }
     if(e.target===w || e.target.closest('[data-r]') || e.target.closest('[data-act=tplayer],[data-act=tteam]')) w.remove(); });
 }
@@ -2162,17 +2214,21 @@ function matchView(S, m){
   if(sd[1]===null && sd[0]) return `<div class="mvhead"><div class="s">${sideLink(sd[0])}</div><div class="mid"><small>bye</small></div><div class="s r"></div></div>`;
   const w = winnerOf(S,m,sd), sc = score(m), bo = matchBo(S,m), played = (m.games||[]).filter(g=>g.w===0||g.w===1);
   const head = `<div class="mvhead"><div class="s ${w===0?'win':w===1?'loss':''}">${sideLink(sd[0])}</div>
-    <div class="mid"><b>${played.length?sc.join(' – '):'VS'}</b><small>${bo>1?`Best of ${bo}`:'Single game'}</small></div>
+    <div class="mid">${played.length?`<div class="mvsc"><span class="${w===0?'win':w===1?'loss':''}">${sc[0]}</span><span class="${w===1?'win':w===0?'loss':''}">${sc[1]}</span></div>`:'<b>VS</b>'}<small>${bo>1?`Best of ${bo}`:'Single game'}</small></div>
     <div class="s r ${w===1?'win':w===0?'loss':''}">${sideLink(sd[1],true)}</div></div>`;
   const mem = i => sd[i] ? sd[i].flatMap(k=>entMembers(k,t)) : [];
   const plist = (g, i) => { const ps = mem(i).filter(p=>(g.civs||{})[p] || (g.st||{})[p]);
-    return `<div class="mvps ${g.w===i?'win':''}">${ps.map(p=>`<span class="mvp"><a href="javascript:void 0" data-act="tplayer" data-v="${esc(p)}">${esc(P(p).name)}</a>${g.civs&&g.civs[p]?`<small>${esc(g.civs[p])}</small>`:''}</span>`).join('')||'<span class="muted small">no civ picks saved</span>'}</div>`; };
+    return `<div class="mvps ${g.w===i?'win':'loss'} ${i?'r':''}"><span class="mvwl" title="${g.w===i?'Won':'Lost'}">${g.w===i?'W':'L'}</span><div class="mvpl">${ps.map(p=>`<span class="mvp"><a href="javascript:void 0" data-act="tplayer" data-v="${esc(p)}">${esc(P(p).name)}</a>${g.civs&&g.civs[p]?`<small>${esc(g.civs[p])}</small>`:''}</span>`).join('')||'<span class="muted small">no civ picks saved</span>'}</div></div>`; };
   const rows = played.map((g,i)=>{ const st = LIVE && g.mid;
-    return `<div class="mvg ${st?'has':''}" ${st?`data-act="gstats" data-mid="${esc(g.mid)}" role="button" tabindex="0" title="Open game stats"`:''}>
+    const open = st && ui.gsOpen===String(g.mid) && live.games[g.mid];
+    return `<div class="mvg ${st?'has':''} ${open?'open':''}" ${st?`data-act="gsinline" data-mid="${esc(g.mid)}" role="button" tabindex="0" aria-expanded="${open?'true':'false'}" title="${open?'Hide':'Show'} game stats"`:''}>
       <div class="mvgn"><b>G${i+1}</b><span>${esc(g.map||'')}</span>${g.len?`<small>${esc(g.len)}</small>`:''}</div>
-      ${plist(g,0)}<div class="mvw"><span class="${g.w===0?'l':'r'}" title="${esc(sideName(sd[g.w]))} won"><i class="wfull">${esc(sideName(sd[g.w]))} won</i><i class="wshort">Won</i></span></div>${plist(g,1)}
-      <div class="mvgo">${st?`<span class="gsbtn">Game stats <b>›</b></span>`:'<span class="muted small">no replay</span>'}</div></div>`; }).join('');
-  return head + (rows ? `<div class="mvgames">${rows}</div>` : `<div class="muted small" style="margin:10px 2px">No games played yet.</div>`);
+      ${plist(g,0)}${plist(g,1)}
+      <div class="mvgo">${st?`<span class="gsbtn">Game stats <b>${open?'▴':'▾'}</b></span>`:'<span class="muted small">no replay</span>'}</div></div>${open?gsInlineHtml(String(g.mid)):''}`; }).join('');
+  const withSt = played.filter(g=>g.st && Object.keys(g.st).length).length;
+  const sopen = ui.ssOpen===m.id;
+  const sbtn = withSt >= 2 ? `<div class="mvseries ${sopen?'open':''}" data-act="ssinline" data-m="${m.id}" role="button" tabindex="0" aria-expanded="${sopen?'true':'false'}"><div><b>Series stats</b><span class="small muted">Every player's averages across all ${played.length} games</span></div><span class="gsbtn">${sopen?'Hide':'Show'} <b>${sopen?'▴':'▾'}</b></span></div>${sopen?`<div class="gsinline ssinline">${seriesBody(S,m)}</div>`:''}` : '';
+  return head + (rows ? `<div class="mvgames">${rows}</div>${sbtn}` : `<div class="muted small" style="margin:10px 2px">No games played yet.</div>`);
 }
 function bracketView(S){
   const R = S.matches.reduce((a,m)=>Math.max(a,m.r),0), seeds = seedMap(S); let cols = '';
@@ -2203,6 +2259,25 @@ function roundsView(S){
 /* a row or card that opens a team's or player's page (viewers only, organisers click into inputs in the same rows) */
 function entAct(k){ if(!VIEW || !k || !LIVE) return ''; const [kind,id] = k.split(':'), n = entName(k);
   return kind==='t' ? ` data-act="tteam" data-v="${esc(id)}" title="Open ${esc(n)}"` : kind==='p' ? ` data-act="tplayer" data-v="${esc(id)}" title="Open ${esc(n)}"` : ''; }
+/* series stats: each player's averages across every game of the match, from the headline numbers saved with each game */
+function seriesBody(S, m){
+  const t = T(), sd = sidesOf(S,m,t), w = winnerOf(S,m,sd), sc = score(m), played = (m.games||[]).filter(g=>g.w===0||g.w===1);
+  const sec = v => { const x = /^(\d+):(\d\d)$/.exec(v||''); return x ? +x[1]*60 + +x[2] : null; }, ms = v => v==null ? '–' : `${Math.floor(v/60)}:${String(Math.round(v)%60).padStart(2,'0')}`;
+  const avg = a => { const v = a.filter(x=>x!=null && !isNaN(x)); return v.length ? v.reduce((p,q)=>p+q,0)/v.length : null; }, r0 = v => v==null ? '–' : Math.round(v);
+  const side = i => { const ps = (sd[i]||[]).flatMap(k=>entMembers(k,t)).filter(p=>played.some(g=>(g.civs||{})[p] || (g.st||{})[p]));
+    const rows = ps.map(p=>{ const gs = played.filter(g=>(g.civs||{})[p] || (g.st||{})[p]), st = gs.map(g=>(g.st||{})[p]).filter(Boolean), f = k => st.map(x=>x[k]);
+      const won = gs.filter(g=>g.w===i).length, civs = gs.map(g=>(g.civs||{})[p]).filter(Boolean), ops = [...new Set(f('opening').filter(Boolean))];
+      return `<tr><td><a class="gsn" style="--pc:var(--ink)" href="javascript:void 0" data-act="tplayer" data-v="${esc(p)}">${esc(P(p).name)}</a></td><td class="n">${won}–${gs.length-won}</td><td class="small">${civs.map(esc).join(', ')||'–'}</td>
+        <td class="n"><b>${r0(avg(f('eapm')))}</b></td><td class="n">${r0(avg(f('peak')))}</td><td class="n">${r0(avg(f('apm')))}</td><td class="n">${ms(avg(f('feudal').map(sec)))}</td><td class="n">${ms(avg(f('castle').map(sec)))}</td><td class="n">${ms(avg(f('imp').map(sec)))}</td>
+        <td class="n">${ms(avg(f('idleC')))}</td><td class="n">${r0(avg(f('flt')))}</td><td class="n">${avg(f('milPct'))==null?'–':r0(avg(f('milPct')))+'%'}</td><td class="small gsop">${ops.map(esc).join(', ')||'–'}</td></tr>`; }).join('');
+    const k = sd[i] && sd[i].length===1 ? sd[i][0] : null, tm = k && k.startsWith('t:') ? teamOf(t, k.slice(2)) : null;
+    const nm = tm ? `<a href="javascript:void 0" data-act="tteam" data-v="${esc(tm.id)}">${esc(tm.name)}</a>` : esc(sideName(sd[i]));
+    const res = w===i ? 'win' : w==null ? '' : 'loss';
+    return `<div class="gsteam ${res}"><div class="gsth ${res}">${k?bBadge(k):''}<span class="gsthn">${nm}</span><span class="gstag">${sc[i]} map${sc[i]===1?'':'s'} won</span></div>
+      <div class="tablewrap"><table class="gstab"><tr><th>Player</th><th class="n">Maps</th><th>Civs</th><th class="n">eAPM</th><th class="n" title="Busiest single minute">Peak</th><th class="n">APM</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">Imp</th><th class="n" title="Town Center idle from the start until the Castle Age click">TC idle</th><th class="n" title="Average banked resources">Float</th><th class="n" title="Share of actions that were military">Mil.</th><th>Openings</th></tr>${rows}</table></div></div>`; };
+  return `<div class="gsbody">${side(0)}${side(1)}<div class="small muted">Averages of each player's ${played.length} games in this series. Age times are when the player clicked up. A dash means no replay numbers for that.</div></div>
+    <div class="gsfoot"><span></span><button class="sm" data-act="ssinline" data-m="${m.id}">Hide series stats ▴</button></div>`;
+}
 
 /* ---------- Broadcast look: big hero, match cards (fixed VS column), team badges ---------- */
 function bHue(n){ return [...String(n)].reduce((a,c)=>a+c.charCodeAt(0),0)*47%360; }
