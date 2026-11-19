@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-29zhO/5Uz26z0rtW+ZZiKc5Uu4hiMKPIYNOd5ybF4/k=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-E7xOAKPIxBMnurS3kDHbAgQG6FrEaYL85SqzrXpn8vE=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -723,6 +723,46 @@ tr[data-act]:hover td{background:color-mix(in srgb,var(--accent) 8%,transparent)
 .ssinline{margin-top:0}
 .mvg,.mvseries{scroll-margin-top:70px}
 @media (max-width:700px){.gsinline .gsbody{padding:0 10px}.gsinline .gslooks{padding:10px 10px 0}.gsinline .gsfoot{flex-direction:column;align-items:flex-start;gap:8px;padding:10px}}
+
+/* TC douche opening (deleted own TC early, rebuilt by an enemy TC) */
+.gsdouche{font-weight:700;color:#f59e0b;cursor:help;border-bottom:1px dotted currentColor}
+.gsdouche.hot{color:#f87171}
+
+/* Fixtures "All": every stage stacked */
+.fxsec{margin-top:22px}.fxsec:first-of-type{margin-top:8px}
+.fxsech{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.fxsech h2{margin:0}
+.fxsec .card.empty{padding:14px 16px}
+
+.sxhero{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:14px 0 6px}
+.sxhero>div{display:flex;flex-direction:column;padding:18px 20px;border:1px solid color-mix(in srgb,var(--accent) 38%,var(--line));border-radius:6px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent2) 22%,var(--card)),var(--card))}
+.sxhero span{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.sxhero b{font-family:var(--head);font-size:2.4rem;line-height:1.15}.sxhero i{font-style:normal;color:var(--muted);font-size:.85rem}
+.sxgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.sxboard ol{list-style:none;margin:8px 0 0;padding:0}
+.sxboard li{position:relative;display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:8px;padding:7px 8px;border-radius:4px;overflow:hidden}
+.sxboard li .bar{position:absolute;left:0;top:0;bottom:0;width:var(--w);background:color-mix(in srgb,var(--accent) 9%,transparent);z-index:0}
+.sxboard li>*:not(.bar){position:relative;z-index:1}
+.sxboard li.lead .bar{background:color-mix(in srgb,var(--accent) 22%,transparent)}
+.sxboard li.lead b{color:var(--accent)}
+.sxboard .rk{color:var(--muted);font-weight:700}.sxboard b{font-variant-numeric:tabular-nums;font-size:1.05rem}
+.who{display:flex;flex-direction:column;min-width:0}.sxp{color:var(--ink);font-weight:700;text-decoration:none}.sxp:hover{text-decoration:underline}.sxtm{font-size:.74rem;color:var(--muted)}
+.sxrecs{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.sxrec{padding:14px 16px;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:6px;background:var(--card);cursor:pointer;display:flex;flex-direction:column;gap:2px}
+.sxrec:hover{border-color:var(--accent)}.sxrec .lbl{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.sxrec b{font-family:var(--head);font-size:1.8rem}.sxrec i{font-style:normal;font-size:.76rem;color:var(--muted)}
+.sxbars{display:grid;gap:6px;margin-top:10px}.sxbr{display:grid;grid-template-columns:120px 1fr 90px;gap:10px;align-items:center;font-size:.9rem}
+.sxbr .track{height:14px;background:var(--raised);border-radius:3px;overflow:hidden}.sxbr .track span{display:block;height:100%;background:var(--accent2);border-radius:3px}.sxbr .v{text-align:right;color:var(--muted);font-variant-numeric:tabular-nums}
+.sxheat td{transition:none}
+.sxtabs{display:flex;gap:6px;margin:12px 0 0;border-bottom:1px solid var(--line)}
+.sxtabs button{background:transparent;border:0;border-bottom:3px solid transparent;border-radius:0;color:var(--muted);font-family:var(--head);letter-spacing:.08em;text-transform:uppercase;padding:10px 14px}
+.sxtabs button.on{color:var(--ink);border-bottom-color:var(--accent)}
+.sxspots{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+.sxspot{border:1px solid color-mix(in srgb,var(--accent) 38%,var(--line));border-radius:6px;overflow:hidden;background:var(--card)}
+.sxspot .lbl{display:block;padding:7px 14px;background:var(--accent);color:var(--accent-ink);font-family:var(--head);font-size:.75rem;letter-spacing:.14em;text-transform:uppercase}
+.sxspot .main{display:flex;align-items:center;gap:12px;padding:14px;background:linear-gradient(90deg,color-mix(in srgb,var(--accent2) 22%,transparent),transparent)}
+.sxspot .main>div{display:flex;flex-direction:column;flex:1;min-width:0}.sxspot .main .sxp{font-size:1.25rem}.sxspot .main b{font-family:var(--head);font-size:2.2rem;color:var(--accent)}
+.sxspot .ru{display:flex;justify-content:space-between;gap:8px;padding:8px 14px;border-top:1px solid var(--line);font-size:.82rem;color:var(--muted)}.sxspot .ru b{color:var(--ink)}
+@media (max-width:900px){.sxhero{grid-template-columns:1fr 1fr}.sxgrid3,.sxspots{grid-template-columns:1fr}.sxrecs{grid-template-columns:1fr 1fr}.sxhero b{font-size:1.8rem}.sxbr{grid-template-columns:90px 1fr 70px}}
+.sxrec.none{cursor:default;opacity:.7}.sxnone{margin-top:10px}.sxboard,.sxgrid3 .card{margin:0}
 </style>
 </head>
 <body>
@@ -1638,12 +1678,12 @@ function gcCount(){ const g = window.goatcounter; if(!g || !g.count) return;
 const TOUR_TABS = ['fixtures','standings','teams','players','stats','setup','data'];
 function applyTourRoute(r){ ui.tab = TOUR_TABS.includes(r.tab) ? r.tab : 'home'; live.wantTab = (r.tab==='setup'||r.tab==='data') ? r.tab : null;   // organiser tabs wait for sign-in
   ui.player = ui.tab==='players' && r.a ? r.a : null; ui.team = ui.tab==='teams' && r.a ? r.a : null;
-  if(ui.tab==='fixtures'){ ui.stage = r.a || null; ui.mopen = r.b || null; } else ui.mopen = null; }
+  if(ui.tab==='fixtures'){ ui.stage = r.a || 'all'; ui.mopen = r.b || null; } else ui.mopen = null; }
 function tourHash(){ const t = T(), e = encodeURIComponent; let h = '#/t/'+live.tid;
   if(ui.tab==='home' || !TOUR_TABS.includes(ui.tab)) return h; h += '/'+ui.tab;
   if(ui.tab==='players' && ui.player) h += '/'+e(ui.player);
   if(ui.tab==='teams' && ui.team) h += '/'+e(ui.team);
-  if(ui.tab==='fixtures' && t && t.stages.length){ const first = ui.stage===t.stages[0].id; if(ui.stage && (!first || ui.mopen)) h += '/'+e(ui.stage); if(ui.mopen) h += '/'+e(ui.mopen); }
+  if(ui.tab==='fixtures' && t && t.stages.length){ const one = ui.stage && ui.stage!=='all'; if(one) h += '/'+e(ui.stage); else if(ui.mopen) h += '/all'; if(ui.mopen) h += '/'+e(ui.mopen); }
   return h; }
 function syncTourHash(){ if(live.route.page!=='t' || !live.tid || !T() || (live.wantTab && !live.ready)) return; const h = tourHash();
   if(location.hash!==h){ history.pushState(null, '', h); live.route = parseRoute(); gcCount(); } }
@@ -2083,7 +2123,11 @@ const gsMs = v => v==null ? '' : `${Math.floor(v/60)}:${String(Math.round(v)%60)
 function gsPid(p){ return Object.keys(state.players).find(k=>String(state.players[k].pid||'')===String(p.profileId)) || null; }
 function gsTeamOf(pid){ const t = T(); return pid && t ? (t.teams||[]).find(x=>(x.members||[]).includes(pid)) : null; }
 function gsName(p, cls){ const id = gsPid(p), c = PCOL[p.color] || 'var(--ink)', nm = esc(id ? P(id).name : (p.name||'?'));
-  return id ? `<a class="gsn ${cls||''}" style="--pc:${c}" data-act="tplayer" data-v="${id}" href="javascript:void 0" title="${PCOLN[p.color]||''} · open ${nm}'s page">${nm}</a>` : `<span class="gsn ${cls||''}" style="--pc:${c}">${nm}</span>`; }
+  return (id ? `<a class="gsn ${cls||''}" style="--pc:${c}" data-act="tplayer" data-v="${id}" href="javascript:void 0" title="${PCOLN[p.color]||''} · open ${nm}'s page">${nm}</a>` : `<span class="gsn ${cls||''}" style="--pc:${c}">${nm}</span>`); }
+// opening text; a TC "douche" (own TC deleted in Dark/Feudal, new one placed by an enemy TC) gets its details on hover
+function gsOpen(s){ const ds = s.douche, o = esc(s.opening||''); if(!Array.isArray(ds) || !ds.length) return o;
+  const tip = ds.map(d=>`Deleted own TC at ${d.deleted} (${d.age} Age), new TC placed at ${d.built} ${d.in_range?'in range of':'near'} ${d.target||'an enemy'}'s TC (${d.dist} tiles apart)`).join('\n');
+  return `<span class="gsdouche${ds.some(d=>d.in_range)?' hot':''}" title="${esc(tip)}">${o}</span>`; }
 function gsTeams(g){ const by = {}; g.players.forEach(p=>(by[p.team] = by[p.team]||[]).push(p));
   return Object.values(by).map(ps=>{ const tm = gsTeamOf(gsPid(ps.find(p=>gsPid(p))||{})), won = ps.some(p=>p.won);
     return {ps, tm, won, name: tm ? tm.name : 'Team '+ps[0].team}; }).sort((a,b)=>b.won-a.won); }
@@ -2101,7 +2145,7 @@ const gsIdle = s => s && s.tcIdle && ('dark' in s.tcIdle || 'feudal' in s.tcIdle
 /* A: scoreboard. One table per team, winners first, colour bar on each row, click a row for units and build order */
 function gsLookA(g, TT){
   const row = p => { const s = p.stats||{}, a = s.ages||{}, k = 'gs'+p.profileId;
-    return `<tr class="gsrow" style="--pc:${PCOL[p.color]||'#888'}" data-gs="${k}"><td class="gsc"></td><td>${gsName(p)}</td><td>${esc(p.civ||'')}</td><td class="n">${s.eapm??''}</td><td class="n">${s.apm??''}</td><td class="gsop">${esc(s.opening||'')}</td>
+    return `<tr class="gsrow" style="--pc:${PCOL[p.color]||'#888'}" data-gs="${k}"><td class="gsc"></td><td>${gsName(p)}</td><td>${esc(p.civ||'')}</td><td class="n">${s.eapm??''}</td><td class="n">${s.apm??''}</td><td class="gsop">${gsOpen(s)}</td>
       <td class="n">${esc(a.Feudal||'')}</td><td class="n">${esc(a.Castle||'')}</td><td class="n">${esc(a.Imperial||'')}</td><td class="n">${s.military??''}</td><td class="n">${gsMs(gsIdle(s))}</td><td class="gsx">▾</td></tr>
       <tr class="gsdet" id="${k}" hidden><td></td><td colspan="11">${gsMore(p)}</td></tr>`; };
   const head = `<tr><th></th><th>Player</th><th>Civ</th><th class="n">eAPM</th><th class="n">APM</th><th>Opening</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">Imp</th><th class="n" title="Military units queued">Mil. queued</th><th class="n" title="Town Center idle from the start until the Castle Age click">TC idle</th><th></th></tr>`;
@@ -2116,7 +2160,7 @@ function gsLookB(g, TT){
     return `<div class="gscard" style="--pc:${PCOL[p.color]||'#888'}"><div class="gscardh">${gsName(p)}<span class="muted small">${esc(p.civ||'')}</span></div>
       <div class="gsbig"><div><b>${s.eapm??'–'}</b><span>eAPM</span></div><div><b>${esc(a.Feudal||'–')}</b><span>Feudal</span></div><div><b>${esc(a.Castle||'–')}</b><span>Castle</span></div><div><b>${s.military??'–'}</b><span>Mil. queued</span></div></div>
       <div class="gsline">${mk('Feudal','F')}${mk('Castle','C')}${mk('Imperial','I')}</div>
-      <div class="small gsop2">${esc(s.opening||'')}</div>
+      <div class="small gsop2">${gsOpen(s)}</div>
       <div class="gschips">${us.map(([k,v])=>`<span class="pill">${esc(k)} <b>${v}</b></span>`).join('')}</div>
       ${tot?`<div class="gsspent sm">${['economy','military','techs','buildings'].map(k=>sp[k]?`<span class="sp-${k}" style="flex:${sp[k]}" title="${k} ${sp[k]}"></span>`:'').join('')}</div>`:''}
       <details class="gsdd"><summary class="small">Build order</summary>${gsMore(p)}</details></div>`; };
@@ -2141,7 +2185,7 @@ function gsLookC(g, TT){
   const g2 = [0, Math.round(mx/2), mx].map(v=>`<line x1="${L}" x2="${W-10}" y1="${y2(v)}" y2="${y2(v)}" stroke="var(--line)"/><text x="${L-8}" y="${y2(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}</text>`).join('')
     + ticks.map(m=>`<text x="${x(m*60)}" y="${H2-2}" text-anchor="middle" font-size="11" fill="var(--muted)">${m}m</text>`).join('');
   const chart = ser.some(s=>s.length) ? `<h4 class="gsh4">eAPM through the game</h4><svg viewBox="0 0 ${W} ${H2}" class="gssvg" role="img" aria-label="eAPM per minute">${g2}${lines}</svg>` : '';
-  const row = p => { const s = p.stats||{}; return `<tr class="gsrow" style="--pc:${PCOL[p.color]||'#888'}"><td class="gsc"></td><td>${gsName(p)}</td><td>${esc(p.civ||'')}</td><td class="n">${s.eapm??''}</td><td class="gsop">${esc(s.opening||'')}</td><td class="n">${s.military??''}</td><td class="n">${gsMs(gsIdle(s))}</td></tr>`; };
+  const row = p => { const s = p.stats||{}; return `<tr class="gsrow" style="--pc:${PCOL[p.color]||'#888'}"><td class="gsc"></td><td>${gsName(p)}</td><td>${esc(p.civ||'')}</td><td class="n">${s.eapm??''}</td><td class="gsop">${gsOpen(s)}</td><td class="n">${s.military??''}</td><td class="n">${gsMs(gsIdle(s))}</td></tr>`; };
   return `<div class="gsres2">${TT.map(gsTeamHead_=>gsTeamHead(gsTeamHead_)).join('')}</div>
     <h4 class="gsh4">Ages <span class="muted small">faint = Dark, then Feudal, Castle, Imperial</span></h4>${lanesSvg}${chart}
     <div class="tablewrap"><table class="gstab"><tr><th></th><th>Player</th><th>Civ</th><th class="n">eAPM</th><th>Opening</th><th class="n">Mil. queued</th><th class="n">TC idle</th></tr>${ps.map(row).join('')}</table></div>`; }
@@ -2214,7 +2258,7 @@ function matchView(S, m){
   if(sd[1]===null && sd[0]) return `<div class="mvhead"><div class="s">${sideLink(sd[0])}</div><div class="mid"><small>bye</small></div><div class="s r"></div></div>`;
   const w = winnerOf(S,m,sd), sc = score(m), bo = matchBo(S,m), played = (m.games||[]).filter(g=>g.w===0||g.w===1);
   const head = `<div class="mvhead"><div class="s ${w===0?'win':w===1?'loss':''}">${sideLink(sd[0])}</div>
-    <div class="mid">${played.length?`<div class="mvsc"><span class="${w===0?'win':w===1?'loss':''}">${sc[0]}</span><span class="${w===1?'win':w===0?'loss':''}">${sc[1]}</span></div>`:'<b>VS</b>'}<small>${bo>1?`Best of ${bo}`:'Single game'}</small></div>
+    <div class="mid">${played.length?`<div class="mvsc"><span class="${w===0?'win':w===1?'loss':''}">${sc[0]}</span><span class="${w===1?'win':w===0?'loss':''}">${sc[1]}</span></div>`:'<b>VS</b>'}<small>${bo>1?`${S.playAll&&!m.bo?'Play all':'Best of'} ${bo}`:'Single game'}</small></div>
     <div class="s r ${w===1?'win':w===0?'loss':''}">${sideLink(sd[1],true)}</div></div>`;
   const mem = i => sd[i] ? sd[i].flatMap(k=>entMembers(k,t)) : [];
   const plist = (g, i) => { const ps = mem(i).filter(p=>(g.civs||{})[p] || (g.st||{})[p]);
@@ -2277,6 +2321,22 @@ function seriesBody(S, m){
       <div class="tablewrap"><table class="gstab"><tr><th>Player</th><th class="n">Maps</th><th>Civs</th><th class="n">eAPM</th><th class="n" title="Busiest single minute">Peak</th><th class="n">APM</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">Imp</th><th class="n" title="Town Center idle from the start until the Castle Age click">TC idle</th><th class="n" title="Average banked resources">Float</th><th class="n" title="Share of actions that were military">Mil.</th><th>Openings</th></tr>${rows}</table></div></div>`; };
   return `<div class="gsbody">${side(0)}${side(1)}<div class="small muted">Averages of each player's ${played.length} games in this series. Age times are when the player clicked up. A dash means no replay numbers for that.</div></div>
     <div class="gsfoot"><span></span><button class="sm" data-act="ssinline" data-m="${m.id}">Hide series stats ▴</button></div>`;
+}
+/* Fixtures page: "All" shows every stage stacked (the default), or pick one stage */
+function stageBody(S){
+  if(!S.matches.length && S.type!=='swiss' && S.type!=='single') return `<div class="card empty">Fixtures not made yet.${VIEW?'':` <button class="pri" data-act="gen" data-s="${S.id}">Make fixtures</button>`}</div>`;
+  if(S.type==='elim') return bracketView(S);
+  if(S.type==='spoon') return seedNote(S) + S.matches.map(m=>matchHtml(S,m)).join('');
+  if(S.type==='single') return singleHtml(S);
+  return roundsView(S); }
+function pageFixtures(){
+  const t = T(); if(!t.stages.length) return `<div class="card empty">No stages yet.${VIEW?'':' Add the format on <b>Setup › Stages</b>.'}</div>`;
+  if(ui.stage!=='all' && !t.stages.find(S=>S.id===ui.stage)) ui.stage = 'all';
+  const all = ui.stage==='all', many = t.stages.length > 1;
+  const bar = many ? `<div class="stagebar"><button data-act="stage" data-v="all" class="${all?'on':''}">All</button>${t.stages.map(x=>`<button data-act="stage" data-v="${x.id}" class="${x.id===ui.stage?'on':''}">${esc(x.name)}</button>`).join('')}</div>` : '';
+  if(!all || !many){ const S = all ? t.stages[0] : t.stages.find(x=>x.id===ui.stage);
+    return pendCard() + bar + `<h2>${esc(S.name)}</h2><div class="muted small" style="margin-bottom:10px">${esc(stageSummary(S))}</div>` + stageBody(S); }
+  return pendCard() + bar + t.stages.map(S=>`<section class="fxsec"><div class="fxsech"><div><h2>${esc(S.name)}</h2><div class="muted small">${esc(stageSummary(S))}</div></div><button class="sm" data-act="stage" data-v="${S.id}">Show only this ›</button></div>${stageBody(S)}</section>`).join('');
 }
 
 /* ---------- Broadcast look: big hero, match cards (fixed VS column), team badges ---------- */
@@ -2631,20 +2691,42 @@ function pageStats(){
     .filter(p=>none || p.n || ec.some(k=>eloOf(p.id,k))).sort((a,b)=>(b.o.eapm||0)-(a.o.eapm||0) || b.w-a.w || P(a.id).name.localeCompare(P(b.id).name));
   const pcols = [0,1,2,3,4,5,6,8,9];
   const noRow = n => `<tr><td colspan="${n}" class="muted small">No games yet.</td></tr>`;
+  /* Leaderboards layout: headline numbers, top-5 boards, record cards, civ / map bars, heatmap player table */
+  const teamOfP = id => t.teams.find(tm=>tm.members.includes(id));
+  const pl = id => `<a href="javascript:void 0" data-act="tplayer" data-v="${id}" class="sxp">${esc(P(id).name)}</a>`;
+  const timedAll = gs.filter(x=>x.len!=null);
+  const hero = `<div class="sxhero">${[['Maps played', gs.length, `${allMatches(t).filter(({S,m})=>(!sd||(S.div||'')===sd) && (m.games||[]).some(g=>g&&(g.w===0||g.w===1))).length} fixtures with results`],
+      ['Avg game', mmss(L.avg), timedAll.length?`longest ${mmss(L.max)}`:'no games yet'], ['Avg eAPM', sxVal(o,MET[0]), o.n?`${o.n} player-games`:'from replays'], ['Avg Feudal', sxVal(o,MET[3]), o.castle!=null?`Castle ${mmss(o.castle)}`:'click time']].concat((()=>{ const pt = predTile(t), m = /<b[^>]*>([^<]*)<\/b>/.exec(pt); return m ? [['Predictions', m[1], 'favourite won the match']] : []; })())
+    .map(([k,v,sub])=>`<div><span>${k}</span><b>${v}</b><i>${sub}</i></div>`).join('')}</div>`;
+  const board = (title, k, low, fmt, note) => { const rw = q.filter(p=>numOk(p.o[k])).sort((a,b)=>low?a.o[k]-b.o[k]:b.o[k]-a.o[k]).slice(0,5), vals = rw.map(p=>p.o[k]), mx = Math.max(...vals), mn = Math.min(...vals);
+    return `<div class="card sxboard"><h3>${title}</h3>${note?`<div class="small muted">${note}</div>`:''}${rw.length?`<ol>${rw.map((p,i)=>{ const v = p.o[k], w = low ? mn/v*100 : v/mx*100, tm = teamOfP(p.id);
+      return `<li class="${i===0?'lead':''}"><span class="rk">${i+1}</span><div class="who">${pl(p.id)}${tm?`<span class="sxtm">${esc(tm.name)}</span>`:''}</div><b>${fmt(v)}</b><span class="bar" style="--w:${Math.max(8,w).toFixed(0)}%"></span></li>`; }).join('')}</ol>`:'<div class="muted small sxnone">No games yet.</div>'}</div>`; };
+  const boards = [board('Highest eAPM','eapm',0,v=>Math.round(v)), board('Fastest Feudal','feudal',1,mmss,'average click time'), board('Fastest Castle','castle',1,mmss,'average click time'),
+    board('Least TC idle','idleC',1,mmss,'idle before the Castle Age click'), board('Lowest float','flt',1,v=>Math.round(v),'average banked resources'), board('Most aggressive','milPct',0,v=>Math.round(v)+'%','share of military actions')].join('');
+  const recCard = (title, f, low, fmt) => { const c = recs.filter(x=>x.s).map(x=>({r:x, v:f(x.s)})).filter(x=>numOk(x.v)).sort((a,b)=>low?a.v-b.v:b.v-a.v)[0];
+    if(!c) return `<div class="sxrec none"><span class="lbl">${title}</span><b>–</b><i>no games yet</i></div>`; const x = c.r.x, live_ = typeof LIVE!=='undefined' && LIVE && x.g.mid;
+    return `<div class="sxrec" ${live_?`data-act="gstats" data-mid="${esc(x.g.mid)}" role="button" tabindex="0" title="Open game stats"`:''}><span class="lbl">${title}</span><b>${fmt(c.v)}</b><div>${pl(c.r.id)}</div><i>${esc(x.g.map||'')} · ${esc(sideName(x.sd[0]))} v ${esc(sideName(x.sd[1]))}</i></div>`; };
+  const recCards = `<div class="sxrecs">${[recCard('Fastest Feudal', s=>tsec(s.feudal), 1, mmss), recCard('Fastest Castle', s=>tsec(s.castle), 1, mmss), recCard('Fastest Imperial', s=>tsec(s.imp), 1, mmss),
+    recCard('Highest game eAPM', s=>s.eapm, 0, v=>Math.round(v)), recCard('Busiest minute', s=>s.peak, 0, v=>Math.round(v))].join('')}</div>`;
+  const cmx = Math.max(1,...civs.map(c=>c[1].n)), mmx = Math.max(1,...maps.map(m=>m[1].n));
+  const civBars = `<div class="card"><h3>Civs</h3><div class="small muted">Bar length = picks, colour = win rate (green wins more, red loses more).</div>${civs.length?`<div class="sxbars">${civs.map(([c,e])=>{ const by = Object.entries(e.by).sort((a,b)=>b[1]-a[1])[0], wr = e.w/e.n;
+      return `<div class="sxbr" title="${esc(c)}: ${e.w}–${e.n-e.w}${by&&state.players[by[0]]?', most by '+esc(P(by[0]).name):''}"><span class="nm">${esc(c)}</span><span class="track"><span style="width:${(e.n/cmx*100).toFixed(0)}%;background:color-mix(in srgb,var(--win-bg) ${Math.round(wr*100)}%,var(--loss))"></span></span><span class="v">${e.n} · ${pct(e.w,e.n)}</span></div>`; }).join('')}</div>`:'<div class="muted small sxnone">No games yet.</div>'}</div>`;
+  const mapBars = `<div class="card"><h3>Maps</h3><div class="small muted">Games played and average length.</div>${maps.length?`<div class="sxbars">${maps.map(([k,e])=>`<div class="sxbr" title="${esc(k)}: shortest ${e.len.length?mmss(Math.min(...e.len)):'–'}, longest ${e.len.length?mmss(Math.max(...e.len)):'–'}"><span class="nm">${esc(k)}</span><span class="track"><span style="width:${(e.n/mmx*100).toFixed(0)}%"></span></span><span class="v">${e.n} · ${e.len.length?mmss(avgOf(e.len)):'–'}</span></div>`).join('')}</div>`:'<div class="muted small sxnone">No games yet.</div>'}</div>`;
+  /* heatmap: each replay column tinted by how the player ranks against the field */
+  const LOW = {feudal:1, castle:1, imp:1, idleC:1, flt:1}, rngs = {}; pcols.forEach(i=>{ const k = MET[i].k, v = prow.map(p=>p.o[k]).filter(numOk).map(Number); rngs[k] = v.length>1 ? [Math.min(...v), Math.max(...v)] : null; });
+  const heat = (k, v) => { const R = rngs[k]; if(!R || !numOk(v) || R[1]===R[0] || k==='ecoPct' || k==='milPct') return ''; let f = (v-R[0])/(R[1]-R[0]); if(LOW[k]) f = 1-f;
+    return ` style="background:color-mix(in srgb,${f>=.5?'var(--win-bg)':'var(--loss)'} ${Math.round(Math.abs(f-.5)*2*50)}%,transparent)"`; };
   return `${none?`<div class="note statsnote" role="status"><b>No games played yet${sd?' in '+esc(sd):''}.</b> These stats fill in automatically as games are played and confirmed.</div>`:''}${seg}
-    <h2 class="sech">${scope}</h2><div class="statrow">${tile('Maps played', gs.length)}${overview}</div>
+    <h2 class="sech">${scope}</h2>${hero}
+    <h2 class="sech">Leaders</h2><div class="small muted" style="margin:-6px 0 10px">From each player's averages${minN>1?' (2 or more games with a replay)':''}. Click a name for their page.</div><div class="sxgrid3">${boards}</div>
+    <h2 class="sech">Single-game records</h2><div class="small muted" style="margin:-6px 0 10px">Click a record to open that game's stats.</div>${recCards}
+    <h2 class="sech">Civs and maps</h2><div class="grid g2">${civBars}${mapBars}</div>
     <h2 class="sech">Replay averages</h2><div class="small muted" style="margin:-6px 0 10px">Average of every player in every game with a replay${o.n?` (${o.n} player-games)`:''}. Float is an estimate from the replay.</div><div class="statrow">${sxRepTiles(o)}</div>
-    <h2 class="sech">Player awards</h2><div class="small muted" style="margin:-6px 0 10px">From each player's averages${minN>1?' (2 or more games with a replay)':''}.</div><div class="statrow">${awards}</div>
-    <h2 class="sech">Single-game records</h2><div class="statrow">${records}</div>
     ${divRows?`<div class="card"><h3>Divisions</h3><div class="tablewrap"><table><tr><th>Division</th><th class="n">Maps</th><th class="n">Avg eAPM</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">TC idle to Castle</th><th class="n">Float</th><th class="n">Avg game</th></tr>${divRows}</table></div></div>`:''}
     ${t.teams.length?`<div class="card"><h3>Teams</h3><div class="small muted">Click a team for its page.</div><div class="tablewrap"><table><tr><th>Team</th><th class="n">Maps W–L</th><th class="n">eAPM</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">TC idle to Castle</th><th class="n">Float</th><th class="n">Mil focus</th><th class="n">Avg game</th><th>Most used civ</th><th>Best civ</th></tr>${teamRows}</table></div></div>`:''}
-    <div class="grid g2"><div class="card"><h3>Civs</h3><div class="tablewrap"><table><tr><th>Civ</th><th class="n">Picks</th><th class="n">Won</th><th class="n">Lost</th><th class="n">Win %</th><th>Most by</th></tr>
-      ${none?noRow(6):''}${civs.map(([k,r])=>{ const by = Object.entries(r.by).sort((a,b)=>b[1]-a[1])[0]; return `<tr><td>${esc(k)}</td><td class="n">${r.n}</td><td class="n">${r.w}</td><td class="n">${r.n-r.w}</td><td class="n">${pct(r.w,r.n)}</td><td class="small">${by&&state.players[by[0]]?esc(P(by[0]).name)+(by[1]>1?` (${by[1]})`:''):''}</td></tr>`; }).join('')}</table></div></div>
-    <div class="card"><h3>Maps</h3><div class="tablewrap"><table><tr><th>Map</th><th class="n">Games</th><th class="n">Avg length</th><th class="n">Shortest</th><th class="n">Longest</th></tr>
-      ${none?noRow(5):''}${maps.map(([k,r])=>`<tr><td>${esc(k)}</td><td class="n">${r.n}</td><td class="n">${r.len.length?mmss(avgOf(r.len)):'–'}</td><td class="n">${r.len.length?mmss(Math.min(...r.len)):'–'}</td><td class="n">${r.len.length?mmss(Math.max(...r.len)):'–'}</td></tr>`).join('')}</table></div></div></div>
     ${sxOpenCards(recs)}
-    <div class="card"><h3>Players</h3><div class="small muted">Click a player for their full stats. ${ec.length?esc(eloNote()):''}</div><div class="tablewrap"><table><tr><th>Player</th>${ec.map(k=>`<th class="n">${LADDER[k]}</th>`).join('')}<th class="n">Maps W–L</th><th class="n">Win %</th>${pcols.map(i=>`<th class="n">${MET[i].n}</th>`).join('')}<th>Usual opening</th></tr>
-      ${prow.map(p=>`<tr style="cursor:pointer" data-act="tplayer" data-v="${p.id}"><td>${chip('p:'+p.id,t)}</td>${ec.map(k=>`<td class="n">${eloTxt(p.id,k)}</td>`).join('')}<td class="n">${p.w}–${p.n-p.w}</td><td class="n">${pct(p.w,p.n)}</td>${pcols.map(i=>`<td class="n">${sxVal(p.o,MET[i])}</td>`).join('')}<td class="small">${esc(p.o.opening||'–')}</td></tr>`).join('')}</table></div></div>`;
+    <h2 class="sech">Players</h2><div class="card"><div class="small muted">Click a player for their full stats. Green = better than the field, red = worse. ${ec.length?esc(eloNote()):''}</div><div class="tablewrap"><table><tr><th>Player</th>${ec.map(k=>`<th class="n">${LADDER[k]}</th>`).join('')}<th class="n">Maps W–L</th><th class="n">Win %</th>${pcols.map(i=>`<th class="n">${MET[i].n}</th>`).join('')}<th>Usual opening</th></tr>
+      ${prow.map(p=>`<tr style="cursor:pointer" data-act="tplayer" data-v="${p.id}"><td>${chip('p:'+p.id,t)}</td>${ec.map(k=>`<td class="n">${eloTxt(p.id,k)}</td>`).join('')}<td class="n">${p.w}–${p.n-p.w}</td><td class="n">${pct(p.w,p.n)}</td>${pcols.map(i=>`<td class="n"${heat(MET[i].k,p.o[MET[i].k])}>${sxVal(p.o,MET[i])}</td>`).join('')}<td class="small">${esc(p.o.opening||'–')}</td></tr>`).join('')}</table></div></div>`;
 }
 
 /* ---------- Seeding: order entrants by hand (▲▼) or by ranked ELO (saved by the game finder) ----------
