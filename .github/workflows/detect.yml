@@ -1,9 +1,14 @@
 name: Detect games
-# Looks for new tournament games every ~10 minutes and puts them in the tracker's Confirm games queue.
+# Looks for new tournament games and puts them in the tracker's Confirm games queue.
+# Times are UTC, set for Sydney summer time (AEDT, UTC+11). When AEST (UTC+10) starts in April, add 1 to every hour.
+# Sydney: 6am daily; every 30 min 5pm-midnight weekdays; every 30 min 10am-midnight weekends.
 # GitHub may run it a few minutes late when busy. Run it by hand from the Actions tab with "Run workflow".
 on:
   schedule:
-    - cron: "*/10 * * * *"
+    - cron: "0 19 * * *"          # 6am daily
+    - cron: "*/30 6-12 * * 1-5"   # weekdays 5pm-midnight
+    - cron: "*/30 23 * * 5,6"     # Sat/Sun 10-11am
+    - cron: "*/30 0-12 * * 0,6"   # Sat/Sun 11am-midnight
   workflow_dispatch:
 concurrency:
   group: detect
