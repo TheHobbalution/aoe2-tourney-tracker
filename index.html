@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-qHl4T0a4vg6+IshDXK6kXvrkcgKd1hEp4/oy9UvYeZU=' 'sha256-tZeaFqThdXqAGoIqMznDG4SVMwu3bvSxQpTDTKz8zBE=' https://www.gstatic.com; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-8Icj7n8sy8HPn9YOvVy9/mabRpFA+bAMvZd95P4YvlQ=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -16,7 +16,8 @@ window.TT_LIVE = {
   "storageBucket": "aoe2-tourney-tracker.firebasestorage.app",
   "messagingSenderId": "330915936292",
   "appId": "1:330915936292:web:ea684dd7f76e9f0d5f80b1"
- }
+ },
+ "goatcounter": "hobba"
 };
 </script>
 <style id="tt-css">
@@ -578,6 +579,114 @@ h2,h3{font-family:var(--head)}
 #pendcard h3 .qbadge{animation:none}
 .warn{color:#e8a33a}
 .autotag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 6px;border-radius:8px;border:1px solid var(--accent);color:var(--accent);vertical-align:middle}
+/* sortable tables */
+.tour th.sortable{cursor:pointer;user-select:none;white-space:nowrap}
+.tour th.sortable:hover{color:var(--accent)}
+.tour th.sortable::after{content:'↕';opacity:.3;font-size:.75em;margin-left:4px}
+.tour th.sa::after{content:'▲';opacity:1;color:var(--accent)}
+.tour th.sd::after{content:'▼';opacity:1;color:var(--accent)}
+
+/* ---------- Game stats view ---------- */
+.gsbox{max-width:1100px;max-height:92vh;overflow:auto;padding:0}
+.gstop{display:flex;align-items:center;gap:18px;padding:16px 20px;border-bottom:1px solid var(--line);background:linear-gradient(90deg,color-mix(in srgb,var(--accent2) 20%,var(--card)),var(--card));position:sticky;top:0;z-index:2}
+.gsmap{font-family:Oxanium,var(--font,inherit);font-size:1.5rem;font-weight:800;letter-spacing:.02em;text-transform:uppercase}
+.gsvs{flex:1;text-align:center;font-weight:700;display:flex;gap:10px;justify-content:center;align-items:baseline;flex-wrap:wrap}
+.gsvs b{color:var(--muted);font-weight:500;font-size:.85rem}
+.gsvs .win{color:var(--win)} .gsvs .loss{color:var(--muted)}
+.gsclose{margin-left:auto;background:transparent;border:1px solid var(--line2);width:34px;height:34px;padding:0;font-size:1rem}
+.gsbody{padding:0 20px}
+.gsbody>.small{margin:8px 0 2px}
+.gsteam{margin-top:16px;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--card)}
+.gsteam.win{border-color:color-mix(in srgb,var(--win) 45%,var(--line))}
+.gsth{display:flex;align-items:center;gap:10px;padding:9px 14px;background:var(--raised);font-weight:700}
+.gsth.win{background:color-mix(in srgb,var(--win-bg) 30%,var(--raised))}
+.gsthn{font-size:1.05rem}.gsthn a{color:var(--ink);text-decoration:none}.gsthn a:hover{text-decoration:underline}
+.gstag{margin-left:auto;font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;padding:3px 9px;border-radius:4px;background:var(--line);color:var(--muted)}
+.gsth.win .gstag{background:var(--win-bg);color:#fff}
+.gstab{width:100%}.gstab td,.gstab th{white-space:nowrap}.gstab .gsop{white-space:normal;min-width:140px}
+.gsrow .gsc{width:6px;padding:0;background:var(--pc)}
+.gsrow[data-gs]{cursor:pointer}.gsrow[data-gs]:hover td{background:color-mix(in srgb,var(--pc) 9%,transparent)}
+.gsrow .gsx{color:var(--muted);width:18px;transition:transform .15s}.gsrow.open .gsx{transform:rotate(180deg)}
+.gsdet td{background:var(--raised);padding:10px 14px;white-space:normal}
+.gsn{color:var(--pc);font-weight:700;text-decoration:none}
+a.gsn:hover{text-decoration:underline}
+.gsspent{display:flex;height:16px;border-radius:4px;overflow:hidden;margin:2px 0 8px;font-size:.68rem;font-weight:700;color:#111}
+.gsspent.sm{height:6px;margin:8px 0 4px}
+.gsspent span{display:flex;align-items:center;justify-content:center;overflow:hidden}
+.sp-economy{background:#7fc97f}.sp-military{background:#ef6c5f}.sp-techs{background:#80b1d3}.sp-buildings{background:#d9b46a}
+.sp-key{display:inline-block;width:10px;height:10px;border-radius:2px;margin:0 3px 0 8px;vertical-align:-1px}
+.gsfoot{display:flex;justify-content:space-between;align-items:center;padding:14px 20px;margin-top:12px;border-top:1px solid var(--line)}
+/* B */
+.gscols{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.gscols .gsteam{margin-top:16px}
+.gscards{display:grid;gap:10px;padding:10px}
+.gscard{border:1px solid var(--line);border-top:3px solid var(--pc);border-radius:6px;padding:10px 12px;background:var(--raised)}
+.gscardh{display:flex;justify-content:space-between;align-items:baseline;gap:8px}.gscardh .gsn{font-size:1.05rem}
+.gsbig{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0 4px}
+.gsbig div{display:flex;flex-direction:column}.gsbig b{font-size:1.1rem;font-variant-numeric:tabular-nums}.gsbig span{font-size:.7rem;color:var(--muted)}
+.gsline{position:relative;height:16px;margin:10px 4px 2px;border-radius:3px;background:linear-gradient(90deg,var(--line),color-mix(in srgb,var(--pc) 40%,var(--line)))}
+.gsmk{position:absolute;top:-3px;transform:translateX(-50%);width:20px;height:20px;border-radius:50%;background:var(--pc);display:grid;place-items:center;border:2px solid var(--raised)}
+.gsmk b{font-size:.62rem;color:#111}
+.gsop2{margin-top:6px;color:var(--muted)}
+.gschips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.gsdd summary{cursor:pointer;color:var(--link);margin-top:6px}
+@media (max-width:760px){.gscols{grid-template-columns:1fr}}
+/* C */
+.gsres2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}
+.gsres2 .gsth{border-radius:6px;border:1px solid var(--line)}
+.gsh4{margin:16px 0 6px;font-size:.9rem;letter-spacing:.06em;text-transform:uppercase}
+.gssvg{width:100%;height:auto;display:block;font-family:inherit}
+.gsl:hover{stroke-width:3.5}
+
+/* ---------- Fixture boxes: clear hover so they read as clickable ---------- */
+.bx[data-act]{transition:border-color .12s,transform .12s,box-shadow .12s,background .12s}
+.bx[data-act]:hover,.bx[data-act]:focus-visible{border-color:var(--accent);transform:translateY(-1px);box-shadow:0 4px 14px rgba(0,0,0,.35),0 0 0 1px var(--accent);outline:none}
+.bx[data-act]:hover .bxn,.bx[data-act]:hover .bxs{background:color-mix(in srgb,var(--accent) 10%,transparent)}
+.bx[data-act]:hover .bxr:not(.won) .bxn{color:var(--ink)}
+.bug:hover{box-shadow:0 0 0 1px var(--accent)}
+/* standings rows link to the team/player page */
+tr[data-act]{cursor:pointer}
+tr[data-act]:hover td{background:color-mix(in srgb,var(--accent) 8%,transparent)}
+
+/* ---------- Match panel (viewer) ---------- */
+.mvhead{display:grid;grid-template-columns:minmax(0,1fr) 140px minmax(0,1fr);align-items:stretch;margin-top:12px;border:1px solid var(--line);border-radius:6px;overflow:hidden;background:var(--card)}
+.mvhead .s{display:flex;align-items:center;gap:12px;padding:14px 18px;font-size:1.2rem;font-weight:700;min-width:0}
+.mvhead .s.r{justify-content:flex-end}
+.mvhead .s .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mvhead .s a{color:var(--ink);text-decoration:none}.mvhead .s a:hover{text-decoration:underline}
+.mvhead .s.win{background:linear-gradient(90deg,color-mix(in srgb,var(--win-bg) 35%,transparent),transparent)}
+.mvhead .s.r.win{background:linear-gradient(270deg,color-mix(in srgb,var(--win-bg) 35%,transparent),transparent)}
+.mvhead .s.loss a{color:var(--muted)}
+.mvhead .mid{display:flex;flex-direction:column;align-items:center;justify-content:center;background:var(--rail);padding:8px}
+.mvhead .mid b{font-family:var(--head);font-size:1.9rem;color:var(--accent);line-height:1.1}
+.mvhead .mid small{color:var(--muted);font-size:.72rem;letter-spacing:.1em;text-transform:uppercase}
+.mvgames{display:grid;gap:8px;margin-top:10px}
+.mvg{display:grid;grid-template-columns:150px minmax(0,1fr) 80px minmax(0,1fr) 130px;gap:12px;align-items:center;padding:10px 14px;border:1px solid var(--line);border-radius:6px;background:var(--raised)}
+.mvg.has{cursor:pointer;transition:border-color .12s,background .12s}
+.mvg.has:hover,.mvg.has:focus-visible{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 8%,var(--raised));outline:none}
+.mvgn{display:flex;flex-direction:column;gap:1px}.mvgn b{font-family:var(--head);color:var(--accent);font-size:.8rem;letter-spacing:.1em}.mvgn span{font-weight:700}.mvgn small{color:var(--muted)}
+.mvps{display:flex;flex-wrap:wrap;gap:4px 12px;opacity:.7}
+.mvps.win{opacity:1}
+.mvp{display:inline-flex;flex-direction:column;line-height:1.2}.mvp a{color:var(--ink);font-weight:600;text-decoration:none;font-size:.9rem}.mvp a:hover{text-decoration:underline}.mvp small{color:var(--muted);font-size:.74rem}
+.mvw{text-align:center}.mvw span{display:inline-block;padding:3px 9px;border-radius:4px;background:var(--win-bg);color:#fff;font-weight:700;font-size:.8rem;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mvw span.l::before{content:'◀ '}.mvw span.r::after{content:' ▶'}
+.mvgo{text-align:right}
+.gsbtn{display:inline-flex;align-items:center;gap:6px;padding:7px 12px;border-radius:5px;background:var(--accent);color:var(--accent-ink);font-weight:700;font-size:.85rem;white-space:nowrap}
+@media (max-width:860px){.mvg{grid-template-columns:1fr 1fr}.mvgn{grid-column:1/-1;flex-direction:row;gap:10px;align-items:baseline}.mvw{grid-column:1/-1;order:-1;text-align:left}.mvgo{grid-column:1/-1;text-align:left}
+  .mvhead{grid-template-columns:minmax(0,1fr) 84px minmax(0,1fr)}.mvhead .s{font-size:.95rem;padding:10px;gap:6px}.mvhead .mid b{font-size:1.4rem}}
+.gsbtn2{background:var(--accent);color:var(--accent-ink);border:0;border-radius:5px;padding:5px 10px;font-weight:700;font-size:.8rem;white-space:nowrap;cursor:pointer}
+.gsbtn2:hover{filter:brightness(1.12)}
+.mvw i{font-style:normal}.mvw .wfull{display:none}
+@media (max-width:860px){.mvw .wfull{display:inline}.mvw .wshort{display:none}.mvw span.l::before,.mvw span.r::after{content:''}
+  .mvps{flex-direction:column;gap:6px}.mvg{gap:8px 14px}}
+@media (max-width:700px){.gsvs{display:none}.gsmap{font-size:1.15rem}.gstop{padding:12px 14px}.gsbody{padding:0 12px}.gsres2{grid-template-columns:1fr}}
+@media (max-width:600px){.mvhead .s{flex-direction:column;align-items:flex-start;font-size:.85rem}.mvhead .s.r{align-items:flex-end;flex-direction:column-reverse}.mvhead .s .nm{white-space:normal;overflow:visible;overflow-wrap:anywhere}.mvhead .s.r .nm{text-align:right}}
+
+.gslooks{display:flex;gap:6px;padding:12px 20px 0}
+.gslooks button{background:var(--raised);border:1px solid var(--line);color:var(--muted);font-family:var(--head);font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;padding:6px 14px;border-radius:4px}
+.gslooks button.on{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.gslooks button:hover:not(.on){color:var(--ink);border-color:var(--line2)}
+@media (max-width:700px){.gslooks{padding:10px 12px 0}}
 </style>
 </head>
 <body>
@@ -930,7 +1039,7 @@ function ladderTable(rows, S){
   const tb = S ? tbOf(S) : [], swiss = S && S.type==='swiss';
   const anyG = rows.some(r=>r.gw+r.gl > r.w+r.l), nw = tb.includes('nw'), man = tb.includes('manual');
   return `<div class="tablewrap"><table><tr><th>#</th><th></th><th class="n">P</th><th class="n">W</th><th class="n">L</th>${anyG?'<th class="n">Maps</th><th class="n" title="Map difference">+/-</th>':''}${nw?'<th class="n" title="Neutral maps won">Neutral</th>':''}${swiss?'<th class="n" title="Buchholz: sum of opponents\' points">Buch.</th>':''}${man?'<th class="n" title="Manual tiebreak: higher ranks first">Manual</th>':''}<th class="n">Pts</th></tr>
-    ${rows.map(r=>`<tr><td>${r.pos}</td><td>${chip(r.k)}</td><td class="n">${r.pl}</td><td class="n">${r.w}</td><td class="n">${r.l}</td>${anyG?`<td class="n">${r.gw}–${r.gl}</td><td class="n">${r.gw-r.gl>0?'+':''}${r.gw-r.gl}</td>`:''}${nw?`<td class="n">${r.nw}</td>`:''}${swiss?`<td class="n">${r.bh}</td>`:''}${man?`<td class="n">${VIEW?r.man:`<input type="number" style="width:60px" data-act="manual" data-s="${S.id}" data-v="${r.k}" value="${r.man}">`}</td>`:''}<td class="n"><b>${r.pts}</b></td></tr>`).join('')}</table></div>`;
+    ${rows.map(r=>`<tr${entAct(r.k)}><td>${r.pos}</td><td>${chip(r.k)}</td><td class="n">${r.pl}</td><td class="n">${r.w}</td><td class="n">${r.l}</td>${anyG?`<td class="n">${r.gw}–${r.gl}</td><td class="n">${r.gw-r.gl>0?'+':''}${r.gw-r.gl}</td>`:''}${nw?`<td class="n">${r.nw}</td>`:''}${swiss?`<td class="n">${r.bh}</td>`:''}${man?`<td class="n">${VIEW?r.man:`<input type="number" style="width:60px" data-act="manual" data-s="${S.id}" data-v="${r.k}" value="${r.man}">`}</td>`:''}<td class="n"><b>${r.pts}</b></td></tr>`).join('')}</table></div>`;
 }
 
 /* ---------- Fixtures ---------- */
@@ -1025,7 +1134,7 @@ function pageStandings(){
     if(hasLadder('t',t,dv) && many(ladderStages('t',dv,t))) out += `<div class="card"><h3>${D}Team ladder</h3><div class="small muted">All team stages marked “counts toward ladder”.</div>${ladderTable(ladder('t',t,dv))}</div>`;
     if(hasLadder('p',t,dv) && many(ladderStages('p',dv,t))) out += `<div class="card"><h3>${D}Player ladder</h3><div class="small muted">All player stages marked “counts toward ladder”.</div>${ladderTable(ladder('p',t,dv))}</div>`;
   t.stages.filter(S=>(S.div||'')===dv).forEach(S=>{
-    if(S.type==='elim'){ const pl = placings(S,t); if(pl.length) out += `<div class="card"><h3>${esc(S.name)}</h3><table>${pl.map(p=>`<tr><td>${ord(p.place)}</td><td>${chip(p.k)}</td></tr>`).join('')}</table></div>`; return; }
+    if(S.type==='elim'){ const pl = placings(S,t); if(pl.length) out += `<div class="card"><h3>${esc(S.name)}</h3><table>${pl.map(p=>`<tr${entAct(p.k)}><td>${ord(p.place)}</td><td>${chip(p.k)}</td></tr>`).join('')}</table></div>`; return; }
     if(S.type==='spoon') return;
     const g = groupStandings(S);
     out += `<div class="card"><h3>${esc(S.name)}</h3><div class="small muted">Ties: ${tbOf(S).map(k=>esc(TB[k])).join(' › ')}</div>${g.map((rows,gi)=>`${g.length>1?`<h3 class="small" style="margin-top:8px">Group ${GL(gi)}</h3>`:''}${ladderTable(rows, S)}`).join('')}</div>`;
@@ -1466,6 +1575,7 @@ async function liveBoot(){
   }catch(e){ $('#root').innerHTML = `<div class="wrap"><div class="card empty">The site couldn't load its data. Check your connection and reload the page.</div></div>`; return; }
   const {fs, au, auth, d} = live.fb;
   window.addEventListener('hashchange', routeChanged);
+  gcStart();
   au.onAuthStateChanged(auth, async u=>{
     live.user = u; live.owner = false;
     if(u){ try{ const m = await fs.getDoc(fs.doc(d,'meta','owners')); live.owner = !!(m.exists() && (m.data().uids||[]).includes(u.uid)); }catch(e){} }
@@ -1474,13 +1584,36 @@ async function liveBoot(){
   routeChanged();
 }
 function parseRoute(){ const h = (location.hash||'#/').replace(/^#\/?/,''), [path, qs] = h.split('?'), [p, id] = path.split('/'), q = new URLSearchParams(qs||'');
-  if(p==='t' && id) return {page:'t', tid:id};
+  if(p==='t' && id){ const x = path.split('/').map(v=>{ try{ return decodeURIComponent(v); }catch(e){ return v; } }); return {page:'t', tid:id, tab:x[2]||'', a:x[3]||'', b:x[4]||''}; }
   if(p==='browse') return {page:'browse', q:q.get('q')||''};
   if(p==='organiser') return {page:'organiser'};
   return {page:'home'}; }
+/* GoatCounter page views (only when the site config names a GoatCounter code). Pages are #/… routes, so each one is
+   counted as its own path; no cookies, no personal data. */
+function gcStart(){ const code = LIVE && LIVE.goatcounter; if(!code || !/^[a-z0-9-]+$/i.test(code)) return;
+  window.goatcounter = {no_onload:true};
+  const sc = document.createElement('script'); sc.async = true; sc.src = 'https://gc.zgo.at/count.js'; sc.dataset.goatcounter = `https://${code}.goatcounter.com/count`;
+  sc.onload = gcCount; document.head.appendChild(sc); window.addEventListener('hashchange', gcCount); }
+function gcCount(){ const g = window.goatcounter; if(!g || !g.count) return;
+  const path = '/tourney-tracker/' + (location.hash.replace(/^#\/?/, '') || 'home').replace(/[?].*$/, '');
+  try{ g.count({path, title: document.title}); }catch(e){} }
+/* Each tab, player, team and open match has its own address (#/t/<id>/players/<player> and so on), so links can be
+   shared and the browser's Back button steps back through the pages instead of leaving the site. */
+const TOUR_TABS = ['fixtures','standings','teams','players','stats','setup','data'];
+function applyTourRoute(r){ ui.tab = TOUR_TABS.includes(r.tab) ? r.tab : 'home'; live.wantTab = (r.tab==='setup'||r.tab==='data') ? r.tab : null;   // organiser tabs wait for sign-in
+  ui.player = ui.tab==='players' && r.a ? r.a : null; ui.team = ui.tab==='teams' && r.a ? r.a : null;
+  if(ui.tab==='fixtures'){ ui.stage = r.a || null; ui.mopen = r.b || null; } else ui.mopen = null; }
+function tourHash(){ const t = T(), e = encodeURIComponent; let h = '#/t/'+live.tid;
+  if(ui.tab==='home' || !TOUR_TABS.includes(ui.tab)) return h; h += '/'+ui.tab;
+  if(ui.tab==='players' && ui.player) h += '/'+e(ui.player);
+  if(ui.tab==='teams' && ui.team) h += '/'+e(ui.team);
+  if(ui.tab==='fixtures' && t && t.stages.length){ const first = ui.stage===t.stages[0].id; if(ui.stage && (!first || ui.mopen)) h += '/'+e(ui.stage); if(ui.mopen) h += '/'+e(ui.mopen); }
+  return h; }
+function syncTourHash(){ if(live.route.page!=='t' || !live.tid || !T() || (live.wantTab && !live.ready)) return; const h = tourHash();
+  if(location.hash!==h){ history.pushState(null, '', h); live.route = parseRoute(); gcCount(); } }
 function routeChanged(){
   const r = parseRoute(); live.route = r; document.body.classList.remove('menu'); window.scrollTo(0,0);
-  if(r.page==='t'){ if(live.tid!==r.tid) openTournament(r.tid); } else if(live.tid) closeTournament();
+  if(r.page==='t'){ if(live.tid!==r.tid){ const nt = live.nextTab; openTournament(r.tid); if(!(nt && !r.tab)) applyTourRoute(r); } else applyTourRoute(r); } else if(live.tid) closeTournament();
   if(r.page==='browse') live.q = r.q;
   if(r.page==='home'||r.page==='browse') loadDir();
   if(r.page==='organiser') loadMine();
@@ -1516,6 +1649,7 @@ function closeTournament(){
 }
 function computeAdmin(){ const was = live.admin, d = live.doc, u = live.user;
   live.admin = !!(u && d && live.tid && (live.owner || (d.admins||[]).includes(u.uid))); VIEW = !live.admin;
+  if(live.admin && live.wantTab){ ui.tab = live.wantTab; live.wantTab = null; }
   if(live.admin!==was) pendListen(live.admin); }
 async function snapHandler(snap, tid){
   if(live.tid!==tid || snap.metadata.hasPendingWrites) return;
@@ -1773,6 +1907,7 @@ function renderSite(){
   document.title = rt==='t' && T() ? T().name+' · Tourney Tracker' : 'Tourney Tracker: Age of Empires II tournaments';
   if(ui.focus){ const f = document.getElementById(ui.focus); ui.focus = null; if(f) f.focus(); }
   r.querySelectorAll('details[data-k]').forEach(d=>{ if(ui.open[d.dataset.k]) d.open = true; d.addEventListener('toggle',()=>ui.open[d.dataset.k]=d.open); });
+  syncTourHash();
 }
 
 /* ---------- actions ---------- */
@@ -1794,6 +1929,7 @@ async function siteAct(a, d, el){
     case 'sdiv': ui.sdiv = d.v || ''; render(); return true;
     case 'team': ui.team = d.v || null; window.scrollTo(0,0); render(); return true;
     case 'tplayer': ui.tab = 'players'; ui.player = d.v; ui.team = null; window.scrollTo(0,0); render(); return true;
+    case 'tteam': ui.tab = 'teams'; ui.team = d.v || null; ui.player = null; window.scrollTo(0,0); render(); return true;
     case 'spub': { const p = pubState(); if(p===null) return true; const {fs, d} = live.fb;
       try{ await fs.setDoc(fs.doc(d,'index',live.tid), {pub: !p}, {merge:true}); live.pub = !p; live.dirAt = 0; live.mine = null; }catch(e){ await say('Could not change that: '+(e.code||e.message)); }
       render(); return true; }
@@ -1891,32 +2027,104 @@ async function pendConfirm(mid){
   toast('Game added to '+S.name); return true;
 }
 /* replay stats pop-up for one game */
-async function gameStats(mid){
-  let g = live.games[mid];
-  if(!g){ try{ const {fs, d} = live.fb, s = await fs.getDoc(fs.doc(d,'tournaments',live.tid,'games',String(mid))); if(s.exists()) g = live.games[mid] = JSON.parse(s.data().json); }catch(e){} }
-  if(!g){ await say('Replay stats for this game aren\'t available.'); return; }
-  const nm = p => { const id = Object.keys(state.players).find(k=>String(state.players[k].pid||'')===String(p.profileId)); return id ? P(id).name : (p.name||'?'); };
-  const teams = {}; g.players.forEach(p=>(teams[p.team] = teams[p.team]||[]).push(p)); const ord = Object.values(teams).flat();
-  const idle = s => s && s.tcIdle ? Object.values(s.tcIdle).reduce((a,b)=>a+(b||0),0) : null, ms = v => v==null ? '' : `${Math.floor(v/60)}:${String(v%60).padStart(2,'0')}`;
-  const row = p => { const s = p.stats||{}, a = s.ages||{}; return `<tr class="${p.won?'wonrow':''}"><td>${p.won?'🏆 ':''}<b>${esc(nm(p))}</b></td><td>${esc(p.civ||'')}</td><td class="n">${s.eapm??''}</td><td class="n">${s.apm??''}</td><td>${esc(s.opening||'')}</td>
-    <td class="n">${esc(a.Feudal||'')}</td><td class="n">${esc(a.Castle||'')}</td><td class="n">${esc(a.Imperial||'')}</td><td class="n">${s.vils??''}</td><td class="n">${s.military??''}</td><td class="n">${ms(idle(s))}</td></tr>`; };
-  const more = p => { const s = p.stats||{}, u = Object.entries(s.units||{}).sort((a,b)=>b[1]-a[1]); if(!u.length && !(s.build||[]).length) return '';
-    return `<details class="box"><summary>${esc(nm(p))}: units and build order</summary><div class="small"><b>Units made:</b> ${u.map(([k,v])=>`${esc(k)} ${v}`).join(', ')||'–'}</div>
-      <div class="small" style="margin-top:4px"><b>Build order:</b> ${(s.build||[]).slice(0,25).map(b=>`${esc(b[0])} ${esc(b[1])}`).join(' · ')||'–'}</div>
-      ${(s.eco||[]).length?`<div class="small" style="margin-top:4px"><b>Eco upgrades:</b> ${s.eco.map(b=>`${esc(b[0])} ${esc(b[1])}`).join(' · ')}</div>`:''}</details>`; };
-  const w = document.createElement('div'); w.className = 'modal';
-  w.innerHTML = `<div class="mbox" style="max-width:980px;max-height:90vh;overflow:auto"><h3 style="margin-top:0">${esc(g.map||'Game')} <span class="muted small">${esc(g.gameTime||'')} game time</span></h3>
-    <div class="tablewrap"><table><tr><th>Player</th><th>Civ</th><th class="n">eAPM</th><th class="n">APM</th><th>Opening</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">Imp</th><th class="n">Vils</th><th class="n">Military</th><th class="n" title="Estimated Town Center idle time">TC idle</th></tr>${ord.map(row).join('')}</table></div>
-    <div class="small muted" style="margin:6px 0">Age times are when the player clicked up. TC idle is an estimate from the replay.</div>${ord.map(more).join('')}
-    <div class="row" style="justify-content:flex-end;margin-top:12px"><button class="pri" data-r="1">Close</button></div></div>`;
-  document.body.appendChild(w); w.addEventListener('click', e=>{ if(e.target===w || e.target.closest('[data-r]')) w.remove(); });
-}
-const statsBtn = g => (LIVE && !VIEW && g && g.auto ? ` <span class="autotag" title="Confirmed automatically by the game finder. If it's wrong, remove it with ✕.">auto</span>` : '') + (LIVE && g && g.mid ? ` <button class="sm" data-act="gstats" data-mid="${esc(g.mid)}">Stats</button>` : '');
+const statsBtn = g => (LIVE && !VIEW && g && g.auto ? ` <span class="autotag" title="Confirmed automatically by the game finder. If it's wrong, remove it with ✕.">auto</span>` : '') + (LIVE && g && g.mid ? ` <button class="gsbtn2" data-act="gstats" data-mid="${esc(g.mid)}">Game stats ›</button>` : '');
 /* averages from the headline numbers saved with each confirmed game */
 function replayAvg(pid, t){ let n = 0, e = 0, f = 0, fn = 0; const sec = v => { const m = /^(\d+):(\d\d)$/.exec(v||''); return m ? +m[1]*60 + +m[2] : null; };
   allMatches(t).forEach(({m})=>(m.games||[]).forEach(g=>{ const s = g && g.st && g.st[pid]; if(!s) return; if(s.eapm!=null){ n++; e += s.eapm; } const x = sec(s.feudal); if(x!=null){ fn++; f += x; } }));
   if(!n && !fn) return ''; const av = fn ? Math.round(f/fn) : null;
   return `<div class="small muted">Replay stats: ${n?`avg eAPM <b>${Math.round(e/n)}</b> over ${n} game${n>1?'s':''}`:''}${n&&fn?' · ':''}${fn?`avg Feudal click <b>${Math.floor(av/60)}:${String(av%60).padStart(2,'0')}</b>`:''}</div>`; }
+/* ---------- Game stats view: players in their in-game colours, names link to player/team pages ----------
+   Looks: 'a' scoreboard, 'b' player cards, 'c' timeline. window.GS_LOOK picks one (default below). */
+const PCOL = ['#4a7dff','#ff4136','#2ecc40','#ffdc00','#18d4d4','#c45cff','#aab2bb','#ff8c1a'];   // in-game colours, replay colour id 0-7
+const PCOLN = ['Blue','Red','Green','Yellow','Teal','Purple','Grey','Orange'];
+let GS_LOOK = 'b';
+const gsSec = v => { if(v==null||v==='') return null; const p = String(v).split(':').map(Number); return p.some(isNaN) ? null : p.reduce((a,b)=>a*60+b,0); };
+const gsMs = v => v==null ? '' : `${Math.floor(v/60)}:${String(Math.round(v)%60).padStart(2,'0')}`;
+function gsPid(p){ return Object.keys(state.players).find(k=>String(state.players[k].pid||'')===String(p.profileId)) || null; }
+function gsTeamOf(pid){ const t = T(); return pid && t ? (t.teams||[]).find(x=>(x.members||[]).includes(pid)) : null; }
+function gsName(p, cls){ const id = gsPid(p), c = PCOL[p.color] || 'var(--ink)', nm = esc(id ? P(id).name : (p.name||'?'));
+  return id ? `<a class="gsn ${cls||''}" style="--pc:${c}" data-act="tplayer" data-v="${id}" href="javascript:void 0" title="${PCOLN[p.color]||''} · open ${nm}'s page">${nm}</a>` : `<span class="gsn ${cls||''}" style="--pc:${c}">${nm}</span>`; }
+function gsTeams(g){ const by = {}; g.players.forEach(p=>(by[p.team] = by[p.team]||[]).push(p));
+  return Object.values(by).map(ps=>{ const tm = gsTeamOf(gsPid(ps.find(p=>gsPid(p))||{})), won = ps.some(p=>p.won);
+    return {ps, tm, won, name: tm ? tm.name : 'Team '+ps[0].team}; }).sort((a,b)=>b.won-a.won); }
+function gsTeamHead(T_, big){ const b = T_.tm && typeof teamBadge==='function' ? teamBadge(T_.tm) : '';
+  const nm = T_.tm ? `<a href="javascript:void 0" data-act="tteam" data-v="${T_.tm.id}">${esc(T_.name)}</a>` : esc(T_.name);
+  return `<div class="gsth ${T_.won?'win':'loss'}">${b}<span class="gsthn">${nm}</span><span class="gstag">${T_.won?'Victory':'Defeat'}</span></div>`; }
+function gsUnits(s, n){ return Object.entries(s.units||{}).filter(([k])=>k!=='Villager').sort((a,b)=>b[1]-a[1]).slice(0,n); }
+function gsMore(p){ const s = p.stats||{}, u = Object.entries(s.units||{}).sort((a,b)=>b[1]-a[1]), sp = s.spent||{}, tot = Object.values(sp).reduce((a,b)=>a+b,0);
+  const bar = tot ? `<div class="gsspent">${[['economy','Eco'],['military','Military'],['techs','Techs'],['buildings','Buildings']].map(([k,n])=>sp[k]?`<span class="sp-${k}" style="flex:${sp[k]}" title="${n} ${sp[k]}">${Math.round(sp[k]/tot*100)>=9?n:''}</span>`:'').join('')}</div>` : '';
+  return `${bar}<div class="small"><b>Units queued:</b> ${u.map(([k,v])=>`${esc(k)} ${v}`).join(', ')||'–'}</div>
+    <div class="small" style="margin-top:4px"><b>Build order:</b> ${(s.build||[]).slice(0,25).map(b=>`${esc(b[0])} ${esc(b[1])}`).join(' · ')||'–'}</div>
+    ${(s.eco||[]).length?`<div class="small" style="margin-top:4px"><b>Eco upgrades:</b> ${s.eco.map(b=>`${esc(b[0])} ${esc(b[1])}`).join(' · ')}</div>`:''}`; }
+const gsIdle = s => s && s.tcIdle && ('dark' in s.tcIdle || 'feudal' in s.tcIdle) ? (s.tcIdle.dark||0) + (s.tcIdle.feudal||0) : null;
+
+/* A: scoreboard. One table per team, winners first, colour bar on each row, click a row for units and build order */
+function gsLookA(g, TT){
+  const row = p => { const s = p.stats||{}, a = s.ages||{}, k = 'gs'+p.profileId;
+    return `<tr class="gsrow" style="--pc:${PCOL[p.color]||'#888'}" data-gs="${k}"><td class="gsc"></td><td>${gsName(p)}</td><td>${esc(p.civ||'')}</td><td class="n">${s.eapm??''}</td><td class="n">${s.apm??''}</td><td class="gsop">${esc(s.opening||'')}</td>
+      <td class="n">${esc(a.Feudal||'')}</td><td class="n">${esc(a.Castle||'')}</td><td class="n">${esc(a.Imperial||'')}</td><td class="n">${s.military??''}</td><td class="n">${gsMs(gsIdle(s))}</td><td class="gsx">▾</td></tr>
+      <tr class="gsdet" id="${k}" hidden><td></td><td colspan="11">${gsMore(p)}</td></tr>`; };
+  const head = `<tr><th></th><th>Player</th><th>Civ</th><th class="n">eAPM</th><th class="n">APM</th><th>Opening</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">Imp</th><th class="n" title="Military units queued">Mil. queued</th><th class="n" title="Town Center idle from the start until the Castle Age click">TC idle</th><th></th></tr>`;
+  return TT.map(T_=>`<div class="gsteam ${T_.won?'win':'loss'}">${gsTeamHead(T_)}<div class="tablewrap"><table class="gstab">${head}${T_.ps.map(row).join('')}</table></div></div>`).join('')
+    + `<div class="small muted">Click a player's row for units, spending and build order. Age times are when the player clicked up.</div>`; }
+
+/* B: player cards. Team columns side by side, a card per player with age-up timeline, top units and spending */
+function gsLookB(g, TT){
+  const len = gsSec(g.gameTime) || 1;
+  const card = p => { const s = p.stats||{}, a = s.ages||{}, us = gsUnits(s, 3), sp = s.spent||{}, tot = Object.values(sp).reduce((x,y)=>x+y,0);
+    const mk = (n,l) => { const v = gsSec(a[n]); return v==null ? '' : `<span class="gsmk" style="left:${Math.min(100,v/len*100)}%" title="${n} click ${a[n]}"><b>${l}</b></span>`; };
+    return `<div class="gscard" style="--pc:${PCOL[p.color]||'#888'}"><div class="gscardh">${gsName(p)}<span class="muted small">${esc(p.civ||'')}</span></div>
+      <div class="gsbig"><div><b>${s.eapm??'–'}</b><span>eAPM</span></div><div><b>${esc(a.Feudal||'–')}</b><span>Feudal</span></div><div><b>${esc(a.Castle||'–')}</b><span>Castle</span></div><div><b>${s.military??'–'}</b><span>Mil. queued</span></div></div>
+      <div class="gsline">${mk('Feudal','F')}${mk('Castle','C')}${mk('Imperial','I')}</div>
+      <div class="small gsop2">${esc(s.opening||'')}</div>
+      <div class="gschips">${us.map(([k,v])=>`<span class="pill">${esc(k)} <b>${v}</b></span>`).join('')}</div>
+      ${tot?`<div class="gsspent sm">${['economy','military','techs','buildings'].map(k=>sp[k]?`<span class="sp-${k}" style="flex:${sp[k]}" title="${k} ${sp[k]}"></span>`:'').join('')}</div>`:''}
+      <details class="gsdd"><summary class="small">Build order</summary>${gsMore(p)}</details></div>`; };
+  return `<div class="gscols">${TT.map(T_=>`<div class="gsteam ${T_.won?'win':'loss'}">${gsTeamHead(T_)}<div class="gscards">${T_.ps.map(card).join('')}</div></div>`).join('')}</div>
+    <div class="small muted">Spending bar: <span class="sp-key sp-economy"></span>eco <span class="sp-key sp-military"></span>military <span class="sp-key sp-techs"></span>techs <span class="sp-key sp-buildings"></span>buildings.</div>`; }
+
+/* C: timeline. Age-up lanes and an eAPM chart over the game, each player in their colour, then a compact table */
+function gsLookC(g, TT){
+  const len = gsSec(g.gameTime) || 1, nar = window.innerWidth < 700, W = nar ? 440 : 900, L = nar ? 100 : 170, ps = TT.flatMap(T_=>T_.ps), lh = 26, x = v => L + v/len*(W-L-10);
+  const ticks = []; for(let m=0;m*60<=len;m+= (len>2400||nar)?10:5) ticks.push(m);
+  let lanes = ''; ps.forEach((p,i)=>{ const s = p.stats||{}, a = s.ages||{}, y = 22 + i*lh, c = PCOL[p.color]||'#888';
+    const ts = [0, gsSec(a.Feudal), gsSec(a.Castle), gsSec(a.Imperial), len]; const op = [.18,.38,.62,.9];
+    let seg = ''; for(let k=0;k<4;k++){ const s0 = ts[k], s1 = ts.slice(k+1).find(v=>v!=null); if(s0==null||s1==null) continue; seg += `<rect x="${x(s0)}" y="${y}" width="${Math.max(0,x(s1)-x(s0))}" height="${lh-8}" fill="${c}" fill-opacity="${op[k]}"/>`; }
+    if(i && TT[0].ps.length===i) lanes += `<line x1="0" x2="${W}" y1="${y-4}" y2="${y-4}" stroke="var(--line2)"/>`;
+    lanes += `<text x="${L-8}" y="${y+13}" text-anchor="end" fill="${c}" font-weight="700" font-size="13">${esc((gsPid(p)?P(gsPid(p)).name:p.name)||'').slice(0,nar?12:20)}</text>${seg}`; });
+  const H1 = 22 + ps.length*lh;
+  const grid = ticks.map(m=>`<line x1="${x(m*60)}" x2="${x(m*60)}" y1="14" y2="${H1}" stroke="var(--line)" stroke-dasharray="2 3"/><text x="${x(m*60)}" y="10" text-anchor="middle" font-size="11" fill="var(--muted)">${m}m</text>`).join('');
+  const lanesSvg = `<svg viewBox="0 0 ${W} ${H1+4}" class="gssvg" role="img" aria-label="Age-up timeline">${grid}${lanes}</svg>`;
+  const ser = ps.map(p=>((p.stats||{}).detail||{}).eapmSeries||[]), mx = Math.max(10, ...ser.flat()), H2 = 150, y2 = v => H2 - 18 - v/mx*(H2-30);
+  const lines = ps.map((p,i)=>{ const s = ser[i]; if(!s.length) return ''; const pts = s.map((v,j)=>`${x(Math.min(len,(j+.5)*60)).toFixed(1)},${y2(v).toFixed(1)}`).join(' ');
+    return `<polyline points="${pts}" fill="none" stroke="${PCOL[p.color]||'#888'}" stroke-width="1.8" stroke-opacity=".9" class="gsl" data-p="${p.profileId}"/>`; }).join('');
+  const g2 = [0, Math.round(mx/2), mx].map(v=>`<line x1="${L}" x2="${W-10}" y1="${y2(v)}" y2="${y2(v)}" stroke="var(--line)"/><text x="${L-8}" y="${y2(v)+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v}</text>`).join('')
+    + ticks.map(m=>`<text x="${x(m*60)}" y="${H2-2}" text-anchor="middle" font-size="11" fill="var(--muted)">${m}m</text>`).join('');
+  const chart = ser.some(s=>s.length) ? `<h4 class="gsh4">eAPM through the game</h4><svg viewBox="0 0 ${W} ${H2}" class="gssvg" role="img" aria-label="eAPM per minute">${g2}${lines}</svg>` : '';
+  const row = p => { const s = p.stats||{}; return `<tr class="gsrow" style="--pc:${PCOL[p.color]||'#888'}"><td class="gsc"></td><td>${gsName(p)}</td><td>${esc(p.civ||'')}</td><td class="n">${s.eapm??''}</td><td class="gsop">${esc(s.opening||'')}</td><td class="n">${s.military??''}</td><td class="n">${gsMs(gsIdle(s))}</td></tr>`; };
+  return `<div class="gsres2">${TT.map(gsTeamHead_=>gsTeamHead(gsTeamHead_)).join('')}</div>
+    <h4 class="gsh4">Ages <span class="muted small">faint = Dark, then Feudal, Castle, Imperial</span></h4>${lanesSvg}${chart}
+    <div class="tablewrap"><table class="gstab"><tr><th></th><th>Player</th><th>Civ</th><th class="n">eAPM</th><th>Opening</th><th class="n">Mil. queued</th><th class="n">TC idle</th></tr>${ps.map(row).join('')}</table></div>`; }
+
+async function gameStats(mid){
+  let g = live.games[mid];
+  if(!g){ try{ const {fs, d} = live.fb, s = await fs.getDoc(fs.doc(d,'tournaments',live.tid,'games',String(mid))); if(s.exists()) g = live.games[mid] = JSON.parse(s.data().json); }catch(e){} }
+  if(!g){ await say('Replay stats for this game aren\'t available.'); return; }
+  const TT = gsTeams(g), looks = [['b','Cards'],['a','Table'],['c','Timeline']];
+  let look = window.GS_LOOK || GS_LOOK; try{ const v = localStorage.getItem('tt-gslook'); if(v && 'abc'.includes(v)) look = v; }catch(e){}
+  const body = L => L==='b' ? gsLookB(g,TT) : L==='c' ? gsLookC(g,TT) : gsLookA(g,TT);
+  const res = `<div class="gsvs">${TT.map(T_=>`<span class="${T_.won?'win':'loss'}">${esc(T_.name)}</span>`).join('<b>def.</b>')}</div>`;
+  const tabs = L => looks.map(([k,n])=>`<button class="${k===L?'on':''}" data-gsl="${k}" ${k===L?'aria-current="true"':''}>${n}</button>`).join('');
+  const w = document.createElement('div'); w.className = 'modal gsmodal';
+  w.innerHTML = `<div class="mbox gsbox"><div class="gstop"><div><div class="gsmap">${esc(g.map||'Game')}</div><div class="small muted">${esc(g.gameTime||'')} game time${g.realTime?` · ${esc(g.realTime)} real time`:''}</div></div>
+    ${res}<button class="gsclose" data-r="1" aria-label="Close">✕</button></div><nav class="gslooks" aria-label="View">${tabs(look)}</nav><div class="gsbody">${body(look)}</div>
+    <div class="gsfoot"><a href="https://www.aoe2insights.com/match/${encodeURIComponent(mid)}/" target="_blank" rel="noopener">Match on AoE2 Insights ↗</a><button class="pri" data-r="1">Close</button></div></div>`;
+  document.body.appendChild(w);
+  w.addEventListener('click', e=>{ const t = e.target.closest('[data-gsl]'); if(t){ look = t.dataset.gsl; try{ localStorage.setItem('tt-gslook', look); }catch(x){}
+      w.querySelector('.gslooks').innerHTML = tabs(look); w.querySelector('.gsbody').innerHTML = body(look); return; }
+    const r = e.target.closest('.gsrow[data-gs]'); if(r && !e.target.closest('a')){ const d = document.getElementById(r.dataset.gs); d.hidden = !d.hidden; r.classList.toggle('open', !d.hidden); return; }
+    if(e.target===w || e.target.closest('[data-r]') || e.target.closest('[data-act=tplayer],[data-act=tteam]')) w.remove(); });
+}
 
 /* ---------- Fixtures as compact bracket boxes (seed · logo · name · score), click a box for games / editing ---------- */
 function seedMap(S){ const m = {}; if(S.type==='elim') entrantsFor(S).forEach((k,i)=>{ m[k] = i+1; }); return m; }
@@ -1942,8 +2150,29 @@ function matchPanel(S){
   const maxR = S.matches.reduce((a,x)=>Math.max(a,x.r),0);
   const extra = VIEW ? '' : S.type==='swiss' ? swissEdit(S,m,maxR)
     : S.type==='rr' ? `<div class="small muted" style="margin-top:8px">Move to round <select data-act="mround" data-s="${S.id}" data-m="${m.id}">${Array.from({length:maxR+1},(_,k)=>k+1).map(k=>`<option value="${k}" ${k===m.r?'selected':''}>${k}${k===maxR+1?' (new)':''}</option>`).join('')}</select></div>` : '';
-  return `<div class="mpanel card" id="mpanel"><div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0">${esc(matchLabel(S,m))}</h3><button class="sm" data-act="mopen" data-m="${m.id}">Close</button></div>`
-    + matchHtml(S,m) + predHtml(S,m) + extra + `</div>`;
+  return `<div class="mpanel card" id="mpanel"><div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0">${esc(S.name)} · ${esc(matchLabel(S,m))}</h3><button class="sm" data-act="mopen" data-m="${m.id}" aria-label="Close">✕ Close</button></div>`
+    + (VIEW ? matchView(S,m) : matchHtml(S,m)) + predHtml(S,m) + extra + `</div>`;
+}
+/* viewer's match panel: VS header like the Up next cards, then one clickable row per game */
+function sideLink(side, right){ const k = side && side.length===1 ? side[0] : null, n = side ? sideName(side) : 'TBD';
+  const nm = k && k.startsWith('t:') ? `<a href="javascript:void 0" data-act="tteam" data-v="${esc(k.slice(2))}">${esc(n)}</a>` : k && k.startsWith('p:') ? `<a href="javascript:void 0" data-act="tplayer" data-v="${esc(k.slice(2))}">${esc(n)}</a>` : esc(n);
+  const b = k ? bBadge(k) : ''; return right ? `<span class="nm">${nm}</span>${b}` : `${b}<span class="nm">${nm}</span>`; }
+function matchView(S, m){
+  const t = T(), sd = sidesOf(S,m,t);
+  if(sd[1]===null && sd[0]) return `<div class="mvhead"><div class="s">${sideLink(sd[0])}</div><div class="mid"><small>bye</small></div><div class="s r"></div></div>`;
+  const w = winnerOf(S,m,sd), sc = score(m), bo = matchBo(S,m), played = (m.games||[]).filter(g=>g.w===0||g.w===1);
+  const head = `<div class="mvhead"><div class="s ${w===0?'win':w===1?'loss':''}">${sideLink(sd[0])}</div>
+    <div class="mid"><b>${played.length?sc.join(' – '):'VS'}</b><small>${bo>1?`Best of ${bo}`:'Single game'}</small></div>
+    <div class="s r ${w===1?'win':w===0?'loss':''}">${sideLink(sd[1],true)}</div></div>`;
+  const mem = i => sd[i] ? sd[i].flatMap(k=>entMembers(k,t)) : [];
+  const plist = (g, i) => { const ps = mem(i).filter(p=>(g.civs||{})[p] || (g.st||{})[p]);
+    return `<div class="mvps ${g.w===i?'win':''}">${ps.map(p=>`<span class="mvp"><a href="javascript:void 0" data-act="tplayer" data-v="${esc(p)}">${esc(P(p).name)}</a>${g.civs&&g.civs[p]?`<small>${esc(g.civs[p])}</small>`:''}</span>`).join('')||'<span class="muted small">no civ picks saved</span>'}</div>`; };
+  const rows = played.map((g,i)=>{ const st = LIVE && g.mid;
+    return `<div class="mvg ${st?'has':''}" ${st?`data-act="gstats" data-mid="${esc(g.mid)}" role="button" tabindex="0" title="Open game stats"`:''}>
+      <div class="mvgn"><b>G${i+1}</b><span>${esc(g.map||'')}</span>${g.len?`<small>${esc(g.len)}</small>`:''}</div>
+      ${plist(g,0)}<div class="mvw"><span class="${g.w===0?'l':'r'}" title="${esc(sideName(sd[g.w]))} won"><i class="wfull">${esc(sideName(sd[g.w]))} won</i><i class="wshort">Won</i></span></div>${plist(g,1)}
+      <div class="mvgo">${st?`<span class="gsbtn">Game stats <b>›</b></span>`:'<span class="muted small">no replay</span>'}</div></div>`; }).join('');
+  return head + (rows ? `<div class="mvgames">${rows}</div>` : `<div class="muted small" style="margin:10px 2px">No games played yet.</div>`);
 }
 function bracketView(S){
   const R = S.matches.reduce((a,m)=>Math.max(a,m.r),0), seeds = seedMap(S); let cols = '';
@@ -1971,6 +2200,9 @@ function roundsView(S){
     out += `<div class="bk rnd">${Object.entries(rounds).sort((a,b)=>a[0]-b[0]).map(([r,ms])=>`<div class="bkcol"><div class="bkhead">Round ${r}</div><div class="bkbody">${ms.map(m=>`<div class="bkslot">${boxHtml(S,m,{})}</div>`).join('')}</div></div>`).join('')}${future}</div>`; });
   return out + matchPanel(S);
 }
+/* a row or card that opens a team's or player's page (viewers only, organisers click into inputs in the same rows) */
+function entAct(k){ if(!VIEW || !k || !LIVE) return ''; const [kind,id] = k.split(':'), n = entName(k);
+  return kind==='t' ? ` data-act="tteam" data-v="${esc(id)}" title="Open ${esc(n)}"` : kind==='p' ? ` data-act="tplayer" data-v="${esc(id)}" title="Open ${esc(n)}"` : ''; }
 
 /* ---------- Broadcast look: big hero, match cards (fixed VS column), team badges ---------- */
 function bHue(n){ return [...String(n)].reduce((a,c)=>a+c.charCodeAt(0),0)*47%360; }
@@ -2032,7 +2264,7 @@ function teamProfile(tm, t){
   const x = teamStats(tm,t), ec = hasElo(t) ? eloCols(t) : [];
   const roster = tm.members.filter(id=>state.players[id]).map(id=>{ const p = playerStats(id,t), top = Object.entries(p.civs).sort((a,b)=>b[1].n-a[1].n)[0];
     return `<tr style="cursor:pointer" data-act="tplayer" data-v="${id}"><td>${chip('p:'+id,t)}${id===tm.cap?' <span class="badge">captain</span>':''}</td>${ec.map(k=>`<td class="n">${eloTxt(id,k)}</td>`).join('')}<td class="n">${p.gw}–${p.gl}</td><td class="n">${pct(p.gw,p.gw+p.gl)}</td><td class="small">${top?esc(top[0])+` (${top[1].n})`:''}</td></tr>`; }).join('');
-  const games = x.list.map(({S,m,si,sd,w,sc})=>`<tr><td class="small">${esc(S.name)}<div class="muted">${esc(matchLabel(S,m))}</div></td><td>${sideHtml(sd[1-si])}</td><td class="n">${sc[si]}–${sc[1-si]}</td><td>${w==null?'<span class="muted small">to play</span>'+predShort(S,m,si):w===si?'<b style="color:var(--win)">Won</b>':'<span style="color:var(--loss)">Lost</span>'}</td></tr>`).join('');
+  const games = x.list.map(({S,m,si,sd,w,sc})=>`<tr data-act="mgo" data-s="${S.id}" data-m="${m.id}" title="Show this match"><td class="small">${esc(S.name)}<div class="muted">${esc(matchLabel(S,m))}</div></td><td>${sideHtml(sd[1-si])}</td><td class="n">${sc[si]}–${sc[1-si]}</td><td>${w==null?'<span class="muted small">to play</span>'+predShort(S,m,si):w===si?'<b style="color:var(--win)">Won</b>':'<span style="color:var(--loss)">Lost</span>'}</td></tr>`).join('');
   return `<p><button class="sm" data-act="team" data-v="">‹ All teams</button></p>
     <div class="card thead">${teamBadge(tm,true)}<div><h2 style="margin:0">${esc(tm.name)}</h2><div class="muted">${[x.div, tm.cap&&state.players[tm.cap]?'Captain: '+P(tm.cap).name:'', x.place?'finished '+ord(x.place.place):''].filter(Boolean).map(esc).join(' · ')}</div></div></div>
     <div class="statrow">${tile('Series', `${x.w}–${x.l}`)}${tile('Maps', `${x.gw}–${x.gl}`)}${tile('Map win', pct(x.gw,x.gw+x.gl))}${tile('Avg eAPM', x.en?Math.round(x.e/x.en):'–', x.en?'from replays':'no replays yet')}${ec.map(k=>tile('Avg '+LADDER[k], eloAvg(tm.members,k)||'–', 'ranked ladder')).join('')}</div>
@@ -2069,7 +2301,7 @@ const avgOf = a => { a = a.filter(v=>v!=null && !isNaN(v)); return a.length ? a.
 function replayNums(list){ const st = list.map(x=>x.st).filter(Boolean), op = {};
   st.forEach(s=>{ if(s.opening) op[s.opening] = (op[s.opening]||0)+1; });
   return {n:st.length, eapm:avgOf(st.map(s=>s.eapm)), apm:avgOf(st.map(s=>s.apm)), feudal:avgOf(st.map(s=>tsec(s.feudal))), castle:avgOf(st.map(s=>tsec(s.castle))), imp:avgOf(st.map(s=>tsec(s.imp))),
-    tcIdle:avgOf(st.map(s=>s.tcIdle)), opening:(Object.entries(op).sort((a,b)=>b[1]-a[1])[0]||[])[0]||''}; }
+    tcIdle:avgOf(st.map(s=>s.idleC)), opening:(Object.entries(op).sort((a,b)=>b[1]-a[1])[0]||[])[0]||''}; }
 const tile = (k,v,sub,txt) => `<div class="card stat ${txt?'txt':''}"><span>${k}</span><b title="${esc(String(v).replace(/<[^>]+>/g,''))}">${v}</b>${sub?`<i>${sub}</i>`:''}</div>`;
 const formStrip = list => `<span class="formrow">${list.map(x=>`<i class="${x.won?'W':'L'}" title="${esc((x.g.map||'Map')+' v '+sideName(x.sd[1-x.si]))}">${x.won?'W':'L'}</i>`).join('')}</span>`;
 const plLinks = p => p.pid ? `<div class="small"><a href="https://www.aoe2insights.com/user/${encodeURIComponent(p.pid)}/" target="_blank" rel="noopener">AoE2 Insights</a> · <a href="https://www.aoe2companion.com/players/${encodeURIComponent(p.pid)}" target="_blank" rel="noopener">aoe2companion</a></div>` : '';
@@ -2098,13 +2330,13 @@ function playerProfile(id, t){
     bp&&bp[1].w&&Object.keys(mates).length>1?tile('Best team-mate', esc(P(bp[0]).name), `${bp[1].w}–${bp[1].l} together`, 1):''].join('');
   const elo = eloCols(t).filter(k=>eloOf(id,k)).map(k=>{ const e = eloOf(id,k); return tile(LADDER[k], e.r, e.max?`peak ${e.max}`:'ranked ladder'); }).join('');
   const rep = rp.n ? `<div class="card"><h3>Replay averages</h3><div class="small muted">From ${rp.n} game${rp.n>1?'s':''} with a replay.</div><div class="statrow in">
-      ${tile('eAPM', rp.eapm!=null?Math.round(rp.eapm):'–')}${rp.apm!=null?tile('APM', Math.round(rp.apm)):''}${tile('Feudal', mmss(rp.feudal))}${tile('Castle', mmss(rp.castle))}${tile('Imperial', mmss(rp.imp))}${rp.tcIdle!=null?tile('TC idle', mmss(rp.tcIdle), 'per game'):''}${rp.opening?tile('Usual opening', esc(rp.opening), '', 1):''}</div></div>` : '';
-  const h2h = Object.entries(opp).sort((a,b)=>(b[1].w+b[1].l)-(a[1].w+a[1].l)).map(([k,r])=>`<tr><td>${esc(k)}</td><td class="n">${r.w}</td><td class="n">${r.l}</td><td class="n">${pct(r.w,r.w+r.l)}</td></tr>`).join('');
-  const withT = Object.entries(mates).sort((a,b)=>(b[1].w+b[1].l)-(a[1].w+a[1].l)).map(([k,r])=>`<tr><td>${esc(P(k).name)}</td><td class="n">${r.w}</td><td class="n">${r.l}</td><td class="n">${pct(r.w,r.w+r.l)}</td></tr>`).join('');
+      ${tile('eAPM', rp.eapm!=null?Math.round(rp.eapm):'–')}${rp.apm!=null?tile('APM', Math.round(rp.apm)):''}${tile('Feudal', mmss(rp.feudal))}${tile('Castle', mmss(rp.castle))}${tile('Imperial', mmss(rp.imp))}${rp.tcIdle!=null?tile('TC idle to Castle', mmss(rp.tcIdle), 'per game'):''}${rp.opening?tile('Usual opening', esc(rp.opening), '', 1):''}</div></div>` : '';
+  const h2h = Object.entries(opp).sort((a,b)=>(b[1].w+b[1].l)-(a[1].w+a[1].l)).map(([k,r])=>{ const tm = (T().teams||[]).find(x=>x.name===k); return `<tr${tm?` data-act="tteam" data-v="${esc(tm.id)}" title="Open ${esc(k)}"`:''}><td>${esc(k)}</td><td class="n">${r.w}</td><td class="n">${r.l}</td><td class="n">${pct(r.w,r.w+r.l)}</td></tr>`; }).join('');
+  const withT = Object.entries(mates).sort((a,b)=>(b[1].w+b[1].l)-(a[1].w+a[1].l)).map(([k,r])=>`<tr data-act="tplayer" data-v="${esc(k)}" title="Open ${esc(P(k).name)}"><td>${esc(P(k).name)}</td><td class="n">${r.w}</td><td class="n">${r.l}</td><td class="n">${pct(r.w,r.w+r.l)}</td></tr>`).join('');
   const anySt = mine.some(g=>g.st), anyLen = mine.some(g=>g.len!=null);
-  const games = mine.map(g=>`<tr><td class="small">${esc(g.S.name)}<div class="muted">${esc(matchLabel(g.S,g.m))} · map ${g.gi+1}</div></td><td>${sideHtml(g.sd[1-g.si])}</td><td>${esc(g.civs[id]||'–')}</td><td>${esc(g.g.map||'–')}</td>
+  const games = mine.map(g=>`<tr${LIVE&&g.g.mid?` data-act="gstats" data-mid="${esc(g.g.mid)}" title="Open game stats"`:''}><td class="small">${esc(g.S.name)}<div class="muted">${esc(matchLabel(g.S,g.m))} · map ${g.gi+1}</div></td><td>${sideHtml(g.sd[1-g.si])}</td><td>${esc(g.civs[id]||'–')}</td><td>${esc(g.g.map||'–')}</td>
     ${anyLen?`<td class="n">${esc(g.g.len||'–')}</td>`:''}${anySt?`<td class="n">${g.st&&g.st.eapm!=null?g.st.eapm:'–'}</td><td class="n">${g.st&&g.st.feudal?esc(g.st.feudal):'–'}</td>`:''}<td>${g.won?'<b style="color:var(--win)">Won</b>':'<span style="color:var(--loss)">Lost</span>'}${typeof statsBtn==='function'?statsBtn(g.g):''}</td></tr>`).join('');
-  const series = x.list.map(({S,m,si,sd,w,sc})=>`<tr><td class="small">${esc(S.name)}<div class="muted">${esc(matchLabel(S,m))}</div></td><td>${sideHtml(sd[1-si])}</td><td class="n">${sc[si]}–${sc[1-si]}</td><td>${w==null?'<span class="muted small">to play</span>'+predShort(S,m,si):w===si?'<b style="color:var(--win)">Won</b>':'<span style="color:var(--loss)">Lost</span>'}</td></tr>`).join('');
+  const series = x.list.map(({S,m,si,sd,w,sc})=>`<tr data-act="mgo" data-s="${S.id}" data-m="${m.id}" title="Show this match"><td class="small">${esc(S.name)}<div class="muted">${esc(matchLabel(S,m))}</div></td><td>${sideHtml(sd[1-si])}</td><td class="n">${sc[si]}–${sc[1-si]}</td><td>${w==null?'<span class="muted small">to play</span>'+predShort(S,m,si):w===si?'<b style="color:var(--win)">Won</b>':'<span style="color:var(--loss)">Lost</span>'}</td></tr>`).join('');
   return `<p><button class="sm" data-act="player" data-v="">‹ All players</button></p>
     <div class="card thead">${p.photo?`<img class="pphoto" src="${p.photo}" alt="">`:''}
       <div><h2 style="margin:0">${esc(p.name)}</h2><div class="muted">${[x.team?x.team.name+(x.team.cap===id?' · captain':''):'', x.place?'finished '+ord(x.place.place):''].filter(Boolean).map(esc).join(' · ')}</div>${plLinks(p)}</div>
@@ -2230,7 +2462,7 @@ const MET = [
   {k:'castle', n:'Castle click',       f:s=>tsec(s.castle),  fmt:mmss},
   {k:'imp',    n:'Imperial click',     f:s=>tsec(s.imp),     fmt:mmss},
   {k:'idleC',  n:'TC idle to Castle',  f:s=>s.idleC,         fmt:mmss},
-  {k:'tcIdle', n:'TC idle, whole game',f:s=>s.tcIdle,        fmt:mmss},
+  {k:'tcIdle', n:'TC idle, whole game',f:s=>s.tcIdle,        fmt:mmss, hide:1},   // kept for data, not shown: only idle to Castle matters
   {k:'flt',    n:'Avg float',          f:s=>s.flt,           fmt:v=>Math.round(v), sub:'banked resources'},
   {k:'milPct', n:'Military focus',     f:s=>s.milPct,        fmt:v=>Math.round(v)+'%'},
   {k:'ecoPct', n:'Eco focus',          f:s=>s.ecoPct,        fmt:v=>Math.round(v)+'%'}];
@@ -2249,7 +2481,7 @@ function sxLen(list){ const L = list.filter(o=>o.x.len!=null), all = L.map(o=>o.
     win:side?avgOf(L.filter(o=>o.won).map(o=>o.x.len)):null, loss:side?avgOf(L.filter(o=>o.won===false).map(o=>o.x.len)):null, side}; }
 function sxLenTiles(L){ return tile('Avg game', mmss(L.avg)) + tile('Shortest', mmss(L.min)) + tile('Longest', mmss(L.max))
   + (L.side ? tile('Avg win', mmss(L.win)) + tile('Avg loss', mmss(L.loss)) : ''); }
-function sxRepTiles(o){ return MET.map(m=>tile(m.n, sxVal(o,m), m.sub||'')).join('') + tile('Usual opening', o&&o.opening?esc(o.opening):'–', '', 1); }
+function sxRepTiles(o){ return MET.filter(m=>!m.hide).map(m=>tile(m.n, sxVal(o,m), m.sub||'')).join('') + tile('Usual opening', o&&o.opening?esc(o.opening):'–', '', 1); }
 /* openings: overall and by map, from player-game records */
 function sxOpen(recs){ const op = {}, byMap = {};
   recs.forEach(r=>{ const o = r.s && r.s.opening; if(!o) return; const e = op[o] = op[o]||{n:0,w:0,maps:{}}; e.n++; if(r.won) e.w++; const mp = r.x.g.map||'?'; e.maps[mp] = (e.maps[mp]||0)+1;
@@ -2355,6 +2587,31 @@ function seedTools(S, t){ if(!seedable(S)) return '';
     + `<span class="small muted">${any ? (S.ent==='teams'?'Teams by their players\' average ELO. ':'')+'You can still move anyone after.' : 'No ranked ELOs yet. The game finder fetches them on its next run (every 10 minutes), then this button works.'}</span>`
     + (S.type==='swiss' ? `<label class="small" style="margin-left:auto">Round 1 pairs <select data-act="swr1" data-s="${S.id}"><option value="rand" ${S.r1!=='seed'?'selected':''}>at random</option><option value="seed" ${S.r1==='seed'?'selected':''}>by seed (top half v bottom half)</option></select></label>` : ''); }
 function seedRow(S, k, j){ return seedable(S) ? `<button class="sm" data-act="seedup" data-s="${S.id}" data-v="${k}" title="Move up">▲</button><button class="sm" data-act="seeddn" data-s="${S.id}" data-v="${k}" title="Move down">▼</button><span class="small muted">seed ${j+1}${(()=>{ const e = entElo(k,T()); return e!=null?' · '+Math.round(e):''; })()}</span>` : ''; }
+/* ---------- click any table header to sort: numbers high→low first, words A→Z first; click again to flip ---------- */
+const tsort = {};
+function tKey(tb){ const box = tb.closest('.card,details,.box,section') || document.body, h = box.querySelector('h2,h3,summary');
+  return (ui.tab||'') + '|' + (ui.sdiv||'') + '|' + (h ? h.textContent.trim().slice(0,40) : '') + '|' + [...box.querySelectorAll('table')].indexOf(tb); }
+function tHead(tb){ return [...tb.rows].find(r=>r.querySelector('th')); }
+function tVal(td){ if(!td) return null; const t = (td.dataset.sv ?? td.textContent).trim(); if(!t || /^[–—-]$/.test(t)) return null;
+  const m = /^(\d+):(\d\d)(?::(\d\d))?$/.exec(t); if(m) return m[3]!=null ? +m[1]*3600 + +m[2]*60 + +m[3] : +m[1]*60 + +m[2];
+  if(/^[-+−]?[\d.,]+\s*%?$/.test(t)) return parseFloat(t.replace(/[,%\s]/g,'').replace('−','-'));
+  const w = /^(\d+)\s*[–-]\s*(\d+)$/.exec(t); if(w) return +w[1] - +w[2] + +w[1]/1000;     // records like 3–1 sort by wins minus losses
+  return t.toLowerCase(); }
+function tSortable(tb){ return tb.closest('.tour') && ui.tab!=='setup' && ui.tab!=='data' && !tb.querySelector('input,select,textarea') && tHead(tb) && tb.rows.length > 2; }
+function tApply(tb){ const hr = tHead(tb), s = tsort[tb.dataset.tk];
+  [...hr.cells].forEach((th,i)=>{ th.classList.add('sortable'); th.classList.toggle('sa', !!s && s.c===i && s.d>0); th.classList.toggle('sd', !!s && s.c===i && s.d<0);
+    if(!th.title) th.title = 'Sort'; });
+  if(!s) return;
+  const rows = [...tb.rows].filter(r=>r.rowIndex > hr.rowIndex && !r.classList.contains('nosort')), body = rows[0] && rows[0].parentNode; if(!body) return;
+  rows.map((r,i)=>({r, i, v:tVal(r.cells[s.c])})).sort((a,b)=>{ if(a.v==null && b.v==null) return a.i-b.i; if(a.v==null) return 1; if(b.v==null) return -1;
+      const c = typeof a.v==='number' && typeof b.v==='number' ? a.v-b.v : typeof a.v==='number' ? -1 : typeof b.v==='number' ? 1 : String(a.v).localeCompare(String(b.v));
+      return c*s.d || a.i-b.i; }).forEach(x=>body.appendChild(x.r)); }
+function tScan(){ document.querySelectorAll('.tour table').forEach(tb=>{ if(tb.dataset.tk || !tSortable(tb)) return; tb.dataset.tk = tKey(tb); tApply(tb); }); }
+new MutationObserver(tScan).observe(document.documentElement, {childList:true, subtree:true});
+document.addEventListener('click', e=>{ const th = e.target.closest('th.sortable'); if(!th || e.target.closest('button,a,[data-act]')) return;
+  const tb = th.closest('table'), k = tb.dataset.tk, i = th.cellIndex, cur = tsort[k];
+  if(cur && cur.c===i) cur.d = -cur.d; else { const v = [...tb.rows].slice(tHead(tb).rowIndex+1).map(r=>tVal(r.cells[i])).find(x=>x!=null); tsort[k] = {c:i, d: typeof v==='number' ? -1 : 1}; }
+  tApply(tb); });
 
 /* ============ boot ============ */
 document.addEventListener('click', e=>{ const el = e.target.closest('[data-act]'); if(!el || el.tagName==='SELECT' || (el.tagName==='INPUT' && el.type!=='button')) return; act(el, e); });
