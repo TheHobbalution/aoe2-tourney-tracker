@@ -261,6 +261,8 @@ def headline(st):
         "idleC": (idle.get("dark") or 0) + (idle.get("feudal") or 0) if idle and ("dark" in idle or "feudal" in idle) else None,
         "peak": det.get("eapmPeak"), "milPct": det.get("focusMilPct"), "ecoPct": det.get("focusEcoPct"),
         "flt": st.get("floatAvg"), "fltPk": st.get("floatPeak"),
+        # TC douche: "D" = Dark Age, "F" = Feudal; "!" = placed in range of the enemy TC
+        "douche": ",".join(d["age"][0] + ("!" if d.get("in_range") else "") for d in st["douche"]) if st.get("douche") else None,
     }.items() if v is not None}
 
 
@@ -471,12 +473,35 @@ def elos_from_matches(matches):
     return {pid: {k: {"r": v[1]} for k, v in d.items()} for pid, d in best.items()}
 
 
-def fetch_elos(pids, get=http_get):
-    """profile id -> {ladder: {...}} from each player's aoe2companion profile. Players whose profile can't be read are left out."""
+def _cc(v):
+    """Two-letter country code as aoe2companion gives it ("au"), or None."""
+    v = str(v or "").strip().lower()
+    return v if len(v) == 2 and v.isalpha() else None
+
+
+def countries_from_matches(matches):
+    """profile id -> country code, from the player lists of any games already fetched (ranked or lobby)."""
+    out = {}
+    for m in matches:
+        for t in m.get("teams") or []:
+            for p in t.get("players") or []:
+                c = _cc(p.get("country"))
+                if c and p.get("profileId") is not None:
+                    out[p["profileId"]] = c
+    return out
+
+
+def fetch_elos(pids, get=http_get, cc=None):
+    """profile id -> {ladder: {...}} from each player's aoe2companion profile. Players whose profile can't be read are left out.
+    When cc is a dict, each profile's country code is put in it too (profile id -> "au")."""
     out, bad = {}, 0
     for pid in pids:
         try:
             data = json.loads(get(f"https://data.aoe2companion.com/api/profiles/{pid}"))
+            if cc is not None and isinstance(data, dict):
+                c = _cc((data.get("profile") if isinstance(data.get("profile"), dict) else data).get("country"))
+                if c:
+                    cc[pid] = c
             e = parse_profile_elos(data)
             if e:
                 out[pid] = e
@@ -493,7 +518,7 @@ def fetch_elos(pids, get=http_get):
 
 
 def update_elos(site_ref, state, matches_by_pid, now, get=http_get):
-    """Keep tournaments/<tid>/detector/elo fresh: {at, p: {tracker player id: {ladder: {r, max}}}}."""
+    """Keep tournaments/<tid>/detector/elo fresh: {at, p: {tracker player id: {ladder: {r, max}}}, cc: {tracker player id: "au"}}."""
     pidmap = {}
     for t in state.get("tours") or []:
         if elo_window(t, now):
@@ -507,8 +532,14 @@ def update_elos(site_ref, state, matches_by_pid, now, get=http_get):
     asked = set(cur.get("asked") or []) if fresh else set()      # players already asked since the last full refresh
     need = sorted(pid for pid, i in pidmap.items() if not fresh or (i not in have and i not in asked))
     fallback = elos_from_matches(matches_by_pid)
-    got = fetch_elos(need, get) if need else {}
+    ccs = dict(cur.get("cc") or {})
+    got_cc = countries_from_matches(matches_by_pid)
+    got = fetch_elos(need, get, got_cc) if need else {}
     changed = False
+    for pid, i in pidmap.items():                           # nation flags: country code from aoe2companion
+        if got_cc.get(pid) and ccs.get(i) != got_cc[pid]:
+            ccs[i] = got_cc[pid]
+            changed = True
     for pid, i in pidmap.items():
         e = dict(have.get(i) or {})
         for k, v in (fallback.get(pid) or {}).items():      # newest ranked game seen this run
@@ -522,7 +553,7 @@ def update_elos(site_ref, state, matches_by_pid, now, get=http_get):
             changed = True
     if need or changed:
         asked.update(pidmap[pid] for pid in need)
-        ref.set({"at": cur.get("at") or 0 if fresh else now, "p": have, "asked": sorted(asked)})
+        ref.set({"at": cur.get("at") or 0 if fresh else now, "p": have, "asked": sorted(asked), "cc": ccs})
         log(f"{site_ref.id}: ELOs saved for {len(have)} players ({len(got)} of {len(need)} profiles read)")
 
 

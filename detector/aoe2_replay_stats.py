@@ -433,6 +433,7 @@ def player_report(num, info, evs, game_ms, sync, age_done=None, start_age=0):
     return {
         **info,
         "apm": apm, "eapm": eapm, "commands": n_cmds, "eapm_by_age": eapm_by_age,
+        "_reached": {AGE_TECHS[k]: v for k, v in reached.items()},
         # an age whose estimated finish is after the game ended was never reached (clicked, then the game ended first)
         "ages": {AGE_TECHS[k]: {"clicked": mmss(v),
                                 "done_est": mmss(age_done[k]) if k in age_done else "~" + mmss(v + time_of("techs", k, 130) * 1000)}
@@ -469,6 +470,76 @@ def _chat_line(t, m, players):
         return f"{mmss(t)} ** {msg}"
     return f"{mmss(t)} {who}: {msg}" + (" (taunt)" if (j.get("tauntNumber") or -1) > 0 else "")
 
+
+# ---------------------------------------------------------------- TC "douche"
+# Dark/Feudal Age move: a player deletes their own Town Center and builds a new one next to (or in range of)
+# an enemy TC (Jacob, 19 Nov). The replay holds the starting TCs (ids + positions, from the header), every
+# Delete command and every TC placement (with x/y). It can't tell whether the new TC was finished.
+TC_TYPES = {71, 109, 141, 142, 481, 482, 483, 484, 597, 611, 612, 613, 614, 615, 616, 617, 618, 619, 620, 621}
+TC_BUILD = TC_TYPES                 # DE places a new Dark Age TC as 621
+DOUCHE_WINDOW_MS = 4 * 60 * 1000    # delete and new TC within 4 game minutes of each other
+DOUCHE_NEAR = 15                    # tiles between the two TCs' edges to count as "close"
+DOUCHE_RANGE = 6                    # TC range: the enemy TC can shoot it (no Bracer etc. in Dark/Feudal)
+
+def start_tcs(header):
+    """player number -> [(instance id, x, y)] of the Town Centers they start with."""
+    out = defaultdict(list)
+    for p in header.get("players") or []:
+        for o in p.get("objects") or []:
+            if o.get("object_id") in TC_TYPES:
+                pos = o.get("position") or {}
+                out[p.get("number")].append((o.get("instance_id"), pos.get("x"), pos.get("y")))
+    return out
+
+def tc_douches(header, by_player, players, reached):
+    """reached: player -> {"Feudal": ms, "Castle": ms} (when each age was reached). Returns player -> [douche]."""
+    tcs = start_tcs(header)
+    owner = {iid: n for n, lst in tcs.items() for iid, _, _ in lst}
+    pos = {iid: (x, y) for lst in tcs.values() for iid, x, y in lst}
+    deleted = {}                                   # instance id -> time deleted
+    for n, evs in by_player.items():
+        for e in evs:
+            if e["type"] == "DELETE":
+                for iid in e.get("object_ids") or []:
+                    if owner.get(iid) == n and iid not in deleted:
+                        deleted[iid] = e["t"]
+    out = {}
+    for n, evs in by_player.items():
+        mine = [(t, iid) for iid, t in deleted.items() if owner.get(iid) == n]
+        if not mine:
+            continue
+        r = reached.get(n) or {}
+        def age_at(t):
+            return "Dark" if t < r.get("Feudal", 1e12) else ("Feudal" if t < r.get("Castle", 1e12) else None)
+        enemies = [iid for iid, o in owner.items() if o != n and players.get(o, {}).get("team") != players.get(n, {}).get("team")]
+        found = []
+        for t_del, iid in sorted(mine):
+            age = age_at(t_del)
+            if not age:
+                continue                           # Castle Age or later: not a douche
+            best = None
+            for e in evs:
+                if e["type"] != "BUILD" or e.get("building_id") not in TC_BUILD or abs(e["t"] - t_del) > DOUCHE_WINDOW_MS:
+                    continue
+                if e.get("x") is None or not age_at(e["t"]):
+                    continue
+                for en in enemies:
+                    if en in deleted and deleted[en] < e["t"]:
+                        continue                   # that enemy TC was already gone
+                    ex, ey = pos[en]
+                    # gap between the two 4x4 footprints (both positions are TC centres)
+                    gx, gy = max(0.0, abs(e["x"] - ex) - 4), max(0.0, abs(e["y"] - ey) - 4)
+                    d = (gx * gx + gy * gy) ** 0.5
+                    if d <= DOUCHE_NEAR and (best is None or d < best[0]):   # closest spot; time = first near placement
+                        best = (d, min(e["t"], best[1]) if best else e["t"], owner[en])
+            if best:
+                found.append({"deleted": mmss(t_del), "deleted_ms": t_del, "age": age, "built": mmss(best[1]),
+                              "built_ms": best[1], "dist": round(best[0], 1), "in_range": best[0] <= DOUCHE_RANGE,
+                              "target": players.get(best[2], {}).get("name"), "target_profile": players.get(best[2], {}).get("profile_id")})
+        if found:
+            out[n] = found
+    return out
+
 def analyse(raw):
     header, events, chat, sync, game_ms = read_events(raw)
     players = players_from_header(header)
@@ -487,6 +558,15 @@ def analyse(raw):
     start_age = (header.get("de") or {}).get("starting_age_id") or 0     # 0 = Dark (standard), 1 = Feudal (Empire Wars), 2 = Castle ...
     reports = [player_report(n, players[n], by_player.get(n, []), game_ms, sync, done.get(n), start_age)
                for n in sorted(players)]
+    try:
+        reached = {r["number"]: r.pop("_reached", {}) for r in reports}
+        dch = tc_douches(header, by_player, players, reached)
+    except Exception:  # noqa: BLE001 - never lose the other stats over this
+        dch = {}
+    for r in reports:
+        r["tc_douche"] = dch.get(r["number"], [])
+        if r["tc_douche"]:   # shown as the opening, like Scouts / Archers (Jacob, 19 Nov)
+            r["opening"] = f'{r["tc_douche"][0]["age"]} Age TC Douche'
     # result: a team where everyone resigned lost
     teams = defaultdict(list)
     for r in reports:

@@ -209,6 +209,8 @@ def helper_stats(path, num):
             "spent": r.get("spent_estimate"), "resigned": r.get("resigned_at") or p["resigned"],
             "result": r.get("result"),
         })
+        if r.get("tc_douche"):   # deleted own TC in Dark/Feudal and built one near an enemy TC
+            p["douche"] = [{k: d[k] for k in ("deleted", "age", "built", "dist", "in_range", "target")} for d in r["tc_douche"]]
 
 
 def merge(summary, stats):
@@ -236,7 +238,7 @@ def merge(summary, stats):
             s = by_pid.get(p["profileId"])
             if s:
                 p["stats"] = {k: s[k] for k in ("apm", "eapm", "opening", "ages", "agesDone", "build", "techs", "eco", "units",
-                                                "vils", "military", "walls", "resigned", "tcIdle", "floatAvg", "floatPeak", "spent", "detail") if k in s}
+                                                "vils", "military", "walls", "resigned", "tcIdle", "floatAvg", "floatPeak", "spent", "detail", "douche") if k in s}
                 p["civ"] = p.get("civ") or s["civ"]
                 if s.get("color") is not None:
                     p["color"] = s["color"]     # colour actually played, from the replay
