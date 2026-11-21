@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-E7xOAKPIxBMnurS3kDHbAgQG6FrEaYL85SqzrXpn8vE=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-p9cR9Q16ZpblReirls7mjQnVfoLltONPQh7khoAAKuk=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -763,6 +763,33 @@ tr[data-act]:hover td{background:color-mix(in srgb,var(--accent) 8%,transparent)
 .sxspot .ru{display:flex;justify-content:space-between;gap:8px;padding:8px 14px;border-top:1px solid var(--line);font-size:.82rem;color:var(--muted)}.sxspot .ru b{color:var(--ink)}
 @media (max-width:900px){.sxhero{grid-template-columns:1fr 1fr}.sxgrid3,.sxspots{grid-template-columns:1fr}.sxrecs{grid-template-columns:1fr 1fr}.sxhero b{font-size:1.8rem}.sxbr{grid-template-columns:90px 1fr 70px}}
 .sxrec.none{cursor:default;opacity:.7}.sxnone{margin-top:10px}.sxboard,.sxgrid3 .card{margin:0}
+
+/* civ / map bars: one line per row, numbers in aligned columns */
+.sxbars .sxbr{grid-template-columns:minmax(0,150px) 1fr 48px 74px;gap:12px;height:22px}
+.sxbars .sxbr .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sxbars .sxbr .c{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.sxbars .sxbh{height:auto;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase}
+@media (max-width:900px){.sxbars .sxbr{grid-template-columns:minmax(0,96px) 1fr 40px 62px;gap:8px}}
+/* admin results */
+.admtag{display:inline-block;font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:1px 7px;border-radius:99px;background:color-mix(in srgb,var(--accent) 22%,transparent);color:var(--accent);border:1px solid color-mix(in srgb,var(--accent) 55%,transparent);vertical-align:middle}
+.admnote{font-size:.8rem;color:var(--muted);font-style:italic}
+.admban{margin:10px 0 4px;padding:8px 12px;border-radius:8px;background:color-mix(in srgb,var(--accent) 10%,var(--raised));border:1px solid color-mix(in srgb,var(--accent) 35%,var(--line))}
+.admbox{margin-top:12px;padding:8px 12px;border:1px dashed var(--line2);border-radius:8px}
+.admbox summary{cursor:pointer}
+.admbox[open] summary{margin-bottom:8px}
+.admlbl{display:flex;flex-direction:column;gap:4px;margin-bottom:8px;max-width:420px}
+.admlbl input{width:100%}
+.admrow{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:6px}
+.admcur{margin-bottom:8px}
+/* nation flags next to player names: as tall as a capital letter */
+img.flag{display:inline-block;height:.78em!important;width:auto!important;aspect-ratio:4/3;border-radius:2px!important;object-fit:cover;vertical-align:baseline;margin:0 .32em 0 0;box-shadow:0 0 0 1px rgba(0,0,0,.35);flex:none}
+.chip img.flag,.bxn img.flag{margin-right:0}
+input.cc{width:3.2em;text-transform:uppercase;text-align:center}
+
+/* team tables side by side: same fixed column widths so columns line up */
+.gstab.fixed{table-layout:fixed;min-width:900px}
+.gstab.fixed td,.gstab.fixed th{overflow:hidden;text-overflow:ellipsis}
+.gstab.fixed td.small,.gstab.fixed .gsop{white-space:normal}
 </style>
 </head>
 <body>
@@ -852,7 +879,7 @@ function entName(k, T_=T()){ if(!k) return 'TBD'; const [kind,id] = k.split(':')
 function entPhoto(k, T_=T()){ if(!k) return ''; const [kind,id] = k.split(':'); if(kind==='p') return P(id).photo||''; const t = teamOf(T_,id); return (t&&t.logo)||''; }
 function entMembers(k, T_=T()){ if(!k) return []; const [kind,id] = k.split(':'); if(kind==='p') return [id]; const t = teamOf(T_,id); return t ? t.members.slice() : []; }
 function chip(k, T_=T()){ if(!k) return `<span class="chip tbd">TBD</span>`; const ph = entPhoto(k,T_);
-  return `<span class="chip">${ph?`<img src="${ph}" alt="">`:''}${esc(entName(k,T_))}</span>`; }
+  return `<span class="chip">${ph?`<img src="${ph}" alt="">`:''}${entNameH(k)}</span>`; }
 function sideHtml(side, T_=T()){ if(side===null) return `<span class="chip tbd">bye</span>`; if(!side||!side.length) return chip(null); return `<span class="side">${side.map(k=>chip(k,T_)).join(' ')}</span>`; }
 function stageEntrants(S, T_=T()){
   if(S.ent==='teams'){ const all = T_.teams.map(t=>'t:'+t.id); return S.entrants ? S.entrants.filter(k=>all.includes(k)) : all; }
@@ -1179,7 +1206,7 @@ function matchHtml(S, m, compact){
   let games = '';
   if(ready){
     const shown = []; for(let i=0;i<bo;i++){ const g = m.games[i]; if(g && (g.w===0||g.w===1||g.map)) shown.push(i); else { if(w==null) shown.push(i); break; } }
-    if(VIEW){ games = m.games.filter(g=>g.w===0||g.w===1).map((g,i)=>`<div class="game"><span class="gn">G${i+1}</span>${g.map?esc(g.map)+' · ':''}<b>${esc(sideName(sd[g.w]))}</b> won${civLine(g)}${statsBtn(g)}</div>`).join(''); }
+    if(VIEW){ games = m.games.filter(g=>g.w===0||g.w===1).map((g,i)=>`<div class="game"><span class="gn">G${i+1}</span>${g.map?esc(g.map)+' · ':''}<b>${sideNameH(sd[g.w])}</b> won${civLine(g)}${statsBtn(g)}</div>`).join(''); }
     else games = shown.map(i=>gameRow(S,m,i,sd)).join('');
   }
   return `<div class="match ${w!=null?'done':''}" data-m="${m.id}"><div class="mh">${lbl}
@@ -1187,7 +1214,7 @@ function matchHtml(S, m, compact){
     <span class="sc">${ready&&(sc[0]||sc[1]||bo>1)?sc.join(' – '):''}</span></div>${games?`<div class="games">${games}</div>`:''}</div>`;
 }
 function sideName(side){ return (side||[]).map(k=>entName(k)).join(' + '); }
-function civLine(g){ const c = Object.entries(g.civs||{}).filter(([,v])=>v); return c.length ? ` <span class="muted small">(${c.map(([p,v])=>esc(P(p).name)+': '+esc(v)).join(', ')})</span>` : ''; }
+function civLine(g){ const c = Object.entries(g.civs||{}).filter(([,v])=>v); return c.length ? ` <span class="muted small">(${c.map(([p,v])=>pnm(p)+': '+esc(v)).join(', ')})</span>` : ''; }
 function gameRow(S, m, i, sd){
   const t = T(), g = m.games[i] || {}, maps = S.maps.length ? S.maps : null, key = `${S.id}|${m.id}|${i}`;
   const mapSel = maps ? `<select data-act="gmap" data-s="${S.id}" data-m="${m.id}" data-i="${i}"><option value="">map…</option>${maps.map(x=>`<option ${g.map===x?'selected':''}>${esc(x)}</option>`).join('')}</select><button class="sm" title="Random map from the pool, skipping maps already played in this match" data-act="rmap" data-s="${S.id}" data-m="${m.id}" data-i="${i}">🎲</button>`
@@ -1195,7 +1222,7 @@ function gameRow(S, m, i, sd){
   const btn = si => `<button class="sm ${g.w===si?'on':''}" data-act="gwin" data-s="${S.id}" data-m="${m.id}" data-i="${i}" data-v="${si}">${esc(sideName(sd[si]))} won</button>`;
   const members = [...sd[0],...sd[1]].flatMap(k=>entMembers(k,t)), uses = civUses(t), lim = +t.civLimit||0;
   const civs = `<details class="civd" data-k="${key}"><summary class="small muted">civs</summary><div class="civs">${members.map(p=>{ const c = (g.civs||{})[p]||''; const over = lim && c && (uses[p+'|'+c]||0) > lim;
-      return `<label>${esc(P(p).name)} <select class="${over?'over':''}" title="${over?'Over the civ limit':''}" data-act="gciv" data-s="${S.id}" data-m="${m.id}" data-i="${i}" data-p="${p}"><option value="">–</option>${CIVS.map(x=>`<option ${x===c?'selected':''}>${x}</option>`).join('')}</select></label>`; }).join('')}</div></details>`;
+      return `<label>${pnm(p)} <select class="${over?'over':''}" title="${over?'Over the civ limit':''}" data-act="gciv" data-s="${S.id}" data-m="${m.id}" data-i="${i}" data-p="${p}"><option value="">–</option>${CIVS.map(x=>`<option ${x===c?'selected':''}>${x}</option>`).join('')}</select></label>`; }).join('')}</div></details>`;
   const pk = tbOf(S).includes('nw') && S.type!=='elim' && S.type!=='spoon' ? `<select title="Who picked this map" data-act="gpick" data-s="${S.id}" data-m="${m.id}" data-i="${i}">${[['','map pick…'],['n','Neutral'],['a',sideName(sd[0])+' pick'],['b',sideName(sd[1])+' pick']].map(([v,n])=>`<option value="${v}" ${pickOf(S,g,i)===v?'selected':''}>${esc(n)}</option>`).join('')}</select>` : '';
   return `<div class="game"><span class="gn">G${i+1}</span>${mapSel}${pk}${btn(0)}${btn(1)}${(g.w===0||g.w===1)?`<button class="sm" title="Clear this game" data-act="gclear" data-s="${S.id}" data-m="${m.id}" data-i="${i}">✕</button>`:''}${statsBtn(g)}</div>${civs}`;
 }
@@ -1233,7 +1260,7 @@ function finalOrder(t, dv=''){
   spoonSide.forEach(k=>{ if(!seen.has(k)){ n++; out.push({k,place:n,spoon:true}); seen.add(k); } });
   return out;
 }
-function finalTable(t,dv){ return `<table>${finalOrder(t,dv).map(p=>`<tr><td>${p.place===1?'🏆 ':''}${ord(p.place)}${p.spoon?' 🥄':''}</td><td>${chip(p.k,t)}</td><td class="muted small">${p.k.startsWith('t:')?entMembers(p.k,t).map(x=>esc(P(x).name)).join(', '):''}</td></tr>`).join('')}</table>`; }
+function finalTable(t,dv){ return `<table>${finalOrder(t,dv).map(p=>`<tr><td>${p.place===1?'🏆 ':''}${ord(p.place)}${p.spoon?' 🥄':''}</td><td>${chip(p.k,t)}</td><td class="muted small">${p.k.startsWith('t:')?entMembers(p.k,t).map(x=>pnm(x)).join(', '):''}</td></tr>`).join('')}</table>`; }
 function civStats(t){ const c = {}; allMatches(t).forEach(({S,m})=>{ const sd = sidesOf(S,m,t); (m.games||[]).forEach(g=>{ if(g.w!==0&&g.w!==1) return; Object.entries(g.civs||{}).forEach(([p,civ])=>{ if(!civ) return; const si = entMembers((sd[0]||[]).find(k=>entMembers(k,t).includes(p))||'',t).length ? 0 : 1; const x = c[civ]||(c[civ]={n:0,w:0}); x.n++; if(si===g.w) x.w++; }); }); });
   const rows = Object.entries(c).sort((a,b)=>b[1].n-a[1].n); if(!rows.length) return '';
   return `<div class="card"><h3>Civs played</h3><div class="tablewrap"><table><tr><th>Civ</th><th class="n">Games</th><th class="n">Won</th><th class="n">Win %</th></tr>${rows.map(([k,v])=>`<tr><td>${esc(k)}</td><td class="n">${v.n}</td><td class="n">${v.w}</td><td class="n">${Math.round(100*v.w/v.n)}%</td></tr>`).join('')}</table></div></div>`; }
@@ -1346,6 +1373,7 @@ function setupPlayers(){
       ${t?`<label class="small"><input type="checkbox" data-act="roster" value="${id}" ${t.roster.includes(id)?'checked':''}> In</label>`:''}
       <input type="text" data-pf="name" data-p="${id}" value="${esc(p.name)}" placeholder="Name">
       <input type="text" class="num" data-pf="pid" data-p="${id}" value="${esc(p.pid||'')}" placeholder="Profile ID">
+      <input type="text" class="cc" data-pf="cc" data-p="${id}" value="${esc(p.cc||'')}" placeholder="${esc((LIVE && live.elo && live.elo.cc && live.elo.cc[id] || '').toUpperCase() || 'Flag')}" maxlength="2" title="Country code for their flag, like AU or NZ. Leave it empty to use their aoe2companion country.">${fl(id)}
       <button class="sm" data-act="pphoto" data-p="${id}">Photo…</button>
       ${p.pid?`<a class="small" href="https://www.aoe2insights.com/user/${encodeURIComponent(p.pid)}/" target="_blank" rel="noopener">Insights</a>`:''}
       <button class="sm danger" data-act="pdel" data-p="${id}">✕</button></div>`; }).join('') || '<div class="muted" style="padding:10px 0">No players yet.</div>'}</div>
@@ -1366,7 +1394,7 @@ function playerStats(id, t){
     (m.games||[]).forEach(g=>{ if(g.w!==0&&g.w!==1) return; const c = (g.civs||{})[id];
       if(!c && Object.values(g.civs||{}).some(Boolean)) return;   // civs entered for this map but not this player = sat out (team sub)
       const won = g.w===si; if(won) st.gw++; else st.gl++; if(c){ const x = st.civs[c]||(st.civs[c]={n:0,w:0}); x.n++; if(won) x.w++; }
-      if(g.map){ const x = st.maps[g.map]||(st.maps[g.map]={n:0,w:0}); x.n++; if(won) x.w++; } });
+      if(g.map && !g.adm){ const x = st.maps[g.map]||(st.maps[g.map]={n:0,w:0}); x.n++; if(won) x.w++; } });
     st.list.push({S, m, si, sd, w, sc}); });
   st.place = null; divs(t).forEach(dv=>{ if(!finalResult(t,dv).champ) return; const f = finalOrder(t,dv).find(p=>p.k===k || entMembers(p.k,t).includes(id)); if(f) st.place = f; });
   return st;
@@ -1392,7 +1420,7 @@ function playerProfile(id, t){
   const games = x.list.map(({S,m,si,sd,w,sc})=>`<tr><td class="small">${esc(S.name)}<div class="muted">${esc(matchLabel(S,m))}</div></td><td>${sideHtml(sd[1-si])}</td><td class="n">${sc[si]}–${sc[1-si]}</td><td>${w==null?'<span class="muted small">to play</span>':w===si?'<b style="color:var(--win)">Won</b>':'<span style="color:var(--loss)">Lost</span>'}</td></tr>`).join('');
   return `<p><button class="sm" data-act="player" data-v="">‹ All players</button></p>
     <div class="card" style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">${p.photo?`<img src="${p.photo}" alt="" style="width:110px;height:110px;border-radius:50%;object-fit:cover">`:''}
-      <div><h2 style="margin:0">${esc(p.name)}</h2><div class="muted">${x.team?esc(x.team.name)+(x.team.cap===id?' · captain':''):''}${x.place?` · finished ${ord(x.place.place)}`:''}</div>
+      <div><h2 style="margin:0">${pnm(id)}</h2><div class="muted">${x.team?esc(x.team.name)+(x.team.cap===id?' · captain':''):''}${x.place?` · finished ${ord(x.place.place)}`:''}</div>
       ${p.pid?`<div class="small"><a href="https://www.aoe2insights.com/user/${encodeURIComponent(p.pid)}/" target="_blank" rel="noopener">AoE2 Insights</a> · <a href="https://www.aoe2companion.com/players/${encodeURIComponent(p.pid)}" target="_blank" rel="noopener">aoe2companion</a></div>`:''}${replayAvg(id,t)}</div></div>
     <div class="grid g3">
       <div class="card"><b class="muted small">SERIES</b><div style="font-size:1.6rem;font-weight:700">${x.w}–${x.l}</div></div>
@@ -1537,6 +1565,9 @@ async function act(el, ev){
       const other = S.matches.find(x=>x.r===m.r && x.sides && x.sides.some(sd=>sd && sd[0]===k));
       if(other && (other.games||[]).length){ await say('That team already has results in this round. Clear them first.'); render(); return; }
       if(other){ other.sides.forEach(sd=>{ if(sd && sd[0]===k) sd[0] = old; }); } m.sides[i] = [k]; break; }
+    case 'admset': case 'admmap': { const [S,m] = curMatch(d.s,d.m); if(!m) return; lockIfNeeded(S); const note = (($('#adm-note')||{}).value||'').trim().slice(0,80);
+      admAward(S, m, +d.v, a==='admset', note); toast(a==='admset' ? 'Admin result saved' : 'Admin map saved'); break; }
+    case 'admclear': { const [S,m] = curMatch(d.s,d.m); if(!m || !await askYes('Remove the admin result? The maps it filled in are cleared.')) return; admClear(m); break; }
     case 'manual': { const S = curStage(d.s); S.manual = S.manual||{}; S.manual[d.v] = +el.value||0; break; }
     case 'tbup': { const S = curStage(d.s); const tb = tbOf(S).slice(), i = tb.indexOf(d.v); if(i>0) [tb[i-1],tb[i]] = [tb[i],tb[i-1]]; S.tb = tb; break; }
     case 'tbdel': { const S = curStage(d.s); S.tb = tbOf(S).filter(k=>k!==d.v); if(!S.tb.length) S.tb = ['pts']; break; }
@@ -1553,7 +1584,7 @@ async function act(el, ev){
       const A = side('A'), B = side('B'); if(!A.length||!B.length) { await say('Tick at least one on each side.'); return; } if(A.some(x=>B.includes(x))){ await say('Someone is on both sides.'); return; }
       S.matches.push({id:uid(), r:S.matches.length+1, g:0, sides:[A,B], games:[], label:$('#sg-label').value.trim()||`Game ${S.matches.length+1}`, bo:+$('#sg-bo').value}); break; }
     /* results */
-    case 'gwin': { const [S,m] = curMatch(d.s,d.m); lockIfNeeded(S); const i = +d.i, v = +d.v; m.games[i] = m.games[i]||{}; m.games[i].w = m.games[i].w===v ? null : v;
+    case 'gwin': { const [S,m] = curMatch(d.s,d.m); lockIfNeeded(S); const i = +d.i, v = +d.v; m.games[i] = m.games[i]||{}; m.games[i].w = m.games[i].w===v ? null : v; delete m.games[i].adm; delete m.games[i].note;
       const bo = matchBo(S,m); if(winnerOf(S,m)!=null && !(S.playAll && !m.bo)) m.games = m.games.slice(0, Math.max(i+1, m.games.findIndex((g,j)=>{ const s=[0,0]; m.games.slice(0,j+1).forEach(x=>{ if(x&&(x.w===0||x.w===1)) s[x.w]++; }); return s[0]>=need(bo)||s[1]>=need(bo); })+1));
       break; }
     case 'gclear': { const [S,m] = curMatch(d.s,d.m); m.games.splice(+d.i); break; }
@@ -1596,7 +1627,7 @@ function onField(el, final){
   if(d.th){ t.theme = Object.assign({a:'#d4a64a', b:'#6f9bd1'}, t.theme||{}, {[d.th]: el.value}); t.themeCustom = true; }
   else if(d.tf){ t[d.tf] = d.tf==='civLimit' ? Math.max(0, +el.value||0) : el.value; if(d.tf==='name') renderTop(); }
   else if(d.lf){ t.links[+d.link][d.lf] = el.value.trim(); }
-  else if(d.pf){ state.players[d.p][d.pf] = d.pf==='pid' ? el.value.replace(/\D/g,'') : el.value; }
+  else if(d.pf){ const pv = d.pf==='pid' ? el.value.replace(/\D/g,'') : d.pf==='cc' ? el.value.replace(/[^a-z]/gi,'').slice(0,2).toLowerCase() : el.value; if(d.pf==='cc' && !pv) delete state.players[d.p].cc; else state.players[d.p][d.pf] = pv; }
   else if(d.tmf){ t.teams[+d.team][d.tmf] = el.value; }
   else if(d.sf){ const S = curStage(d.s); let v = el.value;
     if(['bo','boFinal','pts','legs','groups','rounds','size','k','rotGames','perGroup'].includes(d.sf)) v = Math.max(0, +v||0);
@@ -2030,6 +2061,18 @@ document.addEventListener('input', e=>{ const el = e.target; if(el.matches && el
 document.addEventListener('input', e=>{ const el = e.target; if(!el.matches || !el.matches('[data-tq]')) return; const i = el.dataset.tq, q = el.value.toLowerCase().trim();
   (window.TQ = window.TQ || {})[i] = el.value; const box = document.querySelector('[data-tql="'+i+'"]'); if(!box) return;
   box.querySelectorAll('label[data-nm]').forEach(l=>{ l.style.display = (!q || l.dataset.mine==='1' || l.dataset.nm.includes(q)) ? '' : 'none'; }); }, true);
+/* ---------- nation flags: each player's country from aoe2companion (saved by the game finder next to the ELOs),
+   or typed by an organiser under Setup › Players. Small SVG flags from the flag-icons package (they show on Windows,
+   which can't draw flag emoji). ---------- */
+const FLAG_CDN = 'https://cdn.jsdelivr.net/npm/flag-icons@7.2.3/flags/4x3/';
+function ccOf(id){ const p = state && state.players[id]; let c = (p && p.cc) || (LIVE && live.elo && live.elo.cc && live.elo.cc[id]) || '';
+  c = String(c).toLowerCase(); return /^[a-z]{2}$/.test(c) ? c : ''; }
+let _ccNames = null;
+function ccName(c){ try{ _ccNames = _ccNames || new Intl.DisplayNames(['en'],{type:'region'}); return _ccNames.of(c.toUpperCase()) || c.toUpperCase(); }catch(e){ return c.toUpperCase(); } }
+const fl = id => { const c = ccOf(id); return c ? `<img class="flag" src="${FLAG_CDN}${c}.svg" alt="${c.toUpperCase()}" title="${esc(ccName(c))}" loading="lazy">` : ''; };
+const pnm = id => fl(id) + esc(P(id).name);                        // a player's name as HTML, flag first
+const entNameH = k => (k && k.startsWith('p:') ? fl(k.slice(2)) : '') + esc(entName(k));
+const sideNameH = side => (side||[]).map(entNameH).join(' + ');
 
 /* ---------- Confirm games queue (live admins) + replay stats ----------
    The detector (GitHub Action) writes tournaments/<site>/pending/<matchId> with status 'new' and, when the replay
@@ -2071,7 +2114,7 @@ function detLine(){
 }
 function pendCard(){
   const list = pendHere(), t = T(); if(!list.length) return detLine();
-  const pname = p => p.id&&state.players[p.id] ? esc(P(p.id).name) : `${esc(p.name||'?')} <i class="muted small">(not in this tournament)</i>`;
+  const pname = p => p.id&&state.players[p.id] ? pnm(p.id) : `${esc(p.name||'?')} <i class="muted small">(not in this tournament)</i>`;
   /* one detected game drawn like a fixture box: a row per side, W/L in the score cell */
   const qrow = (ps, res) => { const one = ps.length===1 && ps[0].id && state.players[ps[0].id] ? ps[0].id : null, ph = one ? entPhoto(one) : '';
     return `<div class="bxr ${res}"><span class="bxn">${ph?`<img src="${esc(ph)}" alt="">`:''}<span>${ps.map(p=>`${pname(p)}${p.civ?` <span class="qciv">${esc(p.civ)}</span>`:''}`).join(', ')}</span></span><span class="bxsc">${res==='won'?'W':res==='lost'?'L':'?'}</span></div>`; };
@@ -2107,7 +2150,7 @@ async function pendConfirm(mid){
   toast('Game added to '+S.name); return true;
 }
 /* replay stats pop-up for one game */
-const statsBtn = g => (LIVE && !VIEW && g && g.auto ? ` <span class="autotag" title="Confirmed automatically by the game finder. If it's wrong, remove it with ✕.">auto</span>` : '') + (LIVE && g && g.mid ? ` <button class="gsbtn2" data-act="gstats" data-mid="${esc(g.mid)}">Game stats ›</button>` : '');
+const statsBtn = g => (typeof admTag==='function' ? admTag(g) : '') + (LIVE && !VIEW && g && g.auto ? ` <span class="autotag" title="Confirmed automatically by the game finder. If it's wrong, remove it with ✕.">auto</span>` : '') + (LIVE && g && g.mid ? ` <button class="gsbtn2" data-act="gstats" data-mid="${esc(g.mid)}">Game stats ›</button>` : '');
 /* averages from the headline numbers saved with each confirmed game */
 function replayAvg(pid, t){ let n = 0, e = 0, f = 0, fn = 0; const sec = v => { const m = /^(\d+):(\d\d)$/.exec(v||''); return m ? +m[1]*60 + +m[2] : null; };
   allMatches(t).forEach(({m})=>(m.games||[]).forEach(g=>{ const s = g && g.st && g.st[pid]; if(!s) return; if(s.eapm!=null){ n++; e += s.eapm; } const x = sec(s.feudal); if(x!=null){ fn++; f += x; } }));
@@ -2123,7 +2166,9 @@ const gsMs = v => v==null ? '' : `${Math.floor(v/60)}:${String(Math.round(v)%60)
 function gsPid(p){ return Object.keys(state.players).find(k=>String(state.players[k].pid||'')===String(p.profileId)) || null; }
 function gsTeamOf(pid){ const t = T(); return pid && t ? (t.teams||[]).find(x=>(x.members||[]).includes(pid)) : null; }
 function gsName(p, cls){ const id = gsPid(p), c = PCOL[p.color] || 'var(--ink)', nm = esc(id ? P(id).name : (p.name||'?'));
-  return (id ? `<a class="gsn ${cls||''}" style="--pc:${c}" data-act="tplayer" data-v="${id}" href="javascript:void 0" title="${PCOLN[p.color]||''} · open ${nm}'s page">${nm}</a>` : `<span class="gsn ${cls||''}" style="--pc:${c}">${nm}</span>`); }
+  return (id ? `<a class="gsn ${cls||''}" style="--pc:${c}" data-act="tplayer" data-v="${id}" href="javascript:void 0" title="${PCOLN[p.color]||''} · open ${nm}'s page">${fl(id)}${nm}</a>` : `<span class="gsn ${cls||''}" style="--pc:${c}">${gsFlag(p)}${nm}</span>`); }
+// a replay player who isn't on the roster still gets a flag from the game record (aoe2companion's country code)
+function gsFlag(p){ const c = String(p.country||'').toLowerCase(); return /^[a-z]{2}$/.test(c) ? `<img class="flag" src="${FLAG_CDN}${c}.svg" alt="${c.toUpperCase()}" title="${esc(ccName(c))}" loading="lazy">` : ''; }
 // opening text; a TC "douche" (own TC deleted in Dark/Feudal, new one placed by an enemy TC) gets its details on hover
 function gsOpen(s){ const ds = s.douche, o = esc(s.opening||''); if(!Array.isArray(ds) || !ds.length) return o;
   const tip = ds.map(d=>`Deleted own TC at ${d.deleted} (${d.age} Age), new TC placed at ${d.built} ${d.in_range?'in range of':'near'} ${d.target||'an enemy'}'s TC (${d.dist} tiles apart)`).join('\n');
@@ -2149,7 +2194,7 @@ function gsLookA(g, TT){
       <td class="n">${esc(a.Feudal||'')}</td><td class="n">${esc(a.Castle||'')}</td><td class="n">${esc(a.Imperial||'')}</td><td class="n">${s.military??''}</td><td class="n">${gsMs(gsIdle(s))}</td><td class="gsx">▾</td></tr>
       <tr class="gsdet" id="${k}" hidden><td></td><td colspan="11">${gsMore(p)}</td></tr>`; };
   const head = `<tr><th></th><th>Player</th><th>Civ</th><th class="n">eAPM</th><th class="n">APM</th><th>Opening</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">Imp</th><th class="n" title="Military units queued">Mil. queued</th><th class="n" title="Town Center idle from the start until the Castle Age click">TC idle</th><th></th></tr>`;
-  return TT.map(T_=>`<div class="gsteam ${T_.won?'win':'loss'}">${gsTeamHead(T_)}<div class="tablewrap"><table class="gstab">${head}${T_.ps.map(row).join('')}</table></div></div>`).join('')
+  return TT.map(T_=>`<div class="gsteam ${T_.won?'win':'loss'}">${gsTeamHead(T_)}<div class="tablewrap"><table class="gstab fixed"><colgroup><col style="width:6px"><col style="width:18%"><col style="width:11%"><col style="width:6%"><col style="width:6%"><col><col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:9%"><col style="width:7%"><col style="width:22px"></colgroup>${head}${T_.ps.map(row).join('')}</table></div></div>`).join('')
     + `<div class="small muted">Click a player's row for units, spending and build order. Age times are when the player clicked up.</div>`; }
 
 /* B: player cards. Team columns side by side, a card per player with age-up timeline, top units and spending */
@@ -2222,6 +2267,35 @@ async function gameStats(mid){
     if(e.target===w || e.target.closest('[data-r]') || e.target.closest('[data-act=tplayer],[data-act=tteam]')) w.remove(); });
 }
 
+/* ---------- Admin results: an organiser awards a map (adm 1) or the rest of a set (adm 2) without a replay, with an optional note ----------
+   Admin maps count in the score, so standings and brackets use them, but they are left out of every replay / map / civ stat and the predictions. */
+const isAdm = g => !!(g && g.adm && (g.w===0||g.w===1));
+const admSet = m => (m.games||[]).some(g=>isAdm(g) && g.adm===2);
+const admAny = m => (m.games||[]).some(isAdm);
+function admNote(m){ const g = (m.games||[]).find(g=>isAdm(g) && g.adm===2 && g.note); return g ? g.note : ''; }
+const admTag = g => isAdm(g) ? ` <span class="admtag" title="${esc(g.note||'Result given by the organisers, no replay')}">${g.adm===2?'Admin result':'Admin win'}</span>${g.note && g.adm!==2?` <span class="admnote">${esc(g.note)}</span>`:''}` : '';
+/* organiser box in the match panel */
+function admBox(S, m){
+  const sd = sidesOf(S,m); if(VIEW || !sd[0]||!sd[1]||!sd[0].length||!sd[1].length) return '';
+  const w = winnerOf(S,m,sd), bo = matchBo(S,m), sc = score(m), nm = i => esc(sideName(sd[i]));
+  const nextI = (m.games||[]).findIndex(g=>!g || (g.w!==0&&g.w!==1)), gi = nextI<0 ? (m.games||[]).length : nextI;
+  const mapOk = w==null && gi < bo, b = (k,i,txt) => `<button class="sm" data-act="${k}" data-s="${S.id}" data-m="${m.id}" data-v="${i}">${txt}</button>`;
+  const set = admSet(m);
+  return `<details class="admbox" ${set?'open':''}><summary><b>Admin result</b> <span class="small muted">forfeit, no-show or a result without a replay</span></summary>
+    ${set ? `<div class="admcur"><b>${nm(w)}</b> awarded the ${bo>1?'set':'game'} by the organisers${admNote(m)?`: ${esc(admNote(m))}`:''}. <button class="sm danger" data-act="admclear" data-s="${S.id}" data-m="${m.id}">Remove admin result</button></div>` : ''}
+    ${w==null ? `<label class="small admlbl">Note (optional, shown to viewers) <input type="text" id="adm-note" maxlength="80" placeholder="e.g. no-show, forfeit, disconnect"></label>
+    <div class="admrow"><span class="small muted">${bo>1?'Whole set':'Game'}:</span>${b('admset',0,`${nm(0)} admin win`)}${b('admset',1,`${nm(1)} admin win`)}</div>
+    ${bo>1 && mapOk ? `<div class="admrow"><span class="small muted">Just G${gi+1}:</span>${b('admmap',0,`${nm(0)} admin win`)}${b('admmap',1,`${nm(1)} admin win`)}</div>` : ''}
+    <div class="small muted">${bo>1?`A whole-set award fills the remaining maps for the winner (${sc.join('–')} now). `:''}Admin maps count in standings and brackets but not in any replay stats.</div>` : set ? '' : `<div class="small muted">This match is decided. Clear its games above to change the result.</div>`}</details>`;
+}
+/* the action handlers (called from act) */
+function admAward(S, m, v, whole, note){
+  m.games = m.games || []; const bo = matchBo(S,m), n = need(bo), done = () => { const s = score(m); return S.playAll && !m.bo ? s[0]+s[1] >= bo : (s[0]>=n || s[1]>=n); };
+  const put = i => { m.games[i] = Object.assign({}, m.games[i]||{}, {w:v, adm: whole?2:1}); delete m.games[i].mid; if(note) m.games[i].note = note; else delete m.games[i].note; };
+  for(let i=0; i<Math.max(bo, m.games.length) && !done(); i++){ const g = m.games[i]; if(g && (g.w===0||g.w===1)) continue; put(i); if(!whole) break; }
+  if(whole && winnerOf(S,m)==null) put(m.games.length);   // only for a play-all tie
+}
+function admClear(m){ m.games = (m.games||[]).filter(g=>!(isAdm(g) && g.adm===2)); }
 /* ---------- Fixtures as compact bracket boxes (seed · logo · name · score), click a box for games / editing ---------- */
 function seedMap(S){ const m = {}; if(S.type==='elim') entrantsFor(S).forEach((k,i)=>{ m[k] = i+1; }); return m; }
 function boxRow(S, side, won, sc, seeds){
@@ -2229,14 +2303,14 @@ function boxRow(S, side, won, sc, seeds){
   const k = side && side.length===1 ? side[0] : null, ph = k ? entPhoto(k) : '';
   const name = side && side.length ? sideName(side) : 'TBD';
   return `<div class="bxr ${won||''} ${side&&side.length?'':'tbd'}"><span class="bxs">${k&&seeds[k]?seeds[k]:''}</span>`
-    + `<span class="bxn">${ph?`<img src="${esc(ph)}" alt="">`:''}<span>${esc(name)}</span></span><span class="bxsc">${sc==null?'':sc}</span></div>`;
+    + `<span class="bxn">${ph?`<img src="${esc(ph)}" alt="">`:''}<span>${side && side.length ? sideNameH(side) : 'TBD'}</span></span><span class="bxsc">${sc==null?'':sc}</span></div>`;
 }
 function boxHtml(S, m, seeds, label, go){
   if(!m) return `<div class="bx ghost"></div>`;
   const sd = sidesOf(S,m), w = winnerOf(S,m,sd), sc = score(m), played = sc[0]+sc[1] > 0;
   const bye = sd[0]===null || sd[1]===null, open = ui.mopen===m.id;
   const tie = w==null && !bye && sc[0]===sc[1] && sc[0]+sc[1]>=matchBo(S,m) && sc[0]>0, rs = i => w!=null ? (w===i ? 'won' : 'lost') : tie ? 'tie' : '';
-  const lt = label || (m.label && S.type!=='elim' ? m.label : ''), lbl = lt ? `<div class="bxl">${esc(lt)}</div>` : '';
+  const lt0 = label || (m.label && S.type!=='elim' ? m.label : ''), lt = admAny(m) ? (lt0 ? lt0+' · ' : '')+(admSet(m)?'Admin result':'Admin map') : lt0, lbl = lt ? `<div class="bxl">${esc(lt)}</div>` : '';
   return `<div class="bx ${w!=null?'done':''} ${open?'sel':''} ${bye?'isbye':''} ${Object.keys(seeds).length?'':'noseed'}" ${bye?'':`data-act="${go?'mgo':'mopen'}" data-s="${S.id}" data-m="${m.id}" role="button" tabindex="0" title="${VIEW?'Show games':'Enter results'}"`}>${lbl}`
     + boxRow(S, sd[0], rs(0), played||w!=null ? (bye?'':sc[0]) : null, seeds) + boxRow(S, sd[1], rs(1), played||w!=null ? (bye?'':sc[1]) : null, seeds) + `</div>`;
 }
@@ -2247,11 +2321,11 @@ function matchPanel(S){
   const extra = VIEW ? '' : S.type==='swiss' ? swissEdit(S,m,maxR)
     : S.type==='rr' ? `<div class="small muted" style="margin-top:8px">Move to round <select data-act="mround" data-s="${S.id}" data-m="${m.id}">${Array.from({length:maxR+1},(_,k)=>k+1).map(k=>`<option value="${k}" ${k===m.r?'selected':''}>${k}${k===maxR+1?' (new)':''}</option>`).join('')}</select></div>` : '';
   return `<div class="mpanel card" id="mpanel"><div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0">${esc(S.name)} · ${esc(matchLabel(S,m))}</h3><button class="sm" data-act="mopen" data-m="${m.id}" aria-label="Close">✕ Close</button></div>`
-    + (VIEW ? matchView(S,m) : matchHtml(S,m)) + predHtml(S,m) + extra + `</div>`;
+    + (VIEW ? matchView(S,m) : matchHtml(S,m) + admBox(S,m)) + predHtml(S,m) + extra + `</div>`;
 }
 /* viewer's match panel: VS header like the Up next cards, then one clickable row per game */
 function sideLink(side, right){ const k = side && side.length===1 ? side[0] : null, n = side ? sideName(side) : 'TBD';
-  const nm = k && k.startsWith('t:') ? `<a href="javascript:void 0" data-act="tteam" data-v="${esc(k.slice(2))}">${esc(n)}</a>` : k && k.startsWith('p:') ? `<a href="javascript:void 0" data-act="tplayer" data-v="${esc(k.slice(2))}">${esc(n)}</a>` : esc(n);
+  const nm = k && k.startsWith('t:') ? `<a href="javascript:void 0" data-act="tteam" data-v="${esc(k.slice(2))}">${esc(n)}</a>` : k && k.startsWith('p:') ? `<a href="javascript:void 0" data-act="tplayer" data-v="${esc(k.slice(2))}">${pnm(k.slice(2))}</a>` : side ? sideNameH(side) : 'TBD';
   const b = k ? bBadge(k) : ''; return right ? `<span class="nm">${nm}</span>${b}` : `${b}<span class="nm">${nm}</span>`; }
 function matchView(S, m){
   const t = T(), sd = sidesOf(S,m,t);
@@ -2259,17 +2333,19 @@ function matchView(S, m){
   const w = winnerOf(S,m,sd), sc = score(m), bo = matchBo(S,m), played = (m.games||[]).filter(g=>g.w===0||g.w===1);
   const head = `<div class="mvhead"><div class="s ${w===0?'win':w===1?'loss':''}">${sideLink(sd[0])}</div>
     <div class="mid">${played.length?`<div class="mvsc"><span class="${w===0?'win':w===1?'loss':''}">${sc[0]}</span><span class="${w===1?'win':w===0?'loss':''}">${sc[1]}</span></div>`:'<b>VS</b>'}<small>${bo>1?`${S.playAll&&!m.bo?'Play all':'Best of'} ${bo}`:'Single game'}</small></div>
-    <div class="s r ${w===1?'win':w===0?'loss':''}">${sideLink(sd[1],true)}</div></div>`;
+    <div class="s r ${w===1?'win':w===0?'loss':''}">${sideLink(sd[1],true)}</div></div>`
+    + (admSet(m) && w!=null ? `<div class="admban"><span class="admtag">Admin result</span> <b>${sideNameH(sd[w])}</b> awarded the ${bo>1?'set':'game'} by the organisers${admNote(m)?`: ${esc(admNote(m))}`:'.'}</div>` : '');
   const mem = i => sd[i] ? sd[i].flatMap(k=>entMembers(k,t)) : [];
-  const plist = (g, i) => { const ps = mem(i).filter(p=>(g.civs||{})[p] || (g.st||{})[p]);
-    return `<div class="mvps ${g.w===i?'win':'loss'} ${i?'r':''}"><span class="mvwl" title="${g.w===i?'Won':'Lost'}">${g.w===i?'W':'L'}</span><div class="mvpl">${ps.map(p=>`<span class="mvp"><a href="javascript:void 0" data-act="tplayer" data-v="${esc(p)}">${esc(P(p).name)}</a>${g.civs&&g.civs[p]?`<small>${esc(g.civs[p])}</small>`:''}</span>`).join('')||'<span class="muted small">no civ picks saved</span>'}</div></div>`; };
+  const plist = (g, i) => { if(isAdm(g)) return `<div class="mvps ${g.w===i?'win':'loss'} ${i?'r':''}"><span class="mvwl" title="${g.w===i?'Won':'Lost'}">${g.w===i?'W':'L'}</span><div class="mvpl"><span class="muted small">${g.w===i?'Admin win':'Admin loss'}</span></div></div>`;
+    const ps = mem(i).filter(p=>(g.civs||{})[p] || (g.st||{})[p]);
+    return `<div class="mvps ${g.w===i?'win':'loss'} ${i?'r':''}"><span class="mvwl" title="${g.w===i?'Won':'Lost'}">${g.w===i?'W':'L'}</span><div class="mvpl">${ps.map(p=>`<span class="mvp"><a href="javascript:void 0" data-act="tplayer" data-v="${esc(p)}">${pnm(p)}</a>${g.civs&&g.civs[p]?`<small>${esc(g.civs[p])}</small>`:''}</span>`).join('')||'<span class="muted small">no civ picks saved</span>'}</div></div>`; };
   const rows = played.map((g,i)=>{ const st = LIVE && g.mid;
     const open = st && ui.gsOpen===String(g.mid) && live.games[g.mid];
     return `<div class="mvg ${st?'has':''} ${open?'open':''}" ${st?`data-act="gsinline" data-mid="${esc(g.mid)}" role="button" tabindex="0" aria-expanded="${open?'true':'false'}" title="${open?'Hide':'Show'} game stats"`:''}>
       <div class="mvgn"><b>G${i+1}</b><span>${esc(g.map||'')}</span>${g.len?`<small>${esc(g.len)}</small>`:''}</div>
       ${plist(g,0)}${plist(g,1)}
-      <div class="mvgo">${st?`<span class="gsbtn">Game stats <b>${open?'▴':'▾'}</b></span>`:'<span class="muted small">no replay</span>'}</div></div>${open?gsInlineHtml(String(g.mid)):''}`; }).join('');
-  const withSt = played.filter(g=>g.st && Object.keys(g.st).length).length;
+      <div class="mvgo">${st?`<span class="gsbtn">Game stats <b>${open?'▴':'▾'}</b></span>`:isAdm(g)?`<span class="admtag">Admin</span>${g.note&&g.adm!==2?`<div class="admnote">${esc(g.note)}</div>`:''}`:'<span class="muted small">no replay</span>'}</div></div>${open?gsInlineHtml(String(g.mid)):''}`; }).join('');
+  const withSt = played.filter(g=>!isAdm(g) && g.st && Object.keys(g.st).length).length;
   const sopen = ui.ssOpen===m.id;
   const sbtn = withSt >= 2 ? `<div class="mvseries ${sopen?'open':''}" data-act="ssinline" data-m="${m.id}" role="button" tabindex="0" aria-expanded="${sopen?'true':'false'}"><div><b>Series stats</b><span class="small muted">Every player's averages across all ${played.length} games</span></div><span class="gsbtn">${sopen?'Hide':'Show'} <b>${sopen?'▴':'▾'}</b></span></div>${sopen?`<div class="gsinline ssinline">${seriesBody(S,m)}</div>`:''}` : '';
   return head + (rows ? `<div class="mvgames">${rows}</div>${sbtn}` : `<div class="muted small" style="margin:10px 2px">No games played yet.</div>`);
@@ -2305,20 +2381,20 @@ function entAct(k){ if(!VIEW || !k || !LIVE) return ''; const [kind,id] = k.spli
   return kind==='t' ? ` data-act="tteam" data-v="${esc(id)}" title="Open ${esc(n)}"` : kind==='p' ? ` data-act="tplayer" data-v="${esc(id)}" title="Open ${esc(n)}"` : ''; }
 /* series stats: each player's averages across every game of the match, from the headline numbers saved with each game */
 function seriesBody(S, m){
-  const t = T(), sd = sidesOf(S,m,t), w = winnerOf(S,m,sd), sc = score(m), played = (m.games||[]).filter(g=>g.w===0||g.w===1);
+  const t = T(), sd = sidesOf(S,m,t), w = winnerOf(S,m,sd), sc = score(m), played = (m.games||[]).filter(g=>(g.w===0||g.w===1) && !isAdm(g));
   const sec = v => { const x = /^(\d+):(\d\d)$/.exec(v||''); return x ? +x[1]*60 + +x[2] : null; }, ms = v => v==null ? '–' : `${Math.floor(v/60)}:${String(Math.round(v)%60).padStart(2,'0')}`;
   const avg = a => { const v = a.filter(x=>x!=null && !isNaN(x)); return v.length ? v.reduce((p,q)=>p+q,0)/v.length : null; }, r0 = v => v==null ? '–' : Math.round(v);
   const side = i => { const ps = (sd[i]||[]).flatMap(k=>entMembers(k,t)).filter(p=>played.some(g=>(g.civs||{})[p] || (g.st||{})[p]));
     const rows = ps.map(p=>{ const gs = played.filter(g=>(g.civs||{})[p] || (g.st||{})[p]), st = gs.map(g=>(g.st||{})[p]).filter(Boolean), f = k => st.map(x=>x[k]);
       const won = gs.filter(g=>g.w===i).length, civs = gs.map(g=>(g.civs||{})[p]).filter(Boolean), ops = [...new Set(f('opening').filter(Boolean))];
-      return `<tr><td><a class="gsn" style="--pc:var(--ink)" href="javascript:void 0" data-act="tplayer" data-v="${esc(p)}">${esc(P(p).name)}</a></td><td class="n">${won}–${gs.length-won}</td><td class="small">${civs.map(esc).join(', ')||'–'}</td>
+      return `<tr><td><a class="gsn" style="--pc:var(--ink)" href="javascript:void 0" data-act="tplayer" data-v="${esc(p)}">${pnm(p)}</a></td><td class="n">${won}–${gs.length-won}</td><td class="small">${civs.map(esc).join(', ')||'–'}</td>
         <td class="n"><b>${r0(avg(f('eapm')))}</b></td><td class="n">${r0(avg(f('peak')))}</td><td class="n">${r0(avg(f('apm')))}</td><td class="n">${ms(avg(f('feudal').map(sec)))}</td><td class="n">${ms(avg(f('castle').map(sec)))}</td><td class="n">${ms(avg(f('imp').map(sec)))}</td>
         <td class="n">${ms(avg(f('idleC')))}</td><td class="n">${r0(avg(f('flt')))}</td><td class="n">${avg(f('milPct'))==null?'–':r0(avg(f('milPct')))+'%'}</td><td class="small gsop">${ops.map(esc).join(', ')||'–'}</td></tr>`; }).join('');
     const k = sd[i] && sd[i].length===1 ? sd[i][0] : null, tm = k && k.startsWith('t:') ? teamOf(t, k.slice(2)) : null;
-    const nm = tm ? `<a href="javascript:void 0" data-act="tteam" data-v="${esc(tm.id)}">${esc(tm.name)}</a>` : esc(sideName(sd[i]));
+    const nm = tm ? `<a href="javascript:void 0" data-act="tteam" data-v="${esc(tm.id)}">${esc(tm.name)}</a>` : sideNameH(sd[i]);
     const res = w===i ? 'win' : w==null ? '' : 'loss';
     return `<div class="gsteam ${res}"><div class="gsth ${res}">${k?bBadge(k):''}<span class="gsthn">${nm}</span><span class="gstag">${sc[i]} map${sc[i]===1?'':'s'} won</span></div>
-      <div class="tablewrap"><table class="gstab"><tr><th>Player</th><th class="n">Maps</th><th>Civs</th><th class="n">eAPM</th><th class="n" title="Busiest single minute">Peak</th><th class="n">APM</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">Imp</th><th class="n" title="Town Center idle from the start until the Castle Age click">TC idle</th><th class="n" title="Average banked resources">Float</th><th class="n" title="Share of actions that were military">Mil.</th><th>Openings</th></tr>${rows}</table></div></div>`; };
+      <div class="tablewrap"><table class="gstab fixed"><colgroup><col style="width:15%"><col style="width:5%"><col style="width:15%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:6%"><col style="width:6%"><col style="width:6%"><col style="width:6%"><col style="width:5.5%"><col style="width:5%"><col></colgroup><tr><th>Player</th><th class="n">Maps</th><th>Civs</th><th class="n">eAPM</th><th class="n" title="Busiest single minute">Peak</th><th class="n">APM</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">Imp</th><th class="n" title="Town Center idle from the start until the Castle Age click">TC idle</th><th class="n" title="Average banked resources">Float</th><th class="n" title="Share of actions that were military">Mil.</th><th>Openings</th></tr>${rows}</table></div></div>`; };
   return `<div class="gsbody">${side(0)}${side(1)}<div class="small muted">Averages of each player's ${played.length} games in this series. Age times are when the player clicked up. A dash means no replay numbers for that.</div></div>
     <div class="gsfoot"><span></span><button class="sm" data-act="ssinline" data-m="${m.id}">Hide series stats ▴</button></div>`;
 }
@@ -2348,7 +2424,7 @@ function bBadge(k){ const ph = entPhoto(k), n = entName(k);
 function bSide(side, right){
   if(side===null) return `<div class="s ${right?'r':''}"><span class="nm muted">bye</span></div>`;
   const nm = side && side.length ? sideName(side) : 'TBD', sh = nm, bd = side && side.length===1 ? bBadge(side[0]) : '';
-  return `<div class="s ${right?'r':''}">${right?'':bd}<span class="nm" title="${esc(nm)}">${esc(sh)}</span>${right?bd:''}</div>`; }
+  return `<div class="s ${right?'r':''}">${right?'':bd}<span class="nm" title="${esc(nm)}">${side && side.length ? sideNameH(side) : 'TBD'}</span>${right?bd:''}</div>`; }
 function bugHtml(S, m){
   const sd = sidesOf(S,m), w = winnerOf(S,m,sd), sc = score(m), played = sc[0]+sc[1] > 0;
   return `<div class="bug" data-act="mgo" data-s="${S.id}" data-m="${m.id}" role="button" tabindex="0" title="Show this match">`
@@ -2360,11 +2436,15 @@ function bDates(t){
 function heroB(t, full){
   const {done,total} = progress(t), dt = bDates(t);
   const chips = [t.prize?`<span class="chip2"><b>${esc(t.prize)}</b> prize pool</span>`:'', dt?`<span class="chip2">${esc(dt)}</span>`:'',
-    t.teams.length?`<span class="chip2">${t.teams.length} teams</span>`:(t.roster.length?`<span class="chip2">${t.roster.length} players</span>`:''),
+    t.teams.length?`<span class="chip2">${t.teams.length} teams</span><span class="chip2" title="Players on a team, plus backups who have played">${activePlayers(t)} players</span>`:(t.roster.length?`<span class="chip2">${t.roster.length} players</span>`:''),
     total?`<span class="chip2">${done}/${total} played</span>`:''].join('');
   return `<div class="bhero ${full?'':'mini'} ${t.banner?'hasbn':''}">${t.banner?`<img class="bn" src="${t.banner}" alt="">`:''}<div class="bin">`
     + `${t.logo?`<img class="lg" src="${t.logo}" alt="">`:''}<div class="btx">${full&&t.place?`<div class="eyebrow">${esc(t.place)}</div>`:''}<h1>${esc(t.name)}</h1>`
     + `${full&&t.sub?`<div class="bsub">${esc(t.sub)}</div>`:''}${full&&chips?`<div class="chips">${chips}</div>`:''}</div></div></div>`; }
+/* players who count: everyone on a team, plus any backup once they've played a game */
+function activePlayers(t){ const on = new Set(t.teams.flatMap(x=>x.members||[]));
+  t.stages.forEach(S=>S.matches.forEach(m=>(m.games||[]).forEach(g=>{ if(g) Object.keys(Object.assign({}, g.civs||{}, g.st||{})).forEach(id=>on.add(id)); })));
+  return [...on].filter(id=>state.players[id]).length; }
 
 /* ---------- Teams page: every team's record, roster and results ---------- */
 function teamStats(tm, t){
@@ -2373,7 +2453,7 @@ function teamStats(tm, t){
   allMatches(t).forEach(({S,m})=>{ const sd = sidesOf(S,m,t); if(!sd[0]||!sd[1]||!sd[0].length||!sd[1].length) return;
     const si = sd.findIndex(side=>side.includes(k)); if(si<0) return;
     const w = winnerOf(S,m,sd), sc = score(m); if(w!=null){ if(w===si) st.w++; else st.l++; }
-    (m.games||[]).forEach(g=>{ if(g.w!==0&&g.w!==1) return; const won = g.w===si; if(won) st.gw++; else st.gl++;
+    (m.games||[]).forEach(g=>{ if(g.w!==0&&g.w!==1) return; const won = g.w===si; if(won) st.gw++; else st.gl++; if(g.adm) return;
       if(g.map){ const x = st.maps[g.map]||(st.maps[g.map]={n:0,w:0}); x.n++; if(won) x.w++; }
       tm.members.forEach(id=>{ const c = (g.civs||{})[id]; if(c){ const x = st.civs[c]||(st.civs[c]={n:0,w:0}); x.n++; if(won) x.w++; }
         const s = g.st && g.st[id]; if(s && s.eapm!=null){ st.e += s.eapm; st.en++; } }); });
@@ -2390,9 +2470,9 @@ function pageTeams(){
   const groups = {}; all.forEach(x=>(groups[x.div] = groups[x.div]||[]).push(x));
   const card = x => { const tm = x.tm;
     return `<div class="tcard" data-act="team" data-v="${tm.id}" role="button" tabindex="0" title="Show ${esc(tm.name)}">
-      <div class="tchead">${teamBadge(tm)}<div class="tcname"><b title="${esc(tm.name)}">${esc(tm.name)}</b><span class="small muted">${tm.cap&&state.players[tm.cap]?'Captain: '+esc(P(tm.cap).name):tm.members.length+' players'}</span></div><div class="tcrec" title="Series won and lost">${x.w}<i>–</i>${x.l}</div></div>
+      <div class="tchead">${teamBadge(tm)}<div class="tcname"><b title="${esc(tm.name)}">${esc(tm.name)}</b><span class="small muted">${tm.cap&&state.players[tm.cap]?'Captain: '+pnm(tm.cap):tm.members.length+' players'}</span></div><div class="tcrec" title="Series won and lost">${x.w}<i>–</i>${x.l}</div></div>
       <div class="tcstats"><div><span>Maps</span><b>${x.gw}–${x.gl}</b></div><div><span>Map win</span><b>${pct(x.gw,x.gw+x.gl)}</b></div><div><span>Avg eAPM</span><b>${x.en?Math.round(x.e/x.en):'–'}</b></div></div>${hasElo(t)?`<div class="tcstats elo">${eloCols(t).map(k=>`<div><span>Avg ${LADDER[k]}</span><b>${eloAvg(tm.members,k)||'–'}</b></div>`).join('')}</div>`:''}
-      <div class="tcroster">${tm.members.filter(id=>state.players[id]).map(id=>`<span class="${id===tm.cap?'cap':''}">${esc(P(id).name)}</span>`).join('')}</div></div>`; };
+      <div class="tcroster">${tm.members.filter(id=>state.players[id]).map(id=>`<span class="${id===tm.cap?'cap':''}">${pnm(id)}</span>`).join('')}</div></div>`; };
   return Object.entries(groups).map(([dv,list])=>`${dv||Object.keys(groups).length>1?`<h2 class="sech">${esc(dv||'Other teams')}</h2>`:''}<div class="tgrid">${list.map(card).join('')}</div>`).join('');
 }
 function teamProfile(tm, t){
@@ -2427,7 +2507,7 @@ const mmss = s => s==null || isNaN(s) ? '–' : (s = Math.round(s), s>=3600 ? Ma
 /* every decided map of the tournament, with who actually played it on each side */
 function mapGames(t){ const out = [];
   allMatches(t).forEach(({S,m})=>{ const sd = sidesOf(S,m,t); if(!sd[0]||!sd[1]||!sd[0].length||!sd[1].length) return;
-    (m.games||[]).forEach((g,gi)=>{ if(!g || (g.w!==0&&g.w!==1)) return; const civs = g.civs||{}, any = Object.values(civs).some(Boolean);
+    (m.games||[]).forEach((g,gi)=>{ if(!g || (g.w!==0&&g.w!==1) || g.adm) return; const civs = g.civs||{}, any = Object.values(civs).some(Boolean);
       const on = sd.map(side=>side.flatMap(k=>entMembers(k,t)).filter(id=>!any || civs[id]));
       out.push({S, m, g, gi, sd, on, civs, len:tsec(g.len)}); }); });
   return out; }
@@ -2462,19 +2542,19 @@ function playerProfile(id, t){
   const nem = pick(opp, r=>r.l*10-r.w), vic = pick(opp, r=>r.w*10-r.l), bc = pick(civ, r=>r.w*10-r.l), bm = pick(map, r=>r.w*10-r.l), bp = pick(mates, r=>r.w*10-r.l);
   const fun = [bc&&bc[1].w?tile('Best civ', esc(bc[0]), `${bc[1].w}–${bc[1].l}`, 1):'', bm&&bm[1].w?tile('Best map', esc(bm[0]), `${bm[1].w}–${bm[1].l}`, 1):'',
     nem&&nem[1].l?tile('Toughest opponent', esc(nem[0]), `lost ${nem[1].l} of ${nem[1].w+nem[1].l} maps`, 1):'', vic&&vic[1].w?tile('Best record against', esc(vic[0]), `won ${vic[1].w} of ${vic[1].w+vic[1].l} maps`, 1):'',
-    bp&&bp[1].w&&Object.keys(mates).length>1?tile('Best team-mate', esc(P(bp[0]).name), `${bp[1].w}–${bp[1].l} together`, 1):''].join('');
+    bp&&bp[1].w&&Object.keys(mates).length>1?tile('Best team-mate', pnm(bp[0]), `${bp[1].w}–${bp[1].l} together`, 1):''].join('');
   const elo = eloCols(t).filter(k=>eloOf(id,k)).map(k=>{ const e = eloOf(id,k); return tile(LADDER[k], e.r, e.max?`peak ${e.max}`:'ranked ladder'); }).join('');
   const rep = rp.n ? `<div class="card"><h3>Replay averages</h3><div class="small muted">From ${rp.n} game${rp.n>1?'s':''} with a replay.</div><div class="statrow in">
       ${tile('eAPM', rp.eapm!=null?Math.round(rp.eapm):'–')}${rp.apm!=null?tile('APM', Math.round(rp.apm)):''}${tile('Feudal', mmss(rp.feudal))}${tile('Castle', mmss(rp.castle))}${tile('Imperial', mmss(rp.imp))}${rp.tcIdle!=null?tile('TC idle to Castle', mmss(rp.tcIdle), 'per game'):''}${rp.opening?tile('Usual opening', esc(rp.opening), '', 1):''}</div></div>` : '';
   const h2h = Object.entries(opp).sort((a,b)=>(b[1].w+b[1].l)-(a[1].w+a[1].l)).map(([k,r])=>{ const tm = (T().teams||[]).find(x=>x.name===k); return `<tr${tm?` data-act="tteam" data-v="${esc(tm.id)}" title="Open ${esc(k)}"`:''}><td>${esc(k)}</td><td class="n">${r.w}</td><td class="n">${r.l}</td><td class="n">${pct(r.w,r.w+r.l)}</td></tr>`; }).join('');
-  const withT = Object.entries(mates).sort((a,b)=>(b[1].w+b[1].l)-(a[1].w+a[1].l)).map(([k,r])=>`<tr data-act="tplayer" data-v="${esc(k)}" title="Open ${esc(P(k).name)}"><td>${esc(P(k).name)}</td><td class="n">${r.w}</td><td class="n">${r.l}</td><td class="n">${pct(r.w,r.w+r.l)}</td></tr>`).join('');
+  const withT = Object.entries(mates).sort((a,b)=>(b[1].w+b[1].l)-(a[1].w+a[1].l)).map(([k,r])=>`<tr data-act="tplayer" data-v="${esc(k)}" title="Open ${esc(P(k).name)}"><td>${pnm(k)}</td><td class="n">${r.w}</td><td class="n">${r.l}</td><td class="n">${pct(r.w,r.w+r.l)}</td></tr>`).join('');
   const anySt = mine.some(g=>g.st), anyLen = mine.some(g=>g.len!=null);
   const games = mine.map(g=>`<tr${LIVE&&g.g.mid?` data-act="gstats" data-mid="${esc(g.g.mid)}" title="Open game stats"`:''}><td class="small">${esc(g.S.name)}<div class="muted">${esc(matchLabel(g.S,g.m))} · map ${g.gi+1}</div></td><td>${sideHtml(g.sd[1-g.si])}</td><td>${esc(g.civs[id]||'–')}</td><td>${esc(g.g.map||'–')}</td>
     ${anyLen?`<td class="n">${esc(g.g.len||'–')}</td>`:''}${anySt?`<td class="n">${g.st&&g.st.eapm!=null?g.st.eapm:'–'}</td><td class="n">${g.st&&g.st.feudal?esc(g.st.feudal):'–'}</td>`:''}<td>${g.won?'<b style="color:var(--win)">Won</b>':'<span style="color:var(--loss)">Lost</span>'}${typeof statsBtn==='function'?statsBtn(g.g):''}</td></tr>`).join('');
   const series = x.list.map(({S,m,si,sd,w,sc})=>`<tr data-act="mgo" data-s="${S.id}" data-m="${m.id}" title="Show this match"><td class="small">${esc(S.name)}<div class="muted">${esc(matchLabel(S,m))}</div></td><td>${sideHtml(sd[1-si])}</td><td class="n">${sc[si]}–${sc[1-si]}</td><td>${w==null?'<span class="muted small">to play</span>'+predShort(S,m,si):w===si?'<b style="color:var(--win)">Won</b>':'<span style="color:var(--loss)">Lost</span>'}</td></tr>`).join('');
   return `<p><button class="sm" data-act="player" data-v="">‹ All players</button></p>
     <div class="card thead">${p.photo?`<img class="pphoto" src="${p.photo}" alt="">`:''}
-      <div><h2 style="margin:0">${esc(p.name)}</h2><div class="muted">${[x.team?x.team.name+(x.team.cap===id?' · captain':''):'', x.place?'finished '+ord(x.place.place):''].filter(Boolean).map(esc).join(' · ')}</div>${plLinks(p)}</div>
+      <div><h2 style="margin:0">${pnm(id)}</h2><div class="muted">${[x.team?x.team.name+(x.team.cap===id?' · captain':''):'', x.place?'finished '+ord(x.place.place):''].filter(Boolean).map(esc).join(' · ')}</div>${plLinks(p)}</div>
       ${mine.length?`<div class="formbox"><span class="small muted">Last ${Math.min(5,mine.length)} map${mine.length>1?'s':''}</span>${formStrip(mine.slice(-5))}</div>`:''}</div>
     <div class="statrow">${tile('Series', `${x.w}–${x.l}`)}${tile('Maps', `${x.gw}–${x.gl}`, pct(x.gw,x.gw+x.gl)+' won')}${tile('Streak', streak?(sT?'W':'L')+streak:'–', streak?(sT?'maps won in a row':'maps lost in a row'):'no maps yet')}${elo}${predRatingTile(id,t)}</div>
     ${fun?`<div class="statrow">${fun}</div>`:''}
@@ -2550,7 +2630,7 @@ function predHtml(S, m){
   const t = T(), sd = sidesOf(S,m,t), w = winnerOf(S,m,sd), M = predModel(t), key = S.id+'|'+m.id;
   if(w!=null){ const b = M.before[key]; if(!b) return '';
     const fav = b.p[0]>=b.p[1] ? 0 : 1, called = fav===w;
-    return `<div class="pred done"><span class="small muted">Prediction before the match:</span> <b>${esc(sideName(sd[fav]))} ${pc(b.p[fav])}</b> <span class="ptag ${called?'ok':'up'}">${called?'Called it':'Upset'}</span></div>`; }
+    return `<div class="pred done"><span class="small muted">Prediction before the match:</span> <b>${sideNameH(sd[fav])} ${pc(b.p[fav])}</b> <span class="ptag ${called?'ok':'up'}">${called?'Called it':'Upset'}</span></div>`; }
   const p = predFor(S,m); if(!p) return '';
   const fav = p.p[0]>=p.p[1] ? 0 : 1, nm = sd.map(s=>sideName(s)), sc = score(m), inPlay = sc[0]+sc[1]>0;
   const ranked = p.ids.map(ids=>{ const v = ids.map(id=>p.M.ranked[id]).filter(x=>x!=null); return v.length ? Math.round(avgOf(v)) : null; });
@@ -2560,9 +2640,9 @@ function predHtml(S, m){
   const civs = p.ids.map(ids=>{ const c = {}; ids.forEach(id=>playerGames(id,t).forEach(g=>{ const v = g.civs[id]; if(v){ const r = c[v] = c[v]||{w:0,n:0}; r.n++; if(g.won) r.w++; } }));
     return Object.entries(c).filter(([,r])=>r.w).sort((a,b)=>(b[1].w-b[1].n/2)-(a[1].w-a[1].n/2)).slice(0,2).map(([k,r])=>`${esc(k)} ${r.w}–${r.n-r.w}`).join(', ') || '–'; });
   const sgn = v => (v>0?'+':'')+v;
-  const likely = p.bo>1 && p.likely ? `<div class="small">Most likely: <b>${p.likely[0]>p.likely[1]?esc(nm[0]):esc(nm[1])} ${Math.max(...p.likely)}–${Math.min(...p.likely)}</b>${p.draw>0.005?` · draw ${pc(p.draw)}`:''}</div>` : '';
+  const likely = p.bo>1 && p.likely ? `<div class="small">Most likely: <b>${sideNameH(sd[p.likely[0]>p.likely[1]?0:1])} ${Math.max(...p.likely)}–${Math.min(...p.likely)}</b>${p.draw>0.005?` · draw ${pc(p.draw)}`:''}</div>` : '';
   return `<div class="pred"><div class="predh"><b>Prediction${inPlay?' from here':''}</b><span class="small muted">${p.bo>1?'chance to win the series':'chance to win'}</span></div>
-    <div class="pbar"><span class="${fav===0?'fav':''}">${esc(nm[0])} <b>${pc(p.p[0])}</b></span><span class="${fav===1?'fav':''}"><b>${pc(p.p[1])}</b> ${esc(nm[1])}</span></div>
+    <div class="pbar"><span class="${fav===0?'fav':''}">${sideNameH(sd[0])} <b>${pc(p.p[0])}</b></span><span class="${fav===1?'fav':''}"><b>${pc(p.p[1])}</b> ${sideNameH(sd[1])}</span></div>
     <div class="ptrack" role="img" aria-label="${esc(nm[0])} ${pc(p.p[0])}, ${esc(nm[1])} ${pc(p.p[1])}"><i style="width:${(p.p[0]*100).toFixed(1)}%"></i></div>${likely}
     <table class="pwhy"><tr><th></th><th class="n">${esc(nm[0])}</th><th class="n">${esc(nm[1])}</th></tr>
       <tr><td>Avg ranked ELO</td><td class="n">${ranked[0]??'–'}</td><td class="n">${ranked[1]??'–'}</td></tr>
@@ -2667,12 +2747,12 @@ function pageStats(){
   const pav = Object.entries(per).map(([id,rs])=>({id, o:sxAgg(rs)})).filter(p=>p.o.n);
   const minN = pav.some(p=>p.o.n>=2) ? 2 : 1, q = pav.filter(p=>p.o.n>=minN);
   const award = (title, k, low, fmt) => { const c = q.filter(p=>numOk(p.o[k])).sort((a,b)=>low?a.o[k]-b.o[k]:b.o[k]-a.o[k])[0];
-    return c ? tile(title, fmt(c.o[k]), `${esc(P(c.id).name)} · ${c.o.n} game${c.o.n>1?'s':''}`) : dash(title); };
+    return c ? tile(title, fmt(c.o[k]), `${pnm(c.id)} · ${c.o.n} game${c.o.n>1?'s':''}`) : dash(title); };
   const awards = [award('Highest avg eAPM','eapm',0,v=>Math.round(v)), award('Highest peak eAPM','peak',0,v=>Math.round(v)), award('Lowest avg eAPM','eapm',1,v=>Math.round(v)),
     award('Lowest avg TC idle to Castle','idleC',1,mmss), award('Lowest avg float','flt',1,v=>Math.round(v)), award('Highest avg float','flt',0,v=>Math.round(v)),
     award('Most military-focused','milPct',0,v=>Math.round(v)+'%'), award('Most eco-focused','ecoPct',0,v=>Math.round(v)+'%')].join('');
   const rec1 = (title, f, low, fmt) => { const c = recs.filter(r=>r.s).map(r=>({r, v:f(r.s)})).filter(o=>numOk(o.v)).sort((a,b)=>low?a.v-b.v:b.v-a.v)[0];
-    return c ? tile(title, fmt(c.v), `${esc(P(c.r.id).name)} · ${esc(c.r.x.g.map||'')}`) : dash(title); };
+    return c ? tile(title, fmt(c.v), `${pnm(c.r.id)} · ${esc(c.r.x.g.map||'')}`) : dash(title); };
   const records = [rec1('Fastest Feudal', s=>tsec(s.feudal), 1, mmss), rec1('Fastest Castle', s=>tsec(s.castle), 1, mmss), rec1('Fastest Imperial', s=>tsec(s.imp), 1, mmss),
     rec1('Highest game eAPM', s=>s.eapm, 0, v=>Math.round(v)), rec1('Highest peak minute', s=>s.peak, 0, v=>Math.round(v))].join('');
   /* division comparison */
@@ -2693,7 +2773,7 @@ function pageStats(){
   const noRow = n => `<tr><td colspan="${n}" class="muted small">No games yet.</td></tr>`;
   /* Leaderboards layout: headline numbers, top-5 boards, record cards, civ / map bars, heatmap player table */
   const teamOfP = id => t.teams.find(tm=>tm.members.includes(id));
-  const pl = id => `<a href="javascript:void 0" data-act="tplayer" data-v="${id}" class="sxp">${esc(P(id).name)}</a>`;
+  const pl = id => `<a href="javascript:void 0" data-act="tplayer" data-v="${id}" class="sxp">${pnm(id)}</a>`;
   const timedAll = gs.filter(x=>x.len!=null);
   const hero = `<div class="sxhero">${[['Maps played', gs.length, `${allMatches(t).filter(({S,m})=>(!sd||(S.div||'')===sd) && (m.games||[]).some(g=>g&&(g.w===0||g.w===1))).length} fixtures with results`],
       ['Avg game', mmss(L.avg), timedAll.length?`longest ${mmss(L.max)}`:'no games yet'], ['Avg eAPM', sxVal(o,MET[0]), o.n?`${o.n} player-games`:'from replays'], ['Avg Feudal', sxVal(o,MET[3]), o.castle!=null?`Castle ${mmss(o.castle)}`:'click time']].concat((()=>{ const pt = predTile(t), m = /<b[^>]*>([^<]*)<\/b>/.exec(pt); return m ? [['Predictions', m[1], 'favourite won the match']] : []; })())
@@ -2705,13 +2785,13 @@ function pageStats(){
     board('Least TC idle','idleC',1,mmss,'idle before the Castle Age click'), board('Lowest float','flt',1,v=>Math.round(v),'average banked resources'), board('Most aggressive','milPct',0,v=>Math.round(v)+'%','share of military actions')].join('');
   const recCard = (title, f, low, fmt) => { const c = recs.filter(x=>x.s).map(x=>({r:x, v:f(x.s)})).filter(x=>numOk(x.v)).sort((a,b)=>low?a.v-b.v:b.v-a.v)[0];
     if(!c) return `<div class="sxrec none"><span class="lbl">${title}</span><b>–</b><i>no games yet</i></div>`; const x = c.r.x, live_ = typeof LIVE!=='undefined' && LIVE && x.g.mid;
-    return `<div class="sxrec" ${live_?`data-act="gstats" data-mid="${esc(x.g.mid)}" role="button" tabindex="0" title="Open game stats"`:''}><span class="lbl">${title}</span><b>${fmt(c.v)}</b><div>${pl(c.r.id)}</div><i>${esc(x.g.map||'')} · ${esc(sideName(x.sd[0]))} v ${esc(sideName(x.sd[1]))}</i></div>`; };
+    return `<div class="sxrec" ${live_?`data-act="gstats" data-mid="${esc(x.g.mid)}" role="button" tabindex="0" title="Open game stats"`:''}><span class="lbl">${title}</span><b>${fmt(c.v)}</b><div>${pl(c.r.id)}</div><i>${esc(x.g.map||'')} · ${sideNameH(x.sd[0])} v ${sideNameH(x.sd[1])}</i></div>`; };
   const recCards = `<div class="sxrecs">${[recCard('Fastest Feudal', s=>tsec(s.feudal), 1, mmss), recCard('Fastest Castle', s=>tsec(s.castle), 1, mmss), recCard('Fastest Imperial', s=>tsec(s.imp), 1, mmss),
     recCard('Highest game eAPM', s=>s.eapm, 0, v=>Math.round(v)), recCard('Busiest minute', s=>s.peak, 0, v=>Math.round(v))].join('')}</div>`;
   const cmx = Math.max(1,...civs.map(c=>c[1].n)), mmx = Math.max(1,...maps.map(m=>m[1].n));
-  const civBars = `<div class="card"><h3>Civs</h3><div class="small muted">Bar length = picks, colour = win rate (green wins more, red loses more).</div>${civs.length?`<div class="sxbars">${civs.map(([c,e])=>{ const by = Object.entries(e.by).sort((a,b)=>b[1]-a[1])[0], wr = e.w/e.n;
-      return `<div class="sxbr" title="${esc(c)}: ${e.w}–${e.n-e.w}${by&&state.players[by[0]]?', most by '+esc(P(by[0]).name):''}"><span class="nm">${esc(c)}</span><span class="track"><span style="width:${(e.n/cmx*100).toFixed(0)}%;background:color-mix(in srgb,var(--win-bg) ${Math.round(wr*100)}%,var(--loss))"></span></span><span class="v">${e.n} · ${pct(e.w,e.n)}</span></div>`; }).join('')}</div>`:'<div class="muted small sxnone">No games yet.</div>'}</div>`;
-  const mapBars = `<div class="card"><h3>Maps</h3><div class="small muted">Games played and average length.</div>${maps.length?`<div class="sxbars">${maps.map(([k,e])=>`<div class="sxbr" title="${esc(k)}: shortest ${e.len.length?mmss(Math.min(...e.len)):'–'}, longest ${e.len.length?mmss(Math.max(...e.len)):'–'}"><span class="nm">${esc(k)}</span><span class="track"><span style="width:${(e.n/mmx*100).toFixed(0)}%"></span></span><span class="v">${e.n} · ${e.len.length?mmss(avgOf(e.len)):'–'}</span></div>`).join('')}</div>`:'<div class="muted small sxnone">No games yet.</div>'}</div>`;
+  const civBars = `<div class="card"><h3>Civs</h3><div class="small muted">Bar length = picks, colour = win rate (green wins more, red loses more).</div>${civs.length?`<div class="sxbars"><div class="sxbr sxbh"><span></span><span></span><span class="c">Picks</span><span class="c">Win %</span></div>${civs.map(([c,e])=>{ const by = Object.entries(e.by).sort((a,b)=>b[1]-a[1])[0], wr = e.w/e.n;
+      return `<div class="sxbr" title="${esc(c)}: ${e.w}–${e.n-e.w}${by&&state.players[by[0]]?', most by '+esc(P(by[0]).name):''}"><span class="nm">${esc(c)}</span><span class="track"><span style="width:${(e.n/cmx*100).toFixed(0)}%;background:color-mix(in srgb,var(--win-bg) ${Math.round(wr*100)}%,var(--loss))"></span></span><span class="c">${e.n}</span><span class="c">${pct(e.w,e.n)}</span></div>`; }).join('')}</div>`:'<div class="muted small sxnone">No games yet.</div>'}</div>`;
+  const mapBars = `<div class="card"><h3>Maps</h3><div class="small muted">Games played and average length.</div>${maps.length?`<div class="sxbars"><div class="sxbr sxbh"><span></span><span></span><span class="c">Games</span><span class="c">Avg length</span></div>${maps.map(([k,e])=>`<div class="sxbr" title="${esc(k)}: shortest ${e.len.length?mmss(Math.min(...e.len)):'–'}, longest ${e.len.length?mmss(Math.max(...e.len)):'–'}"><span class="nm">${esc(k)}</span><span class="track"><span style="width:${(e.n/mmx*100).toFixed(0)}%"></span></span><span class="c">${e.n}</span><span class="c">${e.len.length?mmss(avgOf(e.len)):'–'}</span></div>`).join('')}</div>`:'<div class="muted small sxnone">No games yet.</div>'}</div>`;
   /* heatmap: each replay column tinted by how the player ranks against the field */
   const LOW = {feudal:1, castle:1, imp:1, idleC:1, flt:1}, rngs = {}; pcols.forEach(i=>{ const k = MET[i].k, v = prow.map(p=>p.o[k]).filter(numOk).map(Number); rngs[k] = v.length>1 ? [Math.min(...v), Math.max(...v)] : null; });
   const heat = (k, v) => { const R = rngs[k]; if(!R || !numOk(v) || R[1]===R[0] || k==='ecoPct' || k==='milPct') return ''; let f = (v-R[0])/(R[1]-R[0]); if(LOW[k]) f = 1-f;
