@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-p9cR9Q16ZpblReirls7mjQnVfoLltONPQh7khoAAKuk=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-PK4eR3HbTQUKiOjOmwq5YNxDdONIN3xwxmD33injyVs=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -2779,9 +2779,9 @@ function pageStats(){
       ['Avg game', mmss(L.avg), timedAll.length?`longest ${mmss(L.max)}`:'no games yet'], ['Avg eAPM', sxVal(o,MET[0]), o.n?`${o.n} player-games`:'from replays'], ['Avg Feudal', sxVal(o,MET[3]), o.castle!=null?`Castle ${mmss(o.castle)}`:'click time']].concat((()=>{ const pt = predTile(t), m = /<b[^>]*>([^<]*)<\/b>/.exec(pt); return m ? [['Predictions', m[1], 'favourite won the match']] : []; })())
     .map(([k,v,sub])=>`<div><span>${k}</span><b>${v}</b><i>${sub}</i></div>`).join('')}</div>`;
   const board = (title, k, low, fmt, note) => { const rw = q.filter(p=>numOk(p.o[k])).sort((a,b)=>low?a.o[k]-b.o[k]:b.o[k]-a.o[k]).slice(0,5), vals = rw.map(p=>p.o[k]), mx = Math.max(...vals), mn = Math.min(...vals);
-    return `<div class="card sxboard"><h3>${title}</h3>${note?`<div class="small muted">${note}</div>`:''}${rw.length?`<ol>${rw.map((p,i)=>{ const v = p.o[k], w = low ? mn/v*100 : v/mx*100, tm = teamOfP(p.id);
+    return `<div class="card sxboard"><h3>${title}</h3>${note?`<div class="small muted">${note}</div>`:''}${rw.length?`<ol>${rw.map((p,i)=>{ const v = p.o[k], w = mx>0 ? v/mx*100 : 0, tm = teamOfP(p.id);
       return `<li class="${i===0?'lead':''}"><span class="rk">${i+1}</span><div class="who">${pl(p.id)}${tm?`<span class="sxtm">${esc(tm.name)}</span>`:''}</div><b>${fmt(v)}</b><span class="bar" style="--w:${Math.max(8,w).toFixed(0)}%"></span></li>`; }).join('')}</ol>`:'<div class="muted small sxnone">No games yet.</div>'}</div>`; };
-  const boards = [board('Highest eAPM','eapm',0,v=>Math.round(v)), board('Fastest Feudal','feudal',1,mmss,'average click time'), board('Fastest Castle','castle',1,mmss,'average click time'),
+  const boards = [board('Highest eAPM','eapm',0,v=>Math.round(v),'average effective actions per minute'), board('Fastest Feudal','feudal',1,mmss,'average click time'), board('Fastest Castle','castle',1,mmss,'average click time'),
     board('Least TC idle','idleC',1,mmss,'idle before the Castle Age click'), board('Lowest float','flt',1,v=>Math.round(v),'average banked resources'), board('Most aggressive','milPct',0,v=>Math.round(v)+'%','share of military actions')].join('');
   const recCard = (title, f, low, fmt) => { const c = recs.filter(x=>x.s).map(x=>({r:x, v:f(x.s)})).filter(x=>numOk(x.v)).sort((a,b)=>low?a.v-b.v:b.v-a.v)[0];
     if(!c) return `<div class="sxrec none"><span class="lbl">${title}</span><b>–</b><i>no games yet</i></div>`; const x = c.r.x, live_ = typeof LIVE!=='undefined' && LIVE && x.g.mid;
