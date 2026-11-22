@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-Q37MMhZvfEXKbdDRR2ZbfReoiiQftgZR28lJIu3SUMw=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-iTXWrOEPNcOxdDJTm/c3eLUUgIrrRqKkKPm5EV5WVYQ=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -820,6 +820,10 @@ button.gsbtn{border:0;font:inherit;font-weight:700;font-size:.85rem;cursor:point
 .mvgn .rstag{margin-top:3px}
 .qrs{white-space:normal;line-height:1.4}
 .qjoin{display:inline-flex;align-items:center;gap:5px;margin-right:4px}
+/* Setup › Event: Re-parse replays */
+.row > div.f.reparse{flex:1 1 160px;display:flex;flex-direction:column;gap:3px;min-width:0}
+.reparse .rlab{font-size:.85rem;color:var(--muted)}
+.reparse button{min-height:34px;align-self:flex-start}
 </style>
 </head>
 <body>
@@ -1312,7 +1316,7 @@ function setupEvent(){
       <label class="f">Prize pool<input type="text" data-tf="prize" value="${esc(t.prize||'')}"></label>
       <label class="f">Organisers<input type="text" data-tf="org" value="${esc(t.org||'')}"></label>
       <label class="f" title="Decides which ranked ELOs show next to each player. 1v1 ELO always shows.">Game type<select data-tf="mode">${MODES.map(([k,n])=>`<option value="${k}" ${modeOf(t)===k?'selected':''}>${n}</option>`).join('')}</select></label>
-      ${LIVE?`<label class="f" title="Games that fit exactly one open round-robin or Swiss fixture, have a known winner and last over 5 minutes count without waiting. Everything else still waits in Confirm games.">Found games<select data-tf="autoConfirm"><option value="" ${t.autoConfirm?'':'selected'}>Wait for an organiser to confirm</option><option value="1" ${t.autoConfirm?'selected':''}>Confirm clear games automatically</option></select></label>`:''}
+      ${LIVE?`<label class="f" title="Games that fit exactly one open round-robin or Swiss fixture, have a known winner and last over 5 minutes count without waiting. Everything else still waits in Confirm games.">Found games<select data-tf="autoConfirm"><option value="" ${t.autoConfirm?'':'selected'}>Wait for an organiser to confirm</option><option value="1" ${t.autoConfirm?'selected':''}>Confirm clear games automatically</option></select></label>${reparseCtl(t)}`:''}
       <label class="f" title="0 = no limit">Max picks of one civ per player<input type="number" min="0" data-tf="civLimit" value="${+t.civLimit||0}"></label></div>
     <label class="f" style="margin-top:8px">Notes (shown on Home)<textarea data-tf="notes">${esc(t.notes)}</textarea></label></div>
   <div class="grid g2">${img('logo','Logo','Shown next to the name. Square works best.')}${img('banner','Header banner','Wide image across the top of Home.')}</div>
@@ -1634,6 +1638,7 @@ async function act(el, ev){
     case 'pconf': if(!await pendConfirm(d.mid)) return; break;
     case 'pjoin': if(!await pendJoinInto(d.mid)) return; break;
     case 'pskip': try{ await pendSet(d.mid, {status:'ignored'}); toast('Left out'); }catch(e){ await say('Could not update: '+(e.code||e.message)); } return;
+    case 'reparse': if(!t || !await askYes('Re-parse every replay in this tournament? The game finder downloads each confirmed game’s replay again and updates its stats with the newest parser. It takes a few runs (about 10 minutes each). Results don’t change, only the stats.')) return; t.reparse = String(Date.now()); toast('Re-parse asked: the next game finder run starts it'); break;
     case 'precheck': try{ await pendSet(d.mid, {recheck:true}); toast('Re-check asked: the next game finder run fetches it again'); }catch(e){ await say('Could not update: '+(e.code||e.message)); } return;
     case 'restore': { const list = (await idbGet(BKEY))||[]; const b = list[+d.i]; if(!b || !await askYes(`Restore the backup from ${new Date(b.t).toLocaleString()}? What's here now is backed up first.`)) return; await addBackup(JSON.stringify(state),'before restore'); state = JSON.parse(b.json); toast('Restored'); break; }
     default: return;
@@ -2165,6 +2170,14 @@ function detLine(){
   const W = {ranked:'ranked', teams:"sides weren't two of this tournament's teams", lobby:'mostly other players', unfinished:'not finished'};
   const sk = Object.entries(rep.skipped||{}).map(([k,n])=>`${n} ${W[k]||k}`).join(', ');
   return `<div class="detline small muted">Game finder last checked ${esc(when)}: ${rep.players} players with profile IDs, ${rep.fit} tournament game${rep.fit===1?'':'s'} found.${sk?` Left out: ${esc(sk)}.`:''}${rep.failed?' Some players could not be checked; it will retry.':''}</div>`;
+}
+/* Setup › Event: "Re-parse replays" (t.reparse = when it was asked; the detector reports progress in detector/meta reparse) */
+function reparseCtl(t){
+  const r = live.det && live.det.reparse && live.det.reparse[t.id], asked = t.reparse && (!r || r.asked !== t.reparse);
+  const st = !t.reparse ? '' : asked ? 'Asked, waiting for the next game finder run.'
+    : r.finished ? `Done: ${(r.done||[]).length} game${(r.done||[]).length===1?'':'s'} re-parsed${(r.failed||[]).length?`, ${r.failed.length} replay${r.failed.length===1?'':'s'} not found (old stats kept)`:''}.`
+    : `Working: ${(r.done||[]).length} of ${r.total||'?'} games so far.`;
+  return `<div class="f reparse"><span class="rlab">Replay stats</span><button type="button" data-act="reparse" title="Download every confirmed game's replay again and update its stats with the newest parser">Re-parse replays</button>${st?`<div class="small muted">${esc(st)}</div>`:''}</div>`;
 }
 function pendCard(){
   const list = pendHere(), t = T(); if(!list.length) return detLine();
