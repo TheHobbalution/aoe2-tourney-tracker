@@ -263,7 +263,7 @@ def restore_shift(stats):
         p.pop("douche", None)
         if not by:
             continue
-        for k in ("ages", "agesDone"):
+        for k in ("ages", "agesClicked", "agesDone"):
             if isinstance(p.get(k), dict):
                 p[k] = {a: _shift(v, by) for a, v in p[k].items()}
         for k in ("build", "techs", "eco"):
@@ -671,7 +671,7 @@ def update_elos(site_ref, state, matches_by_pid, now, get=http_get):
 
 
 # ---------- one site ----------
-STAT_KEYS = ("apm", "eapm", "opening", "ages", "agesDone", "build", "techs", "eco", "units", "vils", "military", "walls",
+STAT_KEYS = ("apm", "eapm", "opening", "ages", "agesClicked", "agesDone", "build", "techs", "eco", "units", "vils", "military", "walls",
              "resigned", "tcIdle", "floatAvg", "floatPeak", "spent", "detail", "douche")
 
 

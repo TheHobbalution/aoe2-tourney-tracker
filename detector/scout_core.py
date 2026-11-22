@@ -219,7 +219,10 @@ def helper_stats(path, num):
         units = dict(r.get("units") or {})
         p.update({
             "apm": r.get("apm"), "eapm": r.get("eapm"), "opening": r.get("opening"),
-            "ages": {a: d.get("clicked") for a, d in (r.get("ages") or {}).items()},
+            # age times = when the age was REACHED (Jacob, 23 Nov: clicks can be refused or cancelled, and civs like
+            # Malay age up faster); "~" estimates (no "advanced to" message) lose the "~" here. Clicks kept in agesClicked.
+            "ages": {a: str(d.get("done_est") or "").lstrip("~") or None for a, d in (r.get("ages") or {}).items()},
+            "agesClicked": {a: d.get("clicked") for a, d in (r.get("ages") or {}).items()},
             "agesDone": {a: d.get("done_est") for a, d in (r.get("ages") or {}).items()},
             "vils": r.get("villagers", 0), "military": sum(units.values()),
             "units": dict(units, **({"Villager": r.get("villagers")} if r.get("villagers") else {})),
@@ -263,7 +266,7 @@ def merge(summary, stats):
         for p in g["players"]:
             s = by_pid.get(p["profileId"])
             if s:
-                p["stats"] = {k: s[k] for k in ("apm", "eapm", "opening", "ages", "agesDone", "build", "techs", "eco", "units",
+                p["stats"] = {k: s[k] for k in ("apm", "eapm", "opening", "ages", "agesClicked", "agesDone", "build", "techs", "eco", "units",
                                                 "vils", "military", "walls", "resigned", "tcIdle", "floatAvg", "floatPeak", "spent", "detail", "douche") if k in s}
                 p["civ"] = p.get("civ") or s["civ"]
                 if s.get("color") is not None:

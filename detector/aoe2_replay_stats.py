@@ -314,7 +314,13 @@ def tc_idle(evs, age_clicks, game_ms, age_done=None, start_ids=None):
                 add_job(tc, e["t"], vil_ms)
         elif e["type"] == "RESEARCH" and e.get("technology_id") in TC_TECHS:
             tid = e["technology_id"]
-            add_job(oids[0], e["t"], time_of("techs", tid, 25) * 1000)
+            dur = time_of("techs", tid, 25) * 1000
+            if tid in AGE_TECHS:
+                if age_clicks.get(tid) != e["t"]:
+                    continue       # refused, cancelled or repeat age-up clicks: not research time
+                if age_done and age_done.get(tid) is not None and age_done[tid] > e["t"]:
+                    dur = min(dur, age_done[tid] - e["t"])   # faster age-ups (Malay) end when the game says so
+            add_job(oids[0], e["t"], dur)
     if not busy:
         return None
     end_at = game_ms
@@ -405,10 +411,23 @@ def player_report(num, info, evs, game_ms, sync, age_done=None, start_age=0, sta
     age_done = {k: v for k, v in (age_done or {}).items() if v >= MIN_AGE_DONE_MS.get(k, 0)}
     # ages the game STARTS in (Empire Wars = Feudal, start_age 1) count as reached at 0:00, so no time lands in Dark Age (Jacob, 19 Oct)
     started = [FEUDAL, CASTLE, IMPERIAL][:max(0, min(start_age, 3))]
-    age_clicks = {}
+    # Age-up click. The replay records every click, including ones the game turned down (not enough resources)
+    # or that were cancelled, so the first click can be far too early (Jacob, 23 Nov). When the game says when the
+    # age was reached, the real click is the first one in the research window before that; else the first click.
+    clicks = defaultdict(list)
     for e in evs:
-        if e["type"] == "RESEARCH" and e.get("technology_id") in AGE_TECHS and e["technology_id"] not in age_clicks:
-            age_clicks[e["technology_id"]] = e["t"]
+        if e["type"] == "RESEARCH" and e.get("technology_id") in AGE_TECHS:
+            clicks[e["technology_id"]].append(e["t"])
+    age_clicks = {}
+    for tid, cs in clicks.items():
+        d = age_done.get(tid)
+        if d is None:
+            age_clicks[tid] = cs[0]
+            continue
+        before = [c for c in cs if c <= d]
+        rt = time_of("techs", tid, 130) * 1000
+        win = [c for c in before if c >= d - rt - 5000]
+        age_clicks[tid] = min(win) if win else (max(before) if before else cs[0])
     apm, eapm, n_cmds = apm_stats(evs, game_ms)
     # when each age was REACHED (the game's own message, else click + research time); an age still being researched
     # when the game ended was never reached. Per-age eAPM and float split here, so the age-up research counts in the age before (Jacob, 18 Oct)
