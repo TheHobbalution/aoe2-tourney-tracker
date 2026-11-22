@@ -698,9 +698,13 @@ def run_site(db, site_ref, now=None, get=http_get):
         teamof = team_of(t)
         # games queued under an older, looser rule (or before teams were entered) that no longer fit: take them out
         # of the queue, unless an admin has already dealt with them
+        recheck = set()   # queued games an organiser asked to fetch and parse again ("Re-check" in Confirm games)
         for d in site_ref.collection("pending").where(filter=FieldFilter("status", "==", "new")).stream():
             pd = d.to_dict() or {}
+            if pd.get("tour") == t["id"] and pd.get("recheck"):
+                recheck.add(d.id)
             if pd.get("tour") == t["id"] and (ranked(pd.get("leaderboard")) or not sides_fit(pd.get("players") or [], teamof)):
+                recheck.discard(d.id)
                 d.reference.delete()
                 site_ref.collection("games").document(d.id).delete()
                 known[d.id] = {"stats": True, "tries": MAX_TRIES, "tried": now, "skip": True}
@@ -712,6 +716,12 @@ def run_site(db, site_ref, now=None, get=http_get):
             meta.setdefault("deepDone", {})[t["id"]] = dd
             log(f"  catch-up: {len(dd)} of {len(pidmap)} players paged back so far")
         seen_matches += matches
+        have = {str(m.get("matchId")) for m in matches}
+        for mid in sorted(recheck - have):   # older than this run looked back: fetch that one game
+            try:
+                matches.append(json.loads(get_retry(get, f"https://data.aoe2companion.com/api/matches/{mid}")))
+            except Exception as e:  # noqa: BLE001
+                log(f"  game {mid}: re-check could not fetch it ({e})")
         rep = {"at": now, "players": len(pidmap), "looked": len(matches), "fit": 0, "skipped": {}, "failed": len(failed)}
         meta.setdefault("report", {})[t["id"]] = rep
         left = meta.setdefault("left", {}).setdefault(t["id"], {})
@@ -733,14 +743,17 @@ def run_site(db, site_ref, now=None, get=http_get):
                 continue
             left.pop(mid, None)
             rep["fit"] += 1
-            tries = (old or {}).get("tries") or 0
+            force = mid in recheck
+            tries = 0 if force else (old or {}).get("tries") or 0
+            if force:
+                log(f"  game {mid}: re-check asked, fetching it again")
             if old and later and not old.get("later") and not old.get("skip"):
                 try:     # the game was played again after it was queued: tell the queue (and keep auto-confirm off it)
                     site_ref.collection("pending").document(mid).update({"restore.later": later})
                     old["later"] = later
                 except Exception:  # noqa: BLE001 - already removed from the queue
                     old["later"] = later
-            if old and (old.get("stats") or tries >= MAX_TRIES or now - (old.get("tried") or 0) < tries * RETRY_GAP):
+            if old and not force and (old.get("stats") or tries >= MAX_TRIES or now - (old.get("tried") or 0) < tries * RETRY_GAP):
                 continue                     # done, given up, or too soon to try the replay again
             if over(WORK_BUDGET):
                 log(f"  game {mid}: out of time this run, next run picks it up")
@@ -774,11 +787,20 @@ def run_site(db, site_ref, now=None, get=http_get):
             doc = pending_doc(game, t["id"], pidmap, stats, tries + 1)
             doc["tried"] = now
             if old:   # keep the admin's decision; only add the stats/winner we now have
-                site_ref.collection("pending").document(mid).set({k: doc[k] for k in ("players", "stats", "tries", "tried", "gameTime", "map")}, merge=True)
+                upd = {k: doc[k] for k in ("players", "stats", "tries", "tried", "gameTime", "map")}
+                if force:
+                    if not stats and old.get("stats"):   # replay didn't come this time: keep the stats we had, fix the name only
+                        upd = {"map": doc["map"]}
+                    upd.update({"recheck": False, "rechecked": now})
+                site_ref.collection("pending").document(mid).set(upd, merge=True)
             else:
                 doc["seen"] = firestore.SERVER_TIMESTAMP
+                if force:
+                    doc.update({"recheck": False, "rechecked": now})
                 site_ref.collection("pending").document(mid).set(doc)
                 added += 1
+            if force and not stats and (old or {}).get("stats"):
+                stats = True                 # still have the earlier replay's stats
             known[mid] = {"stats": bool(stats), "tries": tries + 1, "tried": now, **({"later": later} if later else {})}
             log(f"  {'full stats' if stats else 'result only, will retry'}")
             if t.get("autoConfirm") and (stats or tries + 1 >= MAX_TRIES):   # wait for the replay so the stats go in too
