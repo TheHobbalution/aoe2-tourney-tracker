@@ -112,6 +112,7 @@ def parse_replay(path):
             }
         meta(f)
         ms = 0
+        clock0 = None   # game clock minus our count at the first sync that carries one (a restored game starts mid-game)
         while f.tell() < eof:
             try:
                 t, pl = operation(f)
@@ -121,6 +122,8 @@ def parse_replay(path):
                 break
             if t == Operation.SYNC:
                 ms += pl[0]
+                if clock0 is None and len(pl) > 2 and isinstance(pl[2], dict) and pl[2].get("current_time") is not None:
+                    clock0 = pl[2]["current_time"] - ms
                 continue
             if t != Operation.ACTION:
                 continue
@@ -176,7 +179,19 @@ def parse_replay(path):
     return {
         "guid": de.get("guid"), "started": de.get("timestamp"), "map": map_name, "rated": de.get("rated"),
         "gameTime": mmss(game_sec), "realTime": mmss(game_sec / speed), "players": list(num.values()),
+        "restoreMs": restore_ms((h.get("map") or {}).get("restore_time"), clock0),
     }
+
+
+def restore_ms(restore_time, clock0):
+    """None for a normal game. For a game loaded from a save: the game time (ms) the save was made at, or 0 when the
+    replay says it was restored but not when. The replay's own clock starts at 0:00 from the save."""
+    if not restore_time:
+        return None
+    for v in (clock0, restore_time):
+        if v and 1000 < v < 10 * 3600 * 1000:
+            return int(v)
+    return 0
 
 
 def _split(line):

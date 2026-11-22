@@ -10,7 +10,7 @@ Nothing counts until an admin confirms it in the tracker.
 
 Env: FIREBASE_SERVICE_ACCOUNT = the service account key JSON (GitHub secret).
 """
-import io, json, os, sys, tempfile, time, zipfile, urllib.request
+import io, json, os, sys, tempfile, time, zipfile, urllib.parse, urllib.request
 from datetime import datetime, timezone, timedelta
 
 import scout_core as core
@@ -152,8 +152,10 @@ def team_of(t):
 
 
 def sides_fit(players, teamof):
-    """Team tournaments: a real fixture is one tournament team against another. Every tournament player on a side
-    must be from the same team, they must be at least half of that side, and the two sides must be different teams.
+    """Team tournaments: a real fixture is one tournament team against another. On each side, one team must have
+    more players than any other team and be at least half of that side; anyone else on the side is a fill-in (another
+    team's player or someone outside the tournament), which the organiser confirms by hand. The two sides must be
+    different teams.
     players: [{"team": lobby side, "id": tracker player id or None}]. Tournaments without teams always fit."""
     if len(set(teamof.values())) < 2:
         return True
@@ -170,10 +172,12 @@ def sides_fit(players, teamof):
     for ps in sides.values():
         tms = [teamof.get(p.get("id")) for p in ps if p.get("id")]
         tms = [x for x in tms if x]
-        if len(tms) < need or len(set(tms)) != 1 or len(tms) * 2 < len(ps):
+        cnt = sorted(((tms.count(x), x) for x in set(tms)), reverse=True)
+        if not cnt or cnt[0][0] < need or cnt[0][0] * 2 < len(ps) or (len(cnt) > 1 and cnt[1][0] == cnt[0][0]):
             return False
-        found.append(tms[0])
-    return found[0] != found[1]
+        found.append((cnt[0][1], set(tms)))
+    # different teams, and nobody plays against their own team (a fill-in comes from a third team or outside)
+    return found[0][0] != found[1][0] and found[0][0] not in found[1][1] and found[1][0] not in found[0][1]
 
 
 def ranked(leaderboard):
@@ -233,6 +237,64 @@ def fill_winner(game):
             p["won"] = p.get("team") != lost[0]
 
 
+# ---------- restored games (a game that dropped and was loaded from a save to play it out; Jacob, 22 Nov) ----------
+# Each part has its own match ID and replay. The restored replay's clock starts at 0:00 from the save, so its times
+# are moved on by the save time, and its opening is dropped (it starts mid-game). The organiser joins the parts into
+# one fixture game in Confirm games: the result comes from the last part, the stats from both.
+TWIN_GAP = 6 * 3600       # parts of one game start within 6 hours of each other
+
+
+def _shift(v, by):
+    x = secs(v)
+    return core.mmss(x + by) if x is not None else v
+
+
+def restore_shift(stats):
+    """Move a restored replay's times on to real game time. Returns the save time in seconds (None = normal game)."""
+    rms = (stats or {}).get("restoreMs")
+    if rms is None:
+        return None
+    by = round(rms / 1000)
+    stats["partTime"] = stats.get("gameTime")
+    if by:
+        stats["gameTime"] = _shift(stats.get("gameTime"), by)
+    for p in stats.get("players") or []:
+        p.pop("opening", None)
+        p.pop("douche", None)
+        if not by:
+            continue
+        for k in ("ages", "agesDone"):
+            if isinstance(p.get(k), dict):
+                p[k] = {a: _shift(v, by) for a, v in p[k].items()}
+        for k in ("build", "techs", "eco"):
+            if isinstance(p.get(k), list):
+                p[k] = [[_shift(e[0], by)] + list(e[1:]) if isinstance(e, (list, tuple)) and e else e for e in p[k]]
+        if p.get("resigned"):
+            p["resigned"] = _shift(p["resigned"], by)
+    return by
+
+
+def twin_key(s):
+    """Same players (by profile ID) on the same map: the parts of a restored game share this."""
+    return (tuple(sorted(str(p.get("profileId")) for p in s.get("players") or [])), norm_map(s.get("map")))
+
+
+def twins(summaries):
+    """matchId -> (earlier part or None, later part or None) among games with the same players and map."""
+    by = {}
+    for s in summaries:
+        by.setdefault(twin_key(s), []).append(s)
+    out = {}
+    for group in by.values():
+        group.sort(key=lambda x: x.get("started") or 0)
+        for i, s in enumerate(group):
+            st = s.get("started") or 0
+            prev = group[i - 1] if i and st - (group[i - 1].get("started") or 0) <= TWIN_GAP else None
+            nxt = group[i + 1] if i + 1 < len(group) and (group[i + 1].get("started") or 0) - st <= TWIN_GAP else None
+            out[str(s.get("matchId"))] = (str(prev["matchId"]) if prev else None, str(nxt["matchId"]) if nxt else None)
+    return out
+
+
 def pending_doc(game, tour_id, pidmap, stats_ok, tries):
     return {
         "matchId": str(game.get("matchId")), "tour": tour_id, "status": "new",
@@ -243,6 +305,7 @@ def pending_doc(game, tour_id, pidmap, stats_ok, tries):
                      "team": p.get("team"), "civ": p.get("civ"), "won": p.get("won"), "color": p.get("color"),
                      "sum": headline(p.get("stats"))} for p in game.get("players") or []],
         "stats": bool(stats_ok), "tries": tries,
+        **({"restore": {k: v for k, v in game["restore"].items() if v is not None}} if game.get("restore") else {}),
     }  # "tried" (time of the last replay attempt) is added by run_site
 
 
@@ -307,6 +370,8 @@ def series_done(S, m):
 def auto_pick(t, pdoc):
     """(reason, fit): fit = (stage, match, flip, winner side of the game) when this detected game belongs to exactly
     one open round-robin / Swiss fixture with a known winner; otherwise reason says why it waits for an organiser."""
+    if pdoc.get("restore"):
+        return "restored", None      # part of a game that dropped and was restored: an organiser joins the parts
     if secs(pdoc.get("gameTime")) is not None and secs(pdoc.get("gameTime")) < AUTO_MIN_SECS:
         return "short", None
     sides = {}
@@ -323,6 +388,8 @@ def auto_pick(t, pdoc):
     ids = [[pl.get("id") for pl in side if pl.get("id")] for side in ps]
     if not ids[0] or not ids[1]:
         return "players", None
+    if any(not pl.get("id") for side in ps for pl in side):
+        return "fill-in", None     # someone outside the tournament played: an organiser confirms it as a fill-in game
     fits = []
     for S in t.get("stages") or []:
         if S.get("type") not in ("rr", "swiss"):
@@ -517,6 +584,43 @@ def fetch_elos(pids, get=http_get, cc=None):
     return out
 
 
+WE_LADDERS = {3: "rm1", 4: "rmt", 13: "ew1", 14: "ewt"}   # the game's own leaderboard ids
+
+
+def fetch_we(pids, get=http_get):
+    """Backup straight from the game's own API (World's Edge, which aoe2companion reads too), for players aoe2companion
+    doesn't have (often ones who haven't played for a while). profile id -> {"cc": "au", "elo": {ladder: {"r", "max"}}}."""
+    out = {}
+    pids = list(pids)
+    for n in range(0, len(pids), 40):
+        chunk = pids[n:n + 40]
+        try:
+            ids = urllib.parse.quote(json.dumps([int(p) for p in chunk], separators=(",", ":")))
+            data = json.loads(get(f"https://aoe-api.worldsedgelink.com/community/leaderboard/GetPersonalStat?title=age2&profile_ids={ids}"))
+        except Exception as e:  # noqa: BLE001
+            log(f"  World's Edge backup failed: {e}")
+            continue
+        group = {}
+        for g in data.get("statGroups") or []:
+            for m in g.get("members") or []:
+                pid = m.get("profile_id")
+                if pid in chunk and g.get("type", 1) == 1:
+                    group[g.get("id")] = pid
+                    o = out.setdefault(pid, {"elo": {}})
+                    if _cc(m.get("country")):
+                        o["cc"] = _cc(m.get("country"))
+        for st in data.get("leaderboardStats") or []:
+            pid, k, r = group.get(st.get("statgroup_id")), WE_LADDERS.get(st.get("leaderboard_id")), _num(st.get("rating"))
+            if pid is None or not k or not r:
+                continue
+            e = out[pid]["elo"][k] = {"r": r}
+            mx = _num(st.get("highestrating"))
+            if mx:
+                e["max"] = max(mx, r)
+        time.sleep(PAUSE)
+    return out
+
+
 def update_elos(site_ref, state, matches_by_pid, now, get=http_get):
     """Keep tournaments/<tid>/detector/elo fresh: {at, p: {tracker player id: {ladder: {r, max}}}, cc: {tracker player id: "au"}}."""
     pidmap = {}
@@ -535,6 +639,15 @@ def update_elos(site_ref, state, matches_by_pid, now, get=http_get):
     ccs = dict(cur.get("cc") or {})
     got_cc = countries_from_matches(matches_by_pid)
     got = fetch_elos(need, get, got_cc) if need else {}
+    miss = [pid for pid in need if not got.get(pid) or pid not in got_cc]      # aoe2companion had nothing (or no country)
+    we = fetch_we(miss, get) if miss else {}
+    for pid, w in we.items():
+        if w.get("cc") and pid not in got_cc:
+            got_cc[pid] = w["cc"]
+        if w.get("elo"):
+            got[pid] = {**w["elo"], **(got.get(pid) or {})}             # aoe2companion's numbers win where both have one
+    if miss:
+        log(f"{site_ref.id}: World's Edge backup asked for {len(miss)} player(s), {sum(1 for w in we.values() if w.get('cc') or w.get('elo'))} found")
     changed = False
     for pid, i in pidmap.items():                           # nation flags: country code from aoe2companion
         if got_cc.get(pid) and ccs.get(i) != got_cc[pid]:
@@ -602,11 +715,15 @@ def run_site(db, site_ref, now=None, get=http_get):
         rep = {"at": now, "players": len(pidmap), "looked": len(matches), "fit": 0, "skipped": {}, "failed": len(failed)}
         meta.setdefault("report", {})[t["id"]] = rep
         left = meta.setdefault("left", {}).setdefault(t["id"], {})
-        for m in matches:
-            s = core.summarize_match(m)
+        sums = [core.summarize_match(m) for m in matches]
+        tw = twins(sums)
+        for s in sums:
             mid = str(s["matchId"])
             old = known.get(mid)
             why = why_not(s, pidmap, window, teamof)
+            prev, later = tw.get(mid, (None, None))
+            if why == "unfinished" and later:
+                why = None        # a game that dropped and was played again (restored or restarted): queue it so it can be joined
             if why:
                 if why not in ("few", "dates"):      # a game between tournament players inside the dates: say why it was left out
                     if left.get(mid) != why:
@@ -617,6 +734,12 @@ def run_site(db, site_ref, now=None, get=http_get):
             left.pop(mid, None)
             rep["fit"] += 1
             tries = (old or {}).get("tries") or 0
+            if old and later and not old.get("later") and not old.get("skip"):
+                try:     # the game was played again after it was queued: tell the queue (and keep auto-confirm off it)
+                    site_ref.collection("pending").document(mid).update({"restore.later": later})
+                    old["later"] = later
+                except Exception:  # noqa: BLE001 - already removed from the queue
+                    old["later"] = later
             if old and (old.get("stats") or tries >= MAX_TRIES or now - (old.get("tried") or 0) < tries * RETRY_GAP):
                 continue                     # done, given up, or too soon to try the replay again
             if over(WORK_BUDGET):
@@ -631,8 +754,16 @@ def run_site(db, site_ref, now=None, get=http_get):
                         stats = core.parse_replay(path)
                     except Exception as e:  # noqa: BLE001
                         log(f"  parse failed: {e}")
+            rs = restore_shift(stats) if stats else None
             game = core.merge(s, stats)
             fill_winner(game)
+            if rs is not None or later:
+                game["restore"] = {"later": later}
+                if rs is not None:
+                    game["restore"].update({"ms": stats.get("restoreMs"), "at": core.mmss(rs) if rs else None, "prev": prev,
+                                            "partTime": stats.get("partTime")})
+                    game["restoreMs"], game["partTime"] = stats.get("restoreMs"), stats.get("partTime")
+                    log(f"  restored from a save at {core.mmss(rs) if rs else '?'}" + (f", earlier part {prev}" if prev else ""))
             if stats:
                 body = json.dumps(game, separators=(",", ":"))
                 if len(body) < 950000:
@@ -648,7 +779,7 @@ def run_site(db, site_ref, now=None, get=http_get):
                 doc["seen"] = firestore.SERVER_TIMESTAMP
                 site_ref.collection("pending").document(mid).set(doc)
                 added += 1
-            known[mid] = {"stats": bool(stats), "tries": tries + 1, "tried": now}
+            known[mid] = {"stats": bool(stats), "tries": tries + 1, "tried": now, **({"later": later} if later else {})}
             log(f"  {'full stats' if stats else 'result only, will retry'}")
             if t.get("autoConfirm") and (stats or tries + 1 >= MAX_TRIES):   # wait for the replay so the stats go in too
                 try:
