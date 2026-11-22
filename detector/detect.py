@@ -671,6 +671,165 @@ def update_elos(site_ref, state, matches_by_pid, now, get=http_get):
 
 
 # ---------- one site ----------
+STAT_KEYS = ("apm", "eapm", "opening", "ages", "agesDone", "build", "techs", "eco", "units", "vils", "military", "walls",
+             "resigned", "tcIdle", "floatAvg", "floatPeak", "spent", "detail", "douche")
+
+
+def state_resum(state, tour_id, sums):
+    """Put re-parsed headline numbers into the confirmed fixture games. sums: matchId -> {profile id: headline}.
+    Games joined from several replays (restored from a save) are left alone. Returns how many games changed."""
+    by = {str(p.get("pid") or "").strip(): k for k, p in (state.get("players") or {}).items() if str(p.get("pid") or "").strip()}
+    t = next((x for x in state.get("tours") or [] if x.get("id") == tour_id), None)
+    n = 0
+    for S in (t or {}).get("stages") or []:
+        for m in S.get("matches") or []:
+            for g in m.get("games") or []:
+                if not g or g.get("parts") or str(g.get("mid")) not in sums or not isinstance(g.get("st"), dict):
+                    continue
+                hit = False
+                for pid, sm in sums[str(g.get("mid"))].items():
+                    k = by.get(str(pid))
+                    if k and k in g["st"] and sm:
+                        g["st"][k] = sm
+                        hit = True
+                n += hit
+    return n
+
+
+def map_name(summary, stats):
+    """The map played, as core.merge picks it: aoe2companion's name for a built-in map (the replay's file name can be
+    left over from an earlier custom pick in the lobby), the replay's for a custom map, else the replay's map number."""
+    summary, stats = summary or {}, stats or {}
+    if summary.get("map") and not summary.get("mapCustom"):
+        return summary["map"]
+    if summary.get("map"):
+        return stats.get("map") or summary["map"]
+    return stats.get("mapBuiltIn") or stats.get("map")
+
+
+def state_remap(state, tour_id, maps):
+    """Correct confirmed fixture games' map names after a re-parse. maps: matchId -> (old name, new name). Only a game
+    whose map is still the old automatic name (or empty) changes, so a name an organiser typed in is kept."""
+    t = next((x for x in state.get("tours") or [] if x.get("id") == tour_id), None)
+    n = 0
+    for S in (t or {}).get("stages") or []:
+        for m in S.get("matches") or []:
+            for g in m.get("games") or []:
+                hit = maps.get(str((g or {}).get("mid")))
+                if not hit or (g.get("map") and norm_map(g["map"]) != norm_map(hit[0])):
+                    continue
+                pool = next((x for x in S.get("maps") or [] if norm_map(x) == norm_map(hit[1])), None)
+                g["map"] = pool or hit[1]
+                n += 1
+    return n
+
+
+def reparse_tour(db, site_ref, t, meta, pidmap, now, get=http_get):
+    """Organiser pressed "Re-parse replays" (t.reparse = when): download every stored game's replay again, parse it
+    with the current parser, and update the game stats, the queue and the confirmed fixture games. Spread over runs."""
+    from firebase_admin import firestore
+    from google.cloud.firestore_v1.base_query import FieldFilter
+    ask = str(t.get("reparse") or "")
+    if not ask:
+        return
+    allrp = meta.setdefault("reparse", {})
+    rp = allrp.get(t["id"]) or {}
+    if rp.get("asked") != ask:
+        rp = {"asked": ask, "done": [], "failed": []}
+    allrp[t["id"]] = rp
+    if rp.get("finished"):
+        return
+    pend = {}
+    for d in site_ref.collection("pending").where(filter=FieldFilter("tour", "==", t["id"])).stream():
+        pd = d.to_dict() or {}
+        if pd.get("status") in ("new", "confirmed", "joined") and pd.get("stats"):
+            pend[d.id] = pd
+    todo = [m for m in sorted(pend) if m not in rp["done"] and m not in rp["failed"]]
+    rp["total"] = len(pend)
+    log(f"  re-parse: {len(todo)} of {len(pend)} games left")
+    sums, maps = {}, {}
+    for mid in todo:
+        if over(WORK_BUDGET):
+            log("  re-parse: out of time this run, next run carries on")
+            break
+        gref = site_ref.collection("games").document(mid)
+        gs = gref.get()
+        try:
+            game = json.loads((gs.to_dict() or {}).get("json") or "{}") if gs.exists else {}
+        except ValueError:
+            game = {}
+        pids = [p.get("pid") for p in pend[mid].get("players") or [] if p.get("pid") in pidmap] or \
+               [p.get("pid") for p in pend[mid].get("players") or [] if p.get("pid")]
+        stats = None
+        with tempfile.TemporaryDirectory() as tmp:
+            path = download_replay(mid, pids, tmp, get)
+            if path:
+                try:
+                    stats = core.parse_replay(path)
+                except Exception as e:  # noqa: BLE001
+                    log(f"  game {mid}: parse failed ({e})")
+        try:     # the map name again, with the current rule (22 Nov: Arena had been saved as "AD5 Dry Socotra")
+            summ = core.summarize_match(json.loads(get_retry(get, f"https://data.aoe2companion.com/api/matches/{mid}")))
+        except Exception:  # noqa: BLE001
+            summ = {}
+        was = game.get("map") or pend[mid].get("map")
+        # without a replay only a built-in name from aoe2companion is sure enough to change it
+        mp = map_name(summ, stats) if stats else (summ.get("map") if not summ.get("mapCustom") else None)
+        if mp and norm_map(mp) != norm_map(was):
+            maps[mid] = (was or "", mp)
+            log(f"  game {mid}: map {was!r} -> {mp!r}")
+        if not stats or not game.get("players"):
+            rp["failed"].append(mid)
+            log(f"  game {mid}: re-parse failed (no replay or no stored game), old stats kept")
+            if mid in maps:
+                if game.get("players"):
+                    game["map"] = mp
+                    gref.set({"json": json.dumps(game, separators=(",", ":")), "matchId": mid, "started": game.get("started"),
+                              "updated": firestore.SERVER_TIMESTAMP}, merge=True)
+                site_ref.collection("pending").document(mid).set({"map": mp}, merge=True)
+            continue
+        restore_shift(stats)
+        if mid in maps:
+            game["map"] = mp
+        new = {p["profileId"]: p for p in stats.get("players") or []}
+        for p in game["players"]:
+            sp = new.get(p.get("profileId"))
+            if sp:
+                p["stats"] = {k: sp[k] for k in STAT_KEYS if k in sp}
+        body = json.dumps(game, separators=(",", ":"))
+        if len(body) >= 950000:
+            rp["failed"].append(mid)
+            continue
+        gref.set({"json": body, "matchId": mid, "started": game.get("started"), "updated": firestore.SERVER_TIMESTAMP, "reparsed": now})
+        hs = {p.get("profileId"): headline(p.get("stats")) for p in game["players"] if p.get("stats")}
+        pl = pend[mid].get("players") or []
+        for p in pl:
+            if p.get("pid") in hs:
+                p["sum"] = hs[p["pid"]]
+        site_ref.collection("pending").document(mid).set({"players": pl, **({"map": mp} if mid in maps else {})}, merge=True)
+        sums[mid] = hs
+        rp["done"].append(mid)
+        log(f"  game {mid}: re-parsed")
+    if sums or maps:
+        @firestore.transactional
+        def run(tx):
+            snap = site_ref.get(transaction=tx)
+            state = json.loads((snap.to_dict() or {}).get("state") or "{}")
+            n = state_resum(state, t["id"], sums) + state_remap(state, t["id"], maps)
+            if n:
+                tx.update(site_ref, {"state": json.dumps(state, separators=(",", ":"), ensure_ascii=False), "updated": firestore.SERVER_TIMESTAMP})
+            return n
+        try:
+            log(f"  re-parse: {run(db.transaction())} fixture games updated")
+        except Exception as e:  # noqa: BLE001
+            log(f"  re-parse: could not update the fixtures ({e}); next run tries again")
+            rp["done"] = [m for m in rp["done"] if m not in sums]
+            rp["failed"] = [m for m in rp["failed"] if m not in maps]
+    if not [m for m in pend if m not in rp["done"] and m not in rp["failed"]]:
+        rp["finished"] = now
+        log(f"  re-parse finished: {len(rp['done'])} games, {len(rp['failed'])} failed")
+
+
 def run_site(db, site_ref, now=None, get=http_get):
     from firebase_admin import firestore
     from google.cloud.firestore_v1.base_query import FieldFilter
@@ -817,6 +976,12 @@ def run_site(db, site_ref, now=None, get=http_get):
             (meta.get("deepDone") or {}).pop(t["id"], None)
         elif failed:
             meta.setdefault("caughtUp", {})[t["id"]] = False     # page back again next run (only the players not done yet)
+    for t in state.get("tours") or []:
+        if t.get("reparse"):
+            try:
+                reparse_tour(db, site_ref, t, meta, tour_pids(state, t), now, get)
+            except Exception as e:  # noqa: BLE001 - never lose the run over this
+                log(f"{site_ref.id}: re-parse failed: {e}")
     try:
         if over(WORK_BUDGET):
             raise RuntimeError("skipped, out of time this run")
