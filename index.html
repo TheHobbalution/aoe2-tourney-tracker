@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-Vf0pN6f4UzXZEF1RePF86pSUjexbuUXdfLvhcWZ+cPw=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-tiW8PCoeOMpUwta6DSlIOup2Vkcd8w4r6yaxF8fZJ+M=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -1270,7 +1270,6 @@ function pageStandings(){
     const g = groupStandings(S);
     out += `<div class="card"><h3>${esc(S.name)}</h3><div class="small muted">Ties: ${tbOf(S).map(k=>esc(TB[k])).join(' › ')}</div>${g.map((rows,gi)=>`${g.length>1?`<h3 class="small" style="margin-top:8px">Group ${GL(gi)}</h3>`:''}${ladderTable(rows, S)}`).join('')}</div>`;
   }); });
-  const civ = civStats(t); if(civ) out += civ;
   return out || `<div class="card empty">No results yet.</div>`;
 }
 const ord = n => n + (['th','st','nd','rd'][(n%100-20)%10]||['th','st','nd','rd'][n%100]||'th');
