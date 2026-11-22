@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-iTXWrOEPNcOxdDJTm/c3eLUUgIrrRqKkKPm5EV5WVYQ=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-tF7vDhQvH1rpX1DmG6wRnMTDbyLIZlHMrfI08/9hdgY=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -820,10 +820,30 @@ button.gsbtn{border:0;font:inherit;font-weight:700;font-size:.85rem;cursor:point
 .mvgn .rstag{margin-top:3px}
 .qrs{white-space:normal;line-height:1.4}
 .qjoin{display:inline-flex;align-items:center;gap:5px;margin-right:4px}
-/* Setup › Event: Re-parse replays */
-.row > div.f.reparse{flex:1 1 160px;display:flex;flex-direction:column;gap:3px;min-width:0}
-.reparse .rlab{font-size:.85rem;color:var(--muted)}
-.reparse button{min-height:34px;align-self:flex-start}
+/* Setup › Event: Re-parse replays card (bottom of the page) */
+.reparse button.pri{padding:9px 18px}
+/* Stats tab: Games and series list (rows unfold into the match view) */
+.sxms-list{display:grid;grid-template-columns:minmax(0,1fr);gap:6px}
+.sxm{min-width:0;border:1px solid color-mix(in srgb,var(--accent) 22%,var(--line));border-radius:6px;background:var(--card);scroll-margin-top:70px}
+.sxm.open{border-color:var(--accent)}
+.sxmh{display:grid;grid-template-columns:170px minmax(0,1fr) 70px minmax(0,1fr) minmax(0,1.1fr) auto;gap:16px;align-items:center;padding:9px 14px;cursor:pointer;border-radius:6px}
+.sxmh:hover,.sxmh:focus-visible{background:color-mix(in srgb,var(--accent) 8%,var(--card));outline:none}
+.sxmh:focus-visible{box-shadow:0 0 0 2px var(--accent)}
+.sxml{font-size:.8rem;color:var(--muted);line-height:1.25;min-width:0}.sxml i{display:block;font-style:normal;color:var(--ink);font-weight:600}
+.sxms{font-weight:700;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sxms.r{text-align:right}
+.sxms.loss{color:var(--muted);font-weight:500}
+.sxmsc{display:flex;justify-content:center;gap:4px;order:0}
+.sxmsc b{font-family:var(--head);min-width:26px;text-align:center;padding:2px 0;border-radius:4px;background:var(--rail)}
+.sxmsc b.win{background:var(--win-bg);color:#fff}.sxmsc b.loss{background:color-mix(in srgb,var(--loss) 70%,#000);color:#fff}
+.sxmm{min-width:0;padding-left:14px;border-left:1px solid var(--line);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sxmb{padding:0 14px 14px}
+.sxmb .mvhead{margin-top:4px}
+.sxmlink{margin-top:10px;text-align:right}
+.sxmore{margin-top:10px;text-align:center}
+@media (max-width:860px){.sxmh{grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr);gap:6px 10px;padding:9px 10px}
+  .sxml{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}.sxml i{display:inline}
+  .sxmm{grid-column:1/3;padding-left:0;border-left:0}.sxmh .gsbtn{grid-column:3;justify-self:end}
+  .sxmb{padding:0 8px 10px}}
 </style>
 </head>
 <body>
@@ -1316,7 +1336,7 @@ function setupEvent(){
       <label class="f">Prize pool<input type="text" data-tf="prize" value="${esc(t.prize||'')}"></label>
       <label class="f">Organisers<input type="text" data-tf="org" value="${esc(t.org||'')}"></label>
       <label class="f" title="Decides which ranked ELOs show next to each player. 1v1 ELO always shows.">Game type<select data-tf="mode">${MODES.map(([k,n])=>`<option value="${k}" ${modeOf(t)===k?'selected':''}>${n}</option>`).join('')}</select></label>
-      ${LIVE?`<label class="f" title="Games that fit exactly one open round-robin or Swiss fixture, have a known winner and last over 5 minutes count without waiting. Everything else still waits in Confirm games.">Found games<select data-tf="autoConfirm"><option value="" ${t.autoConfirm?'':'selected'}>Wait for an organiser to confirm</option><option value="1" ${t.autoConfirm?'selected':''}>Confirm clear games automatically</option></select></label>${reparseCtl(t)}`:''}
+      ${LIVE?`<label class="f" title="Games that fit exactly one open round-robin or Swiss fixture, have a known winner and last over 5 minutes count without waiting. Everything else still waits in Confirm games.">Found games<select data-tf="autoConfirm"><option value="" ${t.autoConfirm?'':'selected'}>Wait for an organiser to confirm</option><option value="1" ${t.autoConfirm?'selected':''}>Confirm clear games automatically</option></select></label>`:''}
       <label class="f" title="0 = no limit">Max picks of one civ per player<input type="number" min="0" data-tf="civLimit" value="${+t.civLimit||0}"></label></div>
     <label class="f" style="margin-top:8px">Notes (shown on Home)<textarea data-tf="notes">${esc(t.notes)}</textarea></label></div>
   <div class="grid g2">${img('logo','Logo','Shown next to the name. Square works best.')}${img('banner','Header banner','Wide image across the top of Home.')}</div>
@@ -1328,7 +1348,7 @@ function setupEvent(){
     <h3 style="margin-top:12px">Documents</h3><div class="small muted">Attach a small PDF (up to 3 MB each). A link is lighter if it's already online.</div>
     <div>${t.docs.map((d,i)=>`<div class="row" style="margin-top:6px"><span>📄 ${esc(d.name)} <span class="muted small">${Math.round(d.size/1024)} KB</span></span><button class="sm danger" data-act="docdel" data-i="${i}">Remove</button></div>`).join('')}</div>
     <p><button data-act="docadd">Attach document…</button></p></div>
-  ${LIVE ? orgCard() : `<div class="card"><h3>Tournament</h3><button data-act="duptour">Copy as new tournament (same setup, no results)</button> <button class="danger" data-act="deltour">Delete this tournament</button></div>`}`;
+  ${LIVE ? orgCard() : `<div class="card"><h3>Tournament</h3><button data-act="duptour">Copy as new tournament (same setup, no results)</button> <button class="danger" data-act="deltour">Delete this tournament</button></div>`}${LIVE ? reparseCtl(t) : ''}`;
 }
 function setupTeams(){
   const t = T(), inTeam = id => t.teams.find(x=>x.members.includes(id));
@@ -1748,11 +1768,13 @@ function gcCount(){ const g = window.goatcounter; if(!g || !g.count) return;
 const TOUR_TABS = ['fixtures','standings','teams','players','stats','setup','data'];
 function applyTourRoute(r){ ui.tab = TOUR_TABS.includes(r.tab) ? r.tab : 'home'; live.wantTab = (r.tab==='setup'||r.tab==='data') ? r.tab : null;   // organiser tabs wait for sign-in
   ui.player = ui.tab==='players' && r.a ? r.a : null; ui.team = ui.tab==='teams' && r.a ? r.a : null;
-  if(ui.tab==='fixtures'){ ui.stage = r.a || 'all'; ui.mopen = r.b || null; } else ui.mopen = null; }
+  if(ui.tab==='fixtures'){ ui.stage = r.a || 'all'; ui.mopen = r.b || null; } else ui.mopen = null;
+  ui.sxm = ui.tab==='stats' && r.a ? r.a : null; }
 function tourHash(){ const t = T(), e = encodeURIComponent; let h = '#/t/'+live.tid;
   if(ui.tab==='home' || !TOUR_TABS.includes(ui.tab)) return h; h += '/'+ui.tab;
   if(ui.tab==='players' && ui.player) h += '/'+e(ui.player);
   if(ui.tab==='teams' && ui.team) h += '/'+e(ui.team);
+  if(ui.tab==='stats' && ui.sxm) h += '/'+e(ui.sxm);
   if(ui.tab==='fixtures' && t && t.stages.length){ const one = ui.stage && ui.stage!=='all'; if(one) h += '/'+e(ui.stage); else if(ui.mopen) h += '/all'; if(ui.mopen) h += '/'+e(ui.mopen); }
   return h; }
 function syncTourHash(){ if(live.route.page!=='t' || !live.tid || !T() || (live.wantTab && !live.ready)) return; const h = tourHash();
@@ -2085,6 +2107,9 @@ async function siteAct(a, d, el){
     case 'sdiv': ui.sdiv = d.v || ''; render(); return true;
     case 'team': ui.team = d.v || null; window.scrollTo(0,0); render(); return true;
     case 'tplayer': ui.tab = 'players'; ui.player = d.v; ui.team = null; window.scrollTo(0,0); render(); return true;
+    case 'sxm': ui.sxm = ui.sxm===d.m ? null : d.m; ui.gsOpen = null; ui.ssOpen = null; render(); { const x = ui.sxm && document.querySelector('.sxm.open'); if(x) x.scrollIntoView({behavior:'smooth', block:'start'}); } return true;
+    case 'sxall': ui.sxAll = true; render(); return true;
+    case 'sxfx': ui.tab = 'fixtures'; ui.stage = d.s; ui.mopen = d.m; ui.sxm = null; render(); { const x = document.getElementById('mpanel'); if(x) x.scrollIntoView({block:'start'}); } return true;
     case 'ssinline': ui.ssOpen = ui.ssOpen===d.m ? null : d.m; ui.gsOpen = null; render(); { const x = document.querySelector('.mvseries'); if(x && ui.ssOpen) x.scrollIntoView({behavior:'smooth', block:'start'}); } return true;
     case 'gsinline': { const mid = String(d.mid); if(ui.gsOpen===mid){ ui.gsOpen = null; render(); return true; }
       const g = await gsLoad(mid); if(!g){ await say('Replay stats for this game aren\'t available.'); return true; }
@@ -2177,7 +2202,7 @@ function reparseCtl(t){
   const st = !t.reparse ? '' : asked ? 'Asked, waiting for the next game finder run.'
     : r.finished ? `Done: ${(r.done||[]).length} game${(r.done||[]).length===1?'':'s'} re-parsed${(r.failed||[]).length?`, ${r.failed.length} replay${r.failed.length===1?'':'s'} not found (old stats kept)`:''}.`
     : `Working: ${(r.done||[]).length} of ${r.total||'?'} games so far.`;
-  return `<div class="f reparse"><span class="rlab">Replay stats</span><button type="button" data-act="reparse" title="Download every confirmed game's replay again and update its stats with the newest parser">Re-parse replays</button>${st?`<div class="small muted">${esc(st)}</div>`:''}</div>`;
+  return `<div class="card reparse" id="reparse"><h3>Replay stats</h3><p class="small muted">Download every confirmed game's replay again and work its stats out with the newest version of the parser (for example after a stats fix). Results don't change. It runs over the next few game finder runs (about 10 minutes each).</p><p><button type="button" class="pri" data-act="reparse">Re-parse all replays</button></p>${st?`<p class="small" role="status">${esc(st)}</p>`:''}</div>`;
 }
 function pendCard(){
   const list = pendHere(), t = T(); if(!list.length) return detLine();
@@ -2251,7 +2276,7 @@ const statsBtn = g => (typeof admTag==='function' ? admTag(g) : '') + fillTag(g)
 function replayAvg(pid, t){ let n = 0, e = 0, f = 0, fn = 0; const sec = v => { const m = /^(\d+):(\d\d)$/.exec(v||''); return m ? +m[1]*60 + +m[2] : null; };
   allMatches(t).forEach(({m})=>(m.games||[]).forEach(g=>{ const s = g && g.st && g.st[pid]; if(!s) return; if(s.eapm!=null){ n++; e += s.eapm; } const x = sec(s.feudal); if(x!=null){ fn++; f += x; } }));
   if(!n && !fn) return ''; const av = fn ? Math.round(f/fn) : null;
-  return `<div class="small muted">Replay stats: ${n?`avg eAPM <b>${Math.round(e/n)}</b> over ${n} game${n>1?'s':''}`:''}${n&&fn?' · ':''}${fn?`avg Feudal click <b>${Math.floor(av/60)}:${String(av%60).padStart(2,'0')}</b>`:''}</div>`; }
+  return `<div class="small muted">Replay stats: ${n?`avg eAPM <b>${Math.round(e/n)}</b> over ${n} game${n>1?'s':''}`:''}${n&&fn?' · ':''}${fn?`avg Feudal reached <b>${Math.floor(av/60)}:${String(av%60).padStart(2,'0')}</b>`:''}</div>`; }
 /* ---------- Restored games: a game that dropped and was loaded from a save to play it out (Jacob, 22 Nov) ----------
    Each part has its own match ID and replay. The organiser joins them in Confirm games into one fixture game:
    the result comes from the last part, the stats from all parts. The fixture game keeps mid = the last part and
@@ -2415,13 +2440,13 @@ function gsLookA(g, TT){
       <tr class="gsdet" id="${k}" hidden><td></td><td colspan="11">${gsMore(p)}</td></tr>`; };
   const head = `<tr><th><span class="sr">Colour</span></th><th>Player</th><th>Civ</th><th class="n">eAPM</th><th class="n">APM</th><th>Opening</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">Imp</th><th class="n" title="Military units queued">Mil. queued</th><th class="n" title="Town Center idle from the start until the Castle Age click">TC idle</th><th></th></tr>`;
   return TT.map(T_=>`<div class="gsteam ${T_.won?'win':'loss'}">${gsTeamHead(T_)}<div class="tablewrap"><table class="gstab fixed"><colgroup><col style="width:6px"><col style="width:18%"><col style="width:11%"><col style="width:6%"><col style="width:6%"><col><col style="width:7%"><col style="width:7%"><col style="width:7%"><col style="width:9%"><col style="width:7%"><col style="width:22px"></colgroup>${head}${T_.ps.map(row).join('')}</table></div></div>`).join('')
-    + `<div class="small muted">Click a player's row for units, spending and build order. Age times are when the player clicked up.</div>`; }
+    + `<div class="small muted">Click a player's row for units, spending and build order. Age times are when the player reached the age.</div>`; }
 
 /* B: player cards. Team columns side by side, a card per player with age-up timeline, top units and spending */
 function gsLookB(g, TT){
   const len = gsSec(g.gameTime) || 1;
   const card = p => { const s = p.stats||{}, a = s.ages||{}, us = gsUnits(s, 3), sp = s.spent||{}, tot = Object.values(sp).reduce((x,y)=>x+y,0);
-    const mk = (n,l) => { const v = gsSec(a[n]); return v==null ? '' : `<span class="gsmk" style="left:${Math.min(100,v/len*100)}%" title="${n} click ${a[n]}"><b>${l}</b></span>`; };
+    const mk = (n,l) => { const v = gsSec(a[n]); return v==null ? '' : `<span class="gsmk" style="left:${Math.min(100,v/len*100)}%" title="${n} reached ${a[n]}"><b>${l}</b></span>`; };
     return `<div class="gscard" style="--pc:${PCOL[p.color]||'#888'}"><div class="gscardh">${gsName(p)}<span class="muted small">${esc(p.civ||'')}</span></div>
       <div class="gsbig"><div><b>${s.eapm??'–'}</b><span>eAPM</span></div><div><b>${esc(a.Feudal||'–')}</b><span>Feudal</span></div><div><b>${esc(a.Castle||'–')}</b><span>Castle</span></div><div><b>${s.military??'–'}</b><span>Mil. queued</span></div></div>
       <div class="gsline">${mk('Feudal','F')}${mk('Castle','C')}${mk('Imperial','I')}</div>
@@ -2549,7 +2574,7 @@ function matchPanel(S){
   const extra = VIEW ? '' : S.type==='swiss' ? swissEdit(S,m,maxR)
     : S.type==='rr' ? `<div class="small muted" style="margin-top:8px">Move to round <select data-act="mround" data-s="${S.id}" data-m="${m.id}">${Array.from({length:maxR+1},(_,k)=>k+1).map(k=>`<option value="${k}" ${k===m.r?'selected':''}>${k}${k===maxR+1?' (new)':''}</option>`).join('')}</select></div>` : '';
   return `<div class="mpanel card" id="mpanel"><div class="row" style="justify-content:space-between;align-items:center"><h3 style="margin:0">${esc(S.name)} · ${esc(matchLabel(S,m))}</h3><button class="sm" data-act="mopen" data-m="${m.id}" aria-label="Close">✕ Close</button></div>`
-    + (VIEW ? matchView(S,m) : matchHtml(S,m) + admBox(S,m)) + predHtml(S,m) + extra + `</div>`;
+    + (VIEW ? matchView(S,m) : matchHtml(S,m) + (LIVE ? seriesBtn(S,m) : '') + admBox(S,m)) + predHtml(S,m) + extra + `</div>`;
 }
 /* viewer's match panel: VS header like the Up next cards, then one clickable row per game */
 function sideLink(side, right){ const k = side && side.length===1 ? side[0] : null, n = side ? sideName(side) : 'TBD';
@@ -2574,10 +2599,14 @@ function matchView(S, m){
       <div class="mvgn"><b>G${i+1}</b><span>${esc(g.map||'')}</span>${g.len?`<small>${esc(g.len)}</small>`:''}${rsTag(g)}</div>
       ${plist(g,0)}${plist(g,1)}
       <div class="mvgo">${st?`<button class="gsbtn" data-act="gsinline" data-mid="${esc(g.mid)}" aria-expanded="${open?'true':'false'}">Game stats <b aria-hidden="true">${open?'▴':'▾'}</b></button>`:isAdm(g)?`<span class="admtag">Admin</span>${g.note&&g.adm!==2?`<div class="admnote">${esc(g.note)}</div>`:''}`:'<span class="muted small">no replay</span>'}</div></div>${open?gsInlineHtml(String(g.mid)):''}`; }).join('');
-  const withSt = played.filter(g=>!isAdm(g) && g.st && Object.keys(g.st).length).length;
-  const sopen = ui.ssOpen===m.id;
-  const sbtn = withSt >= 2 ? `<div class="mvseries ${sopen?'open':''}" data-act="ssinline" data-m="${m.id}" role="button" tabindex="0" aria-expanded="${sopen?'true':'false'}"><div><b>Series stats</b><span class="small muted">Every player's averages across all ${played.length} games</span></div><span class="gsbtn">${sopen?'Hide':'Show'} <b>${sopen?'▴':'▾'}</b></span></div>${sopen?`<div class="gsinline ssinline">${seriesBody(S,m)}</div>`:''}` : '';
+  const sbtn = seriesBtn(S, m);
   return head + (rows ? `<div class="mvgames">${rows}</div>${sbtn}` : `<div class="muted small" style="margin:10px 2px">No games played yet.</div>`);
+}
+/* "Series stats" fold-out under a match: viewers' match view and the organiser's edit panel (Jacob, 23 Nov) */
+function seriesBtn(S, m){
+  const played = (m.games||[]).filter(g=>g&&(g.w===0||g.w===1)), withSt = played.filter(g=>!isAdm(g) && g.st && Object.keys(g.st).length).length;
+  const sopen = ui.ssOpen===m.id;
+  return withSt >= 2 ? `<div class="mvseries ${sopen?'open':''}" data-act="ssinline" data-m="${m.id}" role="button" tabindex="0" aria-expanded="${sopen?'true':'false'}"><div><b>Series stats</b><span class="small muted">Every player's averages across all ${played.length} games</span></div><span class="gsbtn">${sopen?'Hide':'Show'} <b>${sopen?'▴':'▾'}</b></span></div>${sopen?`<div class="gsinline ssinline">${seriesBody(S,m)}</div>`:''}` : '';
 }
 function bracketView(S){
   const R = S.matches.reduce((a,m)=>Math.max(a,m.r),0), seeds = seedMap(S); let cols = '';
@@ -2624,7 +2653,7 @@ function seriesBody(S, m){
     const res = w===i ? 'win' : w==null ? '' : 'loss';
     return `<div class="gsteam ${res}"><div class="gsth ${res}">${k?bBadge(k):''}<span class="gsthn">${nm}</span><span class="gstag">${sc[i]} map${sc[i]===1?'':'s'} won</span></div>
       <div class="tablewrap"><table class="gstab fixed"><colgroup><col style="width:15%"><col style="width:5%"><col style="width:15%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:5.5%"><col style="width:6%"><col style="width:6%"><col style="width:6%"><col style="width:6%"><col style="width:5.5%"><col style="width:5%"><col></colgroup><tr><th>Player</th><th class="n">Maps</th><th>Civs</th><th class="n">eAPM</th><th class="n" title="Busiest single minute">Peak</th><th class="n">APM</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">Imp</th><th class="n" title="Town Center idle from the start until the Castle Age click">TC idle</th><th class="n" title="Average banked resources">Float</th><th class="n" title="Share of actions that were military">Mil.</th><th>Openings</th></tr>${rows}</table></div></div>`; };
-  return `<div class="gsbody">${side(0)}${side(1)}<div class="small muted">Averages of each player's ${played.length} games in this series. Age times are when the player clicked up. A dash means no replay numbers for that.</div></div>
+  return `<div class="gsbody">${side(0)}${side(1)}<div class="small muted">Averages of each player's ${played.length} games in this series. Age times are when the player reached the age. A dash means no replay numbers for that.</div></div>
     <div class="gsfoot"><span></span><button class="sm" data-act="ssinline" data-m="${m.id}">Hide series stats ▴</button></div>`;
 }
 /* Fixtures page: "All" shows every stage stacked (the default), or pick one stage */
@@ -2899,16 +2928,16 @@ function predRatingTile(id, t){ const M = predModel(t); if(!M.any || !(id in M.r
 
 /* ---------- Fuller replay stats: player and team cards, Stats tab for the whole tournament or one division ----------
    Each confirmed game keeps a few replay numbers per player (g.st[id], from the game finder's headline()):
-   eapm, apm, peak (busiest minute's eAPM), feudal/castle/imp (age click times), tcIdle (whole game, s),
+   eapm, apm, peak (busiest minute's eAPM), feudal/castle/imp (when each age was reached), tcIdle (whole game, s),
    idleC (TC idle from the start to the Castle click, s), flt/fltPk (average / peak banked resources, experimental),
    milPct/ecoPct (share of actions on army vs economy), opening. Games confirmed before a number existed just lack it. */
 const MET = [
   {k:'eapm',   n:'eAPM',               f:s=>s.eapm,          fmt:v=>Math.round(v)},
   {k:'peak',   n:'Peak eAPM',          f:s=>s.peak,          fmt:v=>Math.round(v), max:1, sub:'busiest minute'},
   {k:'apm',    n:'APM',                f:s=>s.apm,           fmt:v=>Math.round(v)},
-  {k:'feudal', n:'Feudal click',       f:s=>tsec(s.feudal),  fmt:mmss},
-  {k:'castle', n:'Castle click',       f:s=>tsec(s.castle),  fmt:mmss},
-  {k:'imp',    n:'Imperial click',     f:s=>tsec(s.imp),     fmt:mmss},
+  {k:'feudal', n:'Feudal reached',       f:s=>tsec(s.feudal),  fmt:mmss},
+  {k:'castle', n:'Castle reached',       f:s=>tsec(s.castle),  fmt:mmss},
+  {k:'imp',    n:'Imperial reached',     f:s=>tsec(s.imp),     fmt:mmss},
   {k:'idleC',  n:'TC idle to Castle',  f:s=>s.castle?s.idleC:null, fmt:mmss},   // only games where Castle was clicked (otherwise it runs to the game's end and isn't comparable)
   {k:'tcIdle', n:'TC idle, whole game',f:s=>s.tcIdle,        fmt:mmss, hide:1},   // kept for data, not shown: only idle to Castle matters
   {k:'flt',    n:'Avg float',          f:s=>s.flt,           fmt:v=>Math.round(v), sub:'banked resources'},
@@ -3015,7 +3044,7 @@ function pageStats(){
   const board = (title, k, low, fmt, note) => { const rw = q.filter(p=>numOk(p.o[k])).sort((a,b)=>low?a.o[k]-b.o[k]:b.o[k]-a.o[k]).slice(0,5), vals = rw.map(p=>p.o[k]), mx = Math.max(...vals), mn = Math.min(...vals);
     return `<div class="card sxboard"><h3>${title}</h3>${note?`<div class="small muted">${note}</div>`:''}${rw.length?`<ol>${rw.map((p,i)=>{ const v = p.o[k], w = mx>0 ? v/mx*100 : 0, tm = teamOfP(p.id);
       return `<li class="${i===0?'lead':''}"><span class="rk">${i+1}</span><div class="who">${pl(p.id)}${tm?`<span class="sxtm">${esc(tm.name)}</span>`:isFillIn(p.id,t)?`<span class="sxtm">Fill-in</span>`:''}</div><b>${fmt(v)}</b><span class="bar" style="--w:${Math.max(8,w).toFixed(0)}%"></span></li>`; }).join('')}</ol>`:'<div class="muted small sxnone">No games yet.</div>'}</div>`; };
-  const boards = [board('Highest eAPM','eapm',0,v=>Math.round(v),'average effective actions per minute'), board('Fastest Feudal','feudal',1,mmss,'average click time'), board('Fastest Castle','castle',1,mmss,'average click time'), board('Fastest Imperial','imp',1,mmss,'average click time'),
+  const boards = [board('Highest eAPM','eapm',0,v=>Math.round(v),'average effective actions per minute'), board('Fastest Feudal','feudal',1,mmss,'average time reached'), board('Fastest Castle','castle',1,mmss,'average time reached'), board('Fastest Imperial','imp',1,mmss,'average time reached'),
     board('Least TC idle','idleC',1,mmss,'average idle before the Castle Age click'), board('Lowest float','flt',1,v=>Math.round(v),'average banked resources'), board('Most aggressive','milPct',0,v=>Math.round(v)+'%','average share of military actions'), board('Most eco-focused','ecoPct',0,v=>Math.round(v)+'%','average share of economy actions')].join('');
   const recCard = (title, f, low, fmt, minLen) => { const c = recs.filter(x=>x.s && (!minLen || (x.x.len||0)>=minLen)).map(x=>({r:x, v:f(x.s)})).filter(x=>numOk(x.v)).sort((a,b)=>low?a.v-b.v:b.v-a.v)[0];
     if(!c) return `<div class="sxrec none"><span class="lbl">${title}</span><b>–</b><i>no games yet</i></div>`; const x = c.r.x, live_ = typeof LIVE!=='undefined' && LIVE && x.g.mid;
@@ -3035,6 +3064,7 @@ function pageStats(){
     <h2 class="sech">${scope}</h2>${hero}
     <h2 class="sech">Leaders</h2><div class="small muted" style="margin:-6px 0 10px">From each player's averages${minN>1?' (2 or more games with a replay)':''}. Age times count only games where the player reached that age. Click a name for their page.</div><div class="sxgrid3 sxlead">${boards}</div>
     <h2 class="sech">Single-game records</h2><div class="small muted" style="margin:-6px 0 10px">Click a record to open that game's stats. TC idle counts only games where Castle was clicked; float and aggression only games of 15 min or more.</div>${recCards}
+    <h2 class="sech">Games and series</h2><div class="small muted" style="margin:-6px 0 10px">Every fixture with a result, newest first. Click one for each map's game stats and the series stats.</div>${sxSeries(t, sd)}
     <h2 class="sech">Civs and maps</h2><div class="grid g2">${civBars}${mapBars}</div>
     <h2 class="sech">Replay averages</h2><div class="small muted" style="margin:-6px 0 10px">Average of every player in every game with a replay${o.n?` (${o.n} player-games)`:''}. Float is an estimate from the replay.</div><div class="statrow">${sxRepTiles(o)}</div>
     ${divRows?`<div class="card"><h3>Divisions</h3><div class="tablewrap"><table><tr><th>Division</th><th class="n">Maps</th><th class="n">Avg eAPM</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">TC idle to Castle</th><th class="n">Float</th><th class="n">Avg game</th></tr>${divRows}</table></div></div>`:''}
@@ -3042,6 +3072,27 @@ function pageStats(){
     ${sxOpenCards(recs)}
     <h2 class="sech">Players</h2><div class="card"><div class="small muted">Click a player for their full stats. Green = better than the field, red = worse. ${ec.length?esc(eloNote()):''}</div><div class="tablewrap"><table><tr><th>Player</th>${ec.map(k=>`<th class="n">${LADDER[k]}</th>`).join('')}<th class="n">Maps W–L</th><th class="n">Win %</th>${pcols.map(i=>`<th class="n">${MET[i].n}</th>`).join('')}<th>Usual opening</th></tr>
       ${prow.map(p=>`<tr style="cursor:pointer" data-act="tplayer" data-v="${p.id}"><td>${chip('p:'+p.id,t)}</td>${ec.map(k=>`<td class="n">${eloTxt(p.id,k)}</td>`).join('')}<td class="n">${p.w}–${p.n-p.w}</td><td class="n">${pct(p.w,p.n)}</td>${pcols.map(i=>`<td class="n"${heat(MET[i].k,p.o[MET[i].k])}>${sxVal(p.o,MET[i])}</td>`).join('')}<td class="small">${esc(p.o.opening||'–')}</td></tr>`).join('')}</table></div></div>`;
+}
+/* Stats tab "Games and series": every fixture with results, newest first. Click one to unfold the same view as the
+   Fixtures match panel (Game stats per map, Series stats for the set). Jacob, 23 Nov. */
+const SXM_N = 8;
+function sxSeries(t, sd){
+  const list = allMatches(t).filter(({S,m})=>(!sd||(S.div||'')===sd) && (m.games||[]).some(g=>g&&(g.w===0||g.w===1)))
+    .map(x=>({...x, at: Math.max(0, ...(x.m.games||[]).map(g=>+(g&&g.mid)||0))}))
+    .sort((a,b)=>b.at-a.at || t.stages.indexOf(a.S)-t.stages.indexOf(b.S) || b.m.r-a.m.r);
+  if(!list.length) return `<div class="card muted small sxnone">No results yet. Each fixture appears here once it has a result.</div>`;
+  const open = list.find(x=>x.m.id===ui.sxm), all = ui.sxAll || list.length <= SXM_N + 2, show = all ? list : list.slice(0, SXM_N);
+  if(open && !show.includes(open)) show.push(open);
+  const row = ({S,m}) => { const sd2 = sidesOf(S,m,t), w = winnerOf(S,m,sd2), sc = score(m), on = ui.sxm===m.id;
+    const gs = (m.games||[]).filter(g=>g&&(g.w===0||g.w===1)), nSt = gs.filter(g=>!isAdm(g) && g.mid).length;
+    const cls = i => w===i ? 'win' : w==null ? '' : 'loss';
+    return `<div class="sxm ${on?'open':''}"><div class="sxmh" data-act="sxm" data-m="${esc(m.id)}" role="button" tabindex="0" aria-expanded="${on?'true':'false'}" title="${on?'Hide':'Show'} games and stats">
+      <span class="sxml">${esc(S.name)}<i>${esc(matchLabel(S,m))}</i></span>
+      <span class="sxms ${cls(0)}">${sideNameH(sd2[0])}</span><span class="sxmsc"><b class="${cls(0)}">${sc[0]}</b><b class="${cls(1)}">${sc[1]}</b></span><span class="sxms r ${cls(1)}">${sideNameH(sd2[1])}</span>
+      <span class="sxmm small muted">${gs.map(g=>esc(g.map||'?')).join(', ')}</span>
+      <span class="gsbtn">${nSt?`${nSt} with stats `:''}<b aria-hidden="true">${on?'▴':'▾'}</b></span></div>
+      ${on?`<div class="sxmb">${matchView(S,m)}${predHtml(S,m)}<div class="sxmlink"><button class="sm" data-act="sxfx" data-s="${esc(S.id)}" data-m="${esc(m.id)}">Open in Fixtures ›</button></div></div>`:''}</div>`; };
+  return `<div class="sxms-list">${show.map(row).join('')}</div>${all ? '' : `<div class="sxmore"><button class="sm" data-act="sxall">Show all ${list.length} fixtures</button></div>`}`;
 }
 
 /* ---------- Seeding: order entrants by hand (▲▼) or by ranked ELO (saved by the game finder) ----------
