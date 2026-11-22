@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-pF/YEHpT0M0vrgxK0aGehFtlst/LwLJusjIqW+HwB7g=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-Q37MMhZvfEXKbdDRR2ZbfReoiiQftgZR28lJIu3SUMw=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -3003,7 +3003,7 @@ function pageStats(){
     return `<div class="card sxboard"><h3>${title}</h3>${note?`<div class="small muted">${note}</div>`:''}${rw.length?`<ol>${rw.map((p,i)=>{ const v = p.o[k], w = mx>0 ? v/mx*100 : 0, tm = teamOfP(p.id);
       return `<li class="${i===0?'lead':''}"><span class="rk">${i+1}</span><div class="who">${pl(p.id)}${tm?`<span class="sxtm">${esc(tm.name)}</span>`:isFillIn(p.id,t)?`<span class="sxtm">Fill-in</span>`:''}</div><b>${fmt(v)}</b><span class="bar" style="--w:${Math.max(8,w).toFixed(0)}%"></span></li>`; }).join('')}</ol>`:'<div class="muted small sxnone">No games yet.</div>'}</div>`; };
   const boards = [board('Highest eAPM','eapm',0,v=>Math.round(v),'average effective actions per minute'), board('Fastest Feudal','feudal',1,mmss,'average click time'), board('Fastest Castle','castle',1,mmss,'average click time'), board('Fastest Imperial','imp',1,mmss,'average click time'),
-    board('Least TC idle','idleC',1,mmss,'average idle before the Castle Age click'), board('Lowest float','flt',1,v=>Math.round(v),'average banked resources'), board('Most aggressive','milPct',0,v=>Math.round(v)+'%','average share of military actions')].join('');
+    board('Least TC idle','idleC',1,mmss,'average idle before the Castle Age click'), board('Lowest float','flt',1,v=>Math.round(v),'average banked resources'), board('Most aggressive','milPct',0,v=>Math.round(v)+'%','average share of military actions'), board('Most eco-focused','ecoPct',0,v=>Math.round(v)+'%','average share of economy actions')].join('');
   const recCard = (title, f, low, fmt, minLen) => { const c = recs.filter(x=>x.s && (!minLen || (x.x.len||0)>=minLen)).map(x=>({r:x, v:f(x.s)})).filter(x=>numOk(x.v)).sort((a,b)=>low?a.v-b.v:b.v-a.v)[0];
     if(!c) return `<div class="sxrec none"><span class="lbl">${title}</span><b>–</b><i>no games yet</i></div>`; const x = c.r.x, live_ = typeof LIVE!=='undefined' && LIVE && x.g.mid;
     return `<div class="sxrec" ${live_?`data-act="gstats" data-mid="${esc(x.g.mid)}" title="Open game stats"`:''}><span class="lbl">${title}</span>${live_?`<button class="sxrecv" data-act="gstats" data-mid="${esc(x.g.mid)}" aria-label="${esc(title)} ${esc(String(fmt(c.v)))}, open game stats">${fmt(c.v)}</button>`:`<b>${fmt(c.v)}</b>`}<div>${pl(c.r.id)}</div><i>${esc(x.g.map||'')} · ${sideNameH(x.sd[0])} v ${sideNameH(x.sd[1])}</i></div>`; };
