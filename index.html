@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-1V9rb+q1FjsFpPw2nJ1PjRRj+NPFHBshKzjhFC2bRPE=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-Vf0pN6f4UzXZEF1RePF86pSUjexbuUXdfLvhcWZ+cPw=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -1633,6 +1633,7 @@ async function act(el, ev){
     case 'pconf': if(!await pendConfirm(d.mid)) return; break;
     case 'pjoin': if(!await pendJoinInto(d.mid)) return; break;
     case 'pskip': try{ await pendSet(d.mid, {status:'ignored'}); toast('Left out'); }catch(e){ await say('Could not update: '+(e.code||e.message)); } return;
+    case 'precheck': try{ await pendSet(d.mid, {recheck:true}); toast('Re-check asked: the next game finder run fetches it again'); }catch(e){ await say('Could not update: '+(e.code||e.message)); } return;
     case 'restore': { const list = (await idbGet(BKEY))||[]; const b = list[+d.i]; if(!b || !await askYes(`Restore the backup from ${new Date(b.t).toLocaleString()}? What's here now is backed up first.`)) return; await addBackup(JSON.stringify(state),'before restore'); state = JSON.parse(b.json); toast('Restored'); break; }
     default: return;
   }
@@ -2185,7 +2186,7 @@ function pendCard(){
         ${ps && w<0 ? `<select id="pw-${esc(g.matchId)}"><option value="">who won?…</option><option value="0">${esc(ps[0].map(p=>p.name).join(', '))}</option><option value="1">${esc(ps[1].map(p=>p.name).join(', '))}</option></select>` : ''}
         <button class="pri sm" data-act="pconf" data-mid="${esc(g.matchId)}">${fill.length?'Confirm with fill-in':'Confirm'}</button>` : `<span class="small muted">No open fixture has these players on opposite sides.</span>`;
     const into = pr.next && pr.next.fx ? ` <button class="sm" data-act="pjoin" data-mid="${esc(g.matchId)}">Join into ${fxl(pr.next.fx)}</button>` : '';
-    return `<div class="qgame"><div class="bx done qbx">${head}${body}${rline}${fline}</div><div class="row qact">${pick}${into} <button class="sm" data-act="pskip" data-mid="${esc(g.matchId)}">Not a tourney game</button></div></div>`; };
+    return `<div class="qgame"><div class="bx done qbx">${head}${body}${rline}${fline}</div><div class="row qact">${pick}${into} <button class="sm" data-act="pskip" data-mid="${esc(g.matchId)}">Not a tourney game</button> ${g.recheck?`<span class="small muted">Re-check asked: the next game finder run fetches it again.</span>`:`<button class="sm" data-act="precheck" data-mid="${esc(g.matchId)}" title="Fetch this game and its replay again on the next game finder run (fixes a wrong map name or missing stats)">Re-check</button>`}</div></div>`; };
   /* games that could belong to the same fixture are listed together, so a restart or an extra game stands out */
   const groups = new Map(); list.forEach(g=>{ const f = pendFits(g,t), k = f.length===1 ? f[0].S.id+'|'+f[0].m.id : f.length ? 'many' : 'none'; if(!groups.has(k)) groups.set(k, {f:f[0], gs:[]}); groups.get(k).gs.push(g); });
   const rows = [...groups.entries()].map(([k,{f,gs}])=>{
@@ -2445,6 +2446,8 @@ async function gsRaw(mid){ live.gamesRaw = live.gamesRaw || {}; let g = live.gam
 async function gsLoad(mid){ let g = live.games[mid];
   if(!g){ g = await rsLoad(mid) || await gsRaw(mid); if(g) live.games[mid] = g; }
   return g || null; }
+/* the map name: the confirmed fixture game's (an organiser can correct it there), else the replay's */
+function gsMapName(g, mid){ const t = T(), f = t && rsFixGames(t).find(f=>f.g.mid===String(mid)); return (f && f.g.map) || g.map || ''; }
 const GS_LOOKS = [['b','Cards'],['a','Table'],['c','Timeline']];
 function gsLookNow(){ let look = window.GS_LOOK || GS_LOOK; try{ const v = localStorage.getItem('tt-gslook'); if(v && 'abc'.includes(v)) look = v; }catch(e){} return look; }
 const gsBody = (g, TT, L) => L==='b' ? gsLookB(g,TT) : L==='c' ? gsLookC(g,TT) : gsLookA(g,TT);
@@ -2465,7 +2468,7 @@ async function gameStats(mid){
   const TT = gsTeams(g); let look = gsLookNow();
   const res = `<div class="gsvs">${TT.map(T_=>`<span class="${T_.won?'win':'loss'}">${esc(T_.name)}</span>`).join('<b>def.</b>')}</div>`;
   const w = document.createElement('div'); w.className = 'modal gsmodal';
-  w.innerHTML = `<div class="mbox gsbox"><div class="gstop"><div><div class="gsmap">${esc(g.map||'Game')}</div><div class="small muted">${esc(g.gameTime||'')} game time${g.realTime?` · ${esc(g.realTime)} real time`:''}${gsJoinNote(g)}</div></div>
+  w.innerHTML = `<div class="mbox gsbox"><div class="gstop"><div><div class="gsmap">${esc(gsMapName(g, mid)||'Game')}</div><div class="small muted">${esc(g.gameTime||'')} game time${g.realTime?` · ${esc(g.realTime)} real time`:''}${gsJoinNote(g)}</div></div>
     ${res}<button class="gsclose" data-r="1" aria-label="Close">✕</button></div><nav class="gslooks" aria-label="View">${gsTabs(look)}</nav><div class="gsbody">${gsBody(g,TT,look)}</div>
     <div class="gsfoot">${gsLink(mid)}<button class="pri" data-r="1">Close</button></div></div>`;
   document.body.appendChild(w);
