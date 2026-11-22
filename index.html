@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-tiW8PCoeOMpUwta6DSlIOup2Vkcd8w4r6yaxF8fZJ+M=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-pF/YEHpT0M0vrgxK0aGehFtlst/LwLJusjIqW+HwB7g=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -738,6 +738,8 @@ tr[data-act]:hover td{background:color-mix(in srgb,var(--accent) 8%,transparent)
 .sxhero>div{display:flex;flex-direction:column;padding:18px 20px;border:1px solid color-mix(in srgb,var(--accent) 38%,var(--line));border-radius:6px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent2) 22%,var(--card)),var(--card))}
 .sxhero span{font-size:.75rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}.sxhero b{font-family:var(--head);font-size:2.4rem;line-height:1.15}.sxhero i{font-style:normal;color:var(--muted);font-size:.85rem}
 .sxgrid3{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+@media (min-width:1200px){.sxgrid3.sxlead{grid-template-columns:repeat(4,1fr)}}
+@media (min-width:901px) and (max-width:1199px){.sxgrid3.sxlead{grid-template-columns:repeat(2,1fr)}}
 .sxboard ol{list-style:none;margin:8px 0 0;padding:0}
 .sxboard li{position:relative;display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:8px;padding:7px 8px;border-radius:4px;overflow:hidden}
 .sxboard li .bar{position:absolute;left:0;top:0;bottom:0;width:var(--w);background:color-mix(in srgb,var(--accent) 9%,transparent);z-index:0}
@@ -746,7 +748,7 @@ tr[data-act]:hover td{background:color-mix(in srgb,var(--accent) 8%,transparent)
 .sxboard li.lead b{color:var(--accent-tx)}
 .sxboard .rk{color:var(--muted);font-weight:700}.sxboard b{font-variant-numeric:tabular-nums;font-size:1.05rem}
 .who{display:flex;flex-direction:column;min-width:0}.sxp{color:var(--ink);font-weight:700;text-decoration:none}.sxp:hover{text-decoration:underline}.sxtm{font-size:.74rem;color:var(--muted)}
-.sxrecs{display:grid;grid-template-columns:repeat(5,1fr);gap:12px}
+.sxrecs{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .sxrec{padding:14px 16px;border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:6px;background:var(--card);cursor:pointer;display:flex;flex-direction:column;gap:2px}
 .sxrec:hover{border-color:var(--accent)}.sxrec .lbl{font-size:.72rem;letter-spacing:.1em;text-transform:uppercase;color:var(--muted)}.sxrec b{font-family:var(--head);font-size:1.8rem}.sxrec i{font-style:normal;font-size:.76rem;color:var(--muted)}
 .sxbars{display:grid;gap:6px;margin-top:10px}.sxbr{display:grid;grid-template-columns:120px 1fr 90px;gap:10px;align-items:center;font-size:.9rem}
@@ -1762,7 +1764,7 @@ function routeChanged(){
 /* ---------- directory (search) ---------- */
 async function loadDir(force){
   if(!live.fb || (!force && live.dir && Date.now()-live.dirAt < 60000)) return;
-  try{ const {fs, d} = live.fb, s = await fs.getDocs(fs.query(fs.collection(d,'index'), fs.where('listed','==',true), fs.limit(200)));
+  try{ const {fs, d} = live.fb, s = await fs.getDocs(fs.query(fs.collection(d,'index'), fs.where('listed','==',true), fs.where('pub','==',true), fs.limit(200)));
     live.dir = s.docs.filter(x=>x.data().pub!==false).map(x=>{ const v = x.data(); return Object.assign({id:x.id}, v, {ts: v.updated && v.updated.toMillis ? v.updated.toMillis() : 0}); }); live.dirAt = Date.now(); live.dirErr = '';
   }catch(e){ live.dirErr = e.code||e.message; live.dir = live.dir || []; }
   if(live.route.page==='home'||live.route.page==='browse') render();
@@ -2012,7 +2014,10 @@ function pageOrganiser(){
 function pubState(){
   if(!live.fb || !live.admin || !live.tid) return null;
   if(live.pubFor !== live.tid){ live.pubFor = live.tid; live.pub = null; const {fs, d} = live.fb, tid = live.tid;
-    fs.getDoc(fs.doc(d,'index',tid)).then(x=>{ if(live.pubFor!==tid) return; live.pub = x.exists() ? x.data().pub!==false : null; render(); }).catch(()=>{}); }
+    fs.getDoc(fs.doc(d,'index',tid)).then(x=>{ if(live.pubFor!==tid) return; live.pub = x.exists() ? x.data().pub!==false : null;
+      /* older entries have no 'pub' field: store it, so the rules can keep drafts out of list queries */
+      if(x.exists() && x.data().pub===undefined) fs.setDoc(fs.doc(d,'index',tid), {pub:true}, {merge:true}).catch(()=>{});
+      render(); }).catch(()=>{}); }
   return live.pub;
 }
 function draftNote(){ return pubState()===false ? `<div class="note draft" role="status"><span class="dtag">Not live yet</span><span class="dtx">Visitors can't find this tournament in search or on the home page. Only people you give the link to can open it. Publish when it's ready.</span><button class="pri" data-act="spub">Publish tournament</button></div>` : ''; }
@@ -2891,11 +2896,12 @@ const MET = [
   {k:'feudal', n:'Feudal click',       f:s=>tsec(s.feudal),  fmt:mmss},
   {k:'castle', n:'Castle click',       f:s=>tsec(s.castle),  fmt:mmss},
   {k:'imp',    n:'Imperial click',     f:s=>tsec(s.imp),     fmt:mmss},
-  {k:'idleC',  n:'TC idle to Castle',  f:s=>s.idleC,         fmt:mmss},
+  {k:'idleC',  n:'TC idle to Castle',  f:s=>s.castle?s.idleC:null, fmt:mmss},   // only games where Castle was clicked (otherwise it runs to the game's end and isn't comparable)
   {k:'tcIdle', n:'TC idle, whole game',f:s=>s.tcIdle,        fmt:mmss, hide:1},   // kept for data, not shown: only idle to Castle matters
   {k:'flt',    n:'Avg float',          f:s=>s.flt,           fmt:v=>Math.round(v), sub:'banked resources'},
   {k:'milPct', n:'Military focus',     f:s=>s.milPct,        fmt:v=>Math.round(v)+'%'},
   {k:'ecoPct', n:'Eco focus',          f:s=>s.ecoPct,        fmt:v=>Math.round(v)+'%'}];
+const REC_MIN = 15*60;   // single-game float / aggression records only count games of 15 min or more (short games skew them)
 const numOk = v => v!=null && v!=='' && !isNaN(v);
 /* one record per player per decided map */
 function sxRecs(gs){ const out = []; gs.forEach(x=>[0,1].forEach(si=>x.on[si].forEach(id=>{ if(!state.players[id]) return;
@@ -2996,13 +3002,14 @@ function pageStats(){
   const board = (title, k, low, fmt, note) => { const rw = q.filter(p=>numOk(p.o[k])).sort((a,b)=>low?a.o[k]-b.o[k]:b.o[k]-a.o[k]).slice(0,5), vals = rw.map(p=>p.o[k]), mx = Math.max(...vals), mn = Math.min(...vals);
     return `<div class="card sxboard"><h3>${title}</h3>${note?`<div class="small muted">${note}</div>`:''}${rw.length?`<ol>${rw.map((p,i)=>{ const v = p.o[k], w = mx>0 ? v/mx*100 : 0, tm = teamOfP(p.id);
       return `<li class="${i===0?'lead':''}"><span class="rk">${i+1}</span><div class="who">${pl(p.id)}${tm?`<span class="sxtm">${esc(tm.name)}</span>`:isFillIn(p.id,t)?`<span class="sxtm">Fill-in</span>`:''}</div><b>${fmt(v)}</b><span class="bar" style="--w:${Math.max(8,w).toFixed(0)}%"></span></li>`; }).join('')}</ol>`:'<div class="muted small sxnone">No games yet.</div>'}</div>`; };
-  const boards = [board('Highest eAPM','eapm',0,v=>Math.round(v),'average effective actions per minute'), board('Fastest Feudal','feudal',1,mmss,'average click time'), board('Fastest Castle','castle',1,mmss,'average click time'),
-    board('Least TC idle','idleC',1,mmss,'idle before the Castle Age click'), board('Lowest float','flt',1,v=>Math.round(v),'average banked resources'), board('Most aggressive','milPct',0,v=>Math.round(v)+'%','share of military actions')].join('');
-  const recCard = (title, f, low, fmt) => { const c = recs.filter(x=>x.s).map(x=>({r:x, v:f(x.s)})).filter(x=>numOk(x.v)).sort((a,b)=>low?a.v-b.v:b.v-a.v)[0];
+  const boards = [board('Highest eAPM','eapm',0,v=>Math.round(v),'average effective actions per minute'), board('Fastest Feudal','feudal',1,mmss,'average click time'), board('Fastest Castle','castle',1,mmss,'average click time'), board('Fastest Imperial','imp',1,mmss,'average click time'),
+    board('Least TC idle','idleC',1,mmss,'average idle before the Castle Age click'), board('Lowest float','flt',1,v=>Math.round(v),'average banked resources'), board('Most aggressive','milPct',0,v=>Math.round(v)+'%','average share of military actions')].join('');
+  const recCard = (title, f, low, fmt, minLen) => { const c = recs.filter(x=>x.s && (!minLen || (x.x.len||0)>=minLen)).map(x=>({r:x, v:f(x.s)})).filter(x=>numOk(x.v)).sort((a,b)=>low?a.v-b.v:b.v-a.v)[0];
     if(!c) return `<div class="sxrec none"><span class="lbl">${title}</span><b>–</b><i>no games yet</i></div>`; const x = c.r.x, live_ = typeof LIVE!=='undefined' && LIVE && x.g.mid;
     return `<div class="sxrec" ${live_?`data-act="gstats" data-mid="${esc(x.g.mid)}" title="Open game stats"`:''}><span class="lbl">${title}</span>${live_?`<button class="sxrecv" data-act="gstats" data-mid="${esc(x.g.mid)}" aria-label="${esc(title)} ${esc(String(fmt(c.v)))}, open game stats">${fmt(c.v)}</button>`:`<b>${fmt(c.v)}</b>`}<div>${pl(c.r.id)}</div><i>${esc(x.g.map||'')} · ${sideNameH(x.sd[0])} v ${sideNameH(x.sd[1])}</i></div>`; };
   const recCards = `<div class="sxrecs">${[recCard('Fastest Feudal', s=>tsec(s.feudal), 1, mmss), recCard('Fastest Castle', s=>tsec(s.castle), 1, mmss), recCard('Fastest Imperial', s=>tsec(s.imp), 1, mmss),
-    recCard('Highest game eAPM', s=>s.eapm, 0, v=>Math.round(v)), recCard('Busiest minute', s=>s.peak, 0, v=>Math.round(v))].join('')}</div>`;
+    recCard('Highest game eAPM', s=>s.eapm, 0, v=>Math.round(v)), recCard('Busiest minute', s=>s.peak, 0, v=>Math.round(v)),
+    recCard('Least TC idle to Castle', s=>s.castle?s.idleC:null, 1, mmss), recCard('Lowest float', s=>s.flt, 1, v=>Math.round(v), REC_MIN), recCard('Most aggressive', s=>s.milPct, 0, v=>Math.round(v)+'%', REC_MIN)].join('')}</div>`;
   const cmx = Math.max(1,...civs.map(c=>c[1].n)), mmx = Math.max(1,...maps.map(m=>m[1].n));
   const civBars = `<div class="card"><h3>Civs</h3><div class="small muted">Bar length = picks, colour = win rate (green wins more, red loses more).</div>${civs.length?`<div class="sxbars"><div class="sxbr sxbh"><span></span><span></span><span class="c">Picks</span><span class="c">Win %</span></div>${civs.map(([c,e])=>{ const by = Object.entries(e.by).sort((a,b)=>b[1]-a[1])[0], wr = e.w/e.n;
       return `<div class="sxbr" title="${esc(c)}: ${e.w}–${e.n-e.w}${by&&state.players[by[0]]?', most by '+esc(P(by[0]).name):''}"><span class="nm">${esc(c)}</span><span class="track"><span style="width:${(e.n/cmx*100).toFixed(0)}%;background:color-mix(in srgb,var(--win-bg) ${Math.round(wr*100)}%,var(--loss))"></span></span><span class="c">${e.n}</span><span class="c">${pct(e.w,e.n)}</span></div>`; }).join('')}</div>`:'<div class="muted small sxnone">No games yet.</div>'}</div>`;
@@ -3013,8 +3020,8 @@ function pageStats(){
     return ` style="background:color-mix(in srgb,${f>=.5?'var(--win-bg)':'var(--loss)'} ${Math.round(Math.abs(f-.5)*2*50)}%,transparent)"`; };
   return `${none?`<div class="note statsnote" role="status"><b>No games played yet${sd?' in '+esc(sd):''}.</b> These stats fill in automatically as games are played and confirmed.</div>`:''}${seg}
     <h2 class="sech">${scope}</h2>${hero}
-    <h2 class="sech">Leaders</h2><div class="small muted" style="margin:-6px 0 10px">From each player's averages${minN>1?' (2 or more games with a replay)':''}. Click a name for their page.</div><div class="sxgrid3">${boards}</div>
-    <h2 class="sech">Single-game records</h2><div class="small muted" style="margin:-6px 0 10px">Click a record to open that game's stats.</div>${recCards}
+    <h2 class="sech">Leaders</h2><div class="small muted" style="margin:-6px 0 10px">From each player's averages${minN>1?' (2 or more games with a replay)':''}. Age times count only games where the player reached that age. Click a name for their page.</div><div class="sxgrid3 sxlead">${boards}</div>
+    <h2 class="sech">Single-game records</h2><div class="small muted" style="margin:-6px 0 10px">Click a record to open that game's stats. TC idle counts only games where Castle was clicked; float and aggression only games of 15 min or more.</div>${recCards}
     <h2 class="sech">Civs and maps</h2><div class="grid g2">${civBars}${mapBars}</div>
     <h2 class="sech">Replay averages</h2><div class="small muted" style="margin:-6px 0 10px">Average of every player in every game with a replay${o.n?` (${o.n} player-games)`:''}. Float is an estimate from the replay.</div><div class="statrow">${sxRepTiles(o)}</div>
     ${divRows?`<div class="card"><h3>Divisions</h3><div class="tablewrap"><table><tr><th>Division</th><th class="n">Maps</th><th class="n">Avg eAPM</th><th class="n">Feudal</th><th class="n">Castle</th><th class="n">TC idle to Castle</th><th class="n">Float</th><th class="n">Avg game</th></tr>${divRows}</table></div></div>`:''}
