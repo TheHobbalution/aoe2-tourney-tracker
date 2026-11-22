@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-qZ6k++HuPwD2+cNjJP2EcPw4417R2CrVuVb9EzRXR+E=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-1V9rb+q1FjsFpPw2nJ1PjRRj+NPFHBshKzjhFC2bRPE=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -2126,7 +2126,8 @@ function pendListen(on){
 }
 /* match each player to the tournament by profile ID as it is now, so fixing an ID in Players fixes games already queued */
 function pendFix(g){ const by = {}; Object.entries(state.players||{}).forEach(([k,p])=>{ const v = String(p.pid||'').trim(); if(v) by[v] = k; });
-  return Object.assign({}, g, {players:(g.players||[]).map(p=>{ const k = by[String(p.pid ?? p.profileId ?? '')]; return k ? Object.assign({}, p, {id:k}) : p; })}); }
+  /* aoe2companion adds " (Custom)" to custom map names until the replay names the map (22 Nov): drop it */
+  return Object.assign({}, g, {map: String(g.map||'').replace(/\s*\(custom\)\s*$/i,'') || g.map, players:(g.players||[]).map(p=>{ const k = by[String(p.pid ?? p.profileId ?? '')]; return k ? Object.assign({}, p, {id:k}) : p; })}); }
 const pendHere = () => { const t = T(); return LIVE && live.admin && t ? live.pend.filter(g=>g.tour===t.id).map(pendFix) : []; };
 /* the two sides of a detected game, or null when it isn't a two-sided game */
 function pendSides(g){ const by = {}; (g.players||[]).forEach(p=>{ (by[p.team] = by[p.team]||[]).push(p); }); const k = Object.keys(by); return k.length===2 ? k.map(x=>by[x]) : null; }
@@ -2147,7 +2148,7 @@ function pendFits(g, t){ const ps = pendSides(g); if(!ps) return [];
 /* who a fill-in is: their team in this tournament, or not in it at all */
 function fillWho(p, t){ const tm = p.id && state.players[p.id] && (t.teams||[]).find(x=>(x.members||[]).includes(p.id));
   return p.id && state.players[p.id] ? (tm ? 'from '+tm.name : 'not on a team') : 'not in this tournament'; }
-const normMap = s => String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+const normMap = s => String(s||'').toLowerCase().replace(/\s*\(custom\)\s*$/,'').replace(/[^a-z0-9]/g,'');
 function poolMap(S, name){ return S.maps.find(x=>normMap(x)===normMap(name)) || name || ''; }
 /* what the game finder did on its last run, so an empty queue isn't a mystery */
 function detLine(){
@@ -2172,11 +2173,13 @@ function pendCard(){
     const head = `<div class="bxl"><b>${esc(g.map||'?')}</b> · ${esc(when)}${g.gameTime?' · '+esc(g.gameTime)+' long':''} · Game #${esc(g.matchId)}${short?' · <b class="warn">very short: a restart?</b>':''}${g.stats?'':' · replay stats not in yet'}</div>`;
     const body = !ps ? `<div class="bxr"><span class="bxn muted">Not a two-sided game.</span></div>` : qrow(ps[0], w<0?'':w===0?'won':'lost') + qrow(ps[1], w<0?'':w===1?'won':'lost');
     const fsd = fits.length ? sidesOf(fits[0].S, fits[0].m, t) : null, pr = rsPair(g, list, t), r = g.restore||{}, at = r.ms>0 ? ' at '+mmss(r.ms/1000) : '';
-    const gl = x => `Game #${esc(x.matchId)} (${esc(x.gameTime||'?')} long, ${esc(x.started?new Date(x.started*1000).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):'')})`;
+    const gl = x => `Game #${esc(x.matchId)} (${esc(x.gameTime ? x.gameTime+' long' : x.finished && x.started ? 'about '+Math.max(1,Math.round((x.finished-x.started)/60))+' min real time' : '? long')}, ${esc(x.started?new Date(x.started*1000).toLocaleTimeString(undefined,{hour:'numeric',minute:'2-digit'}):'')})`;
     const fxl = f => `${esc(f.S.name)}: ${esc(matchLabel(f.S,f.m))} map ${f.i+1}`;
-    const rline = pr.prev ? `<div class="bxl qrs"><b>${r.ms!=null?'Restored game':'Same players and map as an earlier game'}</b>${r.ms!=null?` (loaded from a save${at})`:': a restart, or a game restored from a save?'}. ${pr.prev.q?`Earlier part: ${gl(pr.prev.q)}.`:`Earlier part is already in ${fxl(pr.prev.fx)}.`} Joined, they count as one game: the result from this replay and the stats from both.</div>`
+    const pos = r.ms==null && rsMaybe(g, pr), lead = r.ms!=null ? 'Restored game' : pos ? 'Possible restore' : 'Same players and map as an earlier game';
+    const why = r.ms!=null ? ` (loaded from a save${at})` : pos ? `: no replay to check, but it started ${pos.gap!=null?pos.gap+' min after the earlier part ended':'soon after the earlier part'}${pos.civs?' with every player on the same civ':''}` : ': a restart, or a game restored from a save?';
+    const rline = pr.prev ? `<div class="bxl qrs"><b>${lead}</b>${why}. ${pr.prev.q?`Earlier part: ${gl(pr.prev.q)}.`:`Earlier part is already in ${fxl(pr.prev.fx)}.`} Joined, they count as one game: the result from this ${g.stats?'replay':'game'} and the stats from ${g.stats?'both':'the earlier part'}.</div>`
       : pr.next ? `<div class="bxl qrs"><b>Played again</b> with the same players and map${pr.next.q?` as ${gl(pr.next.q)}${(pr.next.q.restore||{}).ms!=null?', restored from a save':''}`:` and already confirmed in ${fxl(pr.next.fx)}`}. ${pr.next.q?`If it dropped and was restored, confirm Game #${esc(pr.next.q.matchId)} with "Join" ticked and this part goes with it.`:'If it dropped and was restored, join this part into that game.'}</div>` : '';
-    const join = pr.prev ? `<label class="small qjoin"><input type="checkbox" id="pj-${esc(g.matchId)}"${r.ms!=null?' checked':''}> Join with ${pr.prev.q?'Game #'+esc(pr.prev.q.matchId):'that game'} as one game</label>` : '';
+    const join = pr.prev ? `<label class="small qjoin"><input type="checkbox" id="pj-${esc(g.matchId)}"${r.ms!=null||(pos&&pos.civs)?' checked':''}> Join with ${pr.prev.q?'Game #'+esc(pr.prev.q.matchId):'that game'} as one game</label>` : '';
     const fline = fill.length ? `<div class="bxl qfill"><b class="warn">Not on the team:</b> ${fill.map(f=>`${esc(f.p.name||'?')} (${esc(fillWho(f.p,t))}) played for ${esc(sideName(fsd[f.s]))}`).join('; ')}. Confirm it as a game with a fill-in, or leave it out. The result counts for the team and the fill-in's stats count for them${fill.some(f=>!(f.p.id&&state.players[f.p.id]))?'; anyone not in the tournament is added to Players as a fill-in':''}.</div>` : '';
     const fxPrev = pr.prev && pr.prev.fx, pick = fxPrev ? `${join} <button class="pri sm" data-act="pconf" data-mid="${esc(g.matchId)}">Confirm</button>` : fits.length ? `${join} <select id="pf-${esc(g.matchId)}">${fits.map(f=>`<option value="${f.S.id}|${f.m.id}|${f.flip?1:0}">${esc(f.S.name)}: ${esc(sideName(sidesOf(f.S,f.m,t)[0]))} v ${esc(sideName(sidesOf(f.S,f.m,t)[1]))}</option>`).join('')}</select>
         ${ps && w<0 ? `<select id="pw-${esc(g.matchId)}"><option value="">who won?…</option><option value="0">${esc(ps[0].map(p=>p.name).join(', '))}</option><option value="1">${esc(ps[1].map(p=>p.name).join(', '))}</option></select>` : ''}
@@ -2309,8 +2312,21 @@ function rsPair(g, list, t){ const key = rsKey(g.players), mp = normMap(g.map), 
   const like = f => normMap(f.g.map)===mp && n && Object.keys(f.g.civs||{}).length===n && Object.entries(civs).every(([k,v])=>(f.g.civs||{})[k]===v);
   const fx = rsFixGames(t);
   if(r.ms!=null){ const f = fx.find(f=>f.g.mid===String(r.prev||'-')) || fx.find(f=>like(f) && !(f.g.parts||[]).length && f.g.rsMs==null); if(f) res.prev = {fx:f}; }
-  else { const f = fx.find(f=>f.g.mid===String(r.later||'-')) || fx.find(f=>like(f) && f.g.rsMs!=null && !(f.g.parts||[]).length); if(f) res.next = {fx:f}; }
+  else { const f = fx.find(f=>f.g.mid===String(r.later||'-')) || fx.find(f=>like(f) && f.g.rsMs!=null && !(f.g.parts||[]).length); if(f) res.next = {fx:f};
+    // no replay (so no restore mark to read): an earlier confirmed game, same map and civs, may be its first part
+    else if(!g.stats){ const e = fx.find(f=>like(f) && f.g.mid!==String(g.matchId) && f.g.rsMs==null && !(f.g.parts||[]).length); if(e) res.prev = {fx:e}; } }
   return res; }
+/* a game with no replay can't show the "restored from a save" mark. It's a possible restore when an earlier part with the
+   same players and map ended at most RS_SOON before it started (gap in minutes; null when the earlier part is already
+   confirmed, so its end time isn't known), and civs = every player on the same civ as in the earlier part. Jacob, 22 Nov */
+const RS_SOON = 15*60;
+function rsMaybe(g, pr){ if(g.stats || !pr.prev) return null; const st = g.started||0;
+  const civs = {}; (g.players||[]).forEach(p=>{ civs[String(p.pid ?? p.profileId ?? '')] = p.civ; });
+  if(pr.prev.q){ const q = pr.prev.q, end = q.finished || ((q.started||0) + (tsec(q.gameTime)||0)/1.7), gap = st - end;
+    if(!(gap > -60 && gap <= RS_SOON)) return null;
+    const same = (q.players||[]).length && (q.players||[]).every(p=>p.civ && civs[String(p.pid ?? p.profileId ?? '')]===p.civ);
+    return {gap: Math.max(0, Math.round(gap/60)), civs: same}; }
+  return {gap: null, civs: true}; }   // a confirmed earlier part was matched on map and every civ
 /* what a fixture game keeps from a queued game's last part */
 function rsPartOf(g){ const r = g.restore||{}; return {ms: r.ms, part: r.partTime, len: g.gameTime}; }
 const rsPartsOf = x => [...((x.parts)||[]), x.mid].filter(Boolean);
