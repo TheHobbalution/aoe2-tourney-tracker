@@ -257,25 +257,55 @@ def apm_stats(evs, game_ms):
     mins = max(game_ms / 60000, 0.01)
     return round(len(clicks) / mins), round(eff / mins), len(clicks)
 
-def tc_idle(evs, age_clicks, game_ms, age_done=None):
+def tc_idle(evs, age_clicks, game_ms, age_done=None, start_ids=None):
     """Simulate the main Town Center's queue from villager queues + TC techs.
     Idle is split by age: Dark (start -> Feudal click), Feudal (Feudal done -> Castle click),
     Castle (Castle done -> Imperial click), Imperial (Imperial done -> game end).
-    Time spent researching the age-up itself counts as busy."""
+    Time spent researching the age-up itself counts as busy.
+    Only time when the player HAS a TC counts (Jacob, 22 Nov): a TC they start with is "on" from 0:00;
+    a TC they build (Nomad, a forward/douche TC, a rebuilt one) is "on" from its estimated finish
+    (placement + build time for the villagers sent; never later than its first queued villager);
+    a TC they delete is gone from that moment. If the main TC is deleted, the next TC takes over.
+    start_ids: instance ids of the player's starting TCs (from the header); None = header unknown."""
     # Walk the commands in time order. A villager queued with several TCs selected goes to
     # whichever of those TCs frees up first (that's how the game shares a multi-TC queue).
     vil_ms = time_of("units", 83, 25) * 1000
+    evs = sorted(evs, key=lambda e: e["t"])
+    known = start_ids is not None
+    start_ids = set(start_ids or ())
+    # finish estimates of the TCs this player placed, in placement order (the replay can't link a
+    # placement to the TC's id, so the n-th new TC used is matched to the n-th placement)
+    placed = []
+    for e in evs:
+        if e["type"] == "BUILD" and e.get("building_id") in TC_TYPES:
+            n = max(len(e.get("object_ids") or []), 1)
+            bt = time_of("buildings", e["building_id"], 150) * 1000
+            placed.append((e["t"], e["t"] + bt * 3 / (n + 2)))      # AoE2 build speed: n builders = 3/(n+2) of the time
+    deleted = {}
+    for e in evs:
+        if e["type"] == "DELETE":
+            for o in e.get("object_ids") or []:
+                deleted.setdefault(o, e["t"])
     busy = {}                      # tc id -> busy until (ms)
+    on = {}                        # tc id -> when the player first had it
     windows = defaultdict(list)    # tc id -> idle windows
-    first_seen = {}
     def add_job(tc, t, dur):
-        first_seen.setdefault(tc, t)
-        b = busy.get(tc, 0 if not busy else t)   # starting TC is "on" from 0:00
+        if tc not in on:
+            if tc in start_ids:
+                on[tc] = 0
+            elif not known and not on and not any(p < t for p, _ in placed):
+                on[tc] = 0         # header has no TC list, nothing placed before: a normal starting TC
+            else:
+                k = sum(1 for x in on if x not in start_ids)
+                est = placed[k][1] if k < len(placed) else t
+                on[tc] = min(est, t)
+            busy[tc] = on[tc]
+        b = busy[tc]
         if t > b:
             windows[tc].append((b, t))
         busy[tc] = max(b, t) + dur
-    for e in sorted(evs, key=lambda e: e["t"]):
-        oids = e.get("object_ids") or []
+    for e in evs:
+        oids = [o for o in (e.get("object_ids") or []) if not (o in deleted and deleted[o] <= e["t"])]
         if not oids:
             continue
         if e["type"] in ("DE_QUEUE", "QUEUE", "MULTIQUEUE") and e.get("unit_id") in VILLAGERS:
@@ -287,11 +317,27 @@ def tc_idle(evs, age_clicks, game_ms, age_done=None):
             add_job(oids[0], e["t"], time_of("techs", tid, 25) * 1000)
     if not busy:
         return None
-    main = min(first_seen, key=first_seen.get)     # the TC you started with
     end_at = game_ms
-    idle_windows = list(windows[main])
-    if busy[main] < end_at:
-        idle_windows.append((busy[main], end_at))
+    for tc in busy:
+        if busy[tc] < deleted.get(tc, end_at):
+            windows[tc].append((busy[tc], deleted.get(tc, end_at)))
+    # the main TC: the one you had first; when it's deleted, the next TC you have takes over
+    idle_windows, no_tc, t0 = [], 0, 0
+    order = sorted(on, key=lambda x: (on[x], x))
+    cur = order[0]
+    no_tc = on[cur]
+    while True:
+        stop = min(deleted.get(cur, end_at), end_at)
+        idle_windows += [(max(s, t0), min(e, stop)) for s, e in windows[cur] if min(e, stop) > max(s, t0)]
+        if stop >= end_at:
+            break
+        nxt = [x for x in order if x != cur and deleted.get(x, end_at) > stop]
+        if not nxt:
+            no_tc += end_at - stop
+            break
+        cur = min(nxt, key=lambda x: (max(on[x], stop), x))
+        no_tc += max(0, on[cur] - stop)
+        t0 = max(on[cur], stop)
 
     def idle_between(a, b):
         if a is None or b is None or b <= a:
@@ -311,6 +357,8 @@ def tc_idle(evs, age_clicks, game_ms, age_done=None):
         "castle_ms": idle_between(c_done, i_click if i_click is not None else end_at),
         "imperial_ms": idle_between(i_done, end_at),
         "tcs": len(busy),
+        "first_tc": mmss(on[order[0]]),            # when the player first had a TC (0:00 unless Nomad)
+        "no_tc_s": round(no_tc / 1000),            # time with no TC at all (not counted as idle)
     }
 
 def opening(evs, age_clicks):
@@ -353,7 +401,7 @@ def opening(evs, age_clicks):
 MIN_AGE_DONE_MS = {101: 150_000, 102: 420_000, 103: 720_000}
 
 
-def player_report(num, info, evs, game_ms, sync, age_done=None, start_age=0):
+def player_report(num, info, evs, game_ms, sync, age_done=None, start_age=0, start_ids=None):
     age_done = {k: v for k, v in (age_done or {}).items() if v >= MIN_AGE_DONE_MS.get(k, 0)}
     # ages the game STARTS in (Empire Wars = Feudal, start_age 1) count as reached at 0:00, so no time lands in Dark Age (Jacob, 19 Oct)
     started = [FEUDAL, CASTLE, IMPERIAL][:max(0, min(start_age, 3))]
@@ -445,7 +493,7 @@ def player_report(num, info, evs, game_ms, sync, age_done=None, start_age=0):
         "techs": [f"{mmss(t)} {tech_name(tid)}" for t, tid in techs],
         "buildings": {bld_name(b): n for b, n in blds.most_common()},
         "spent_estimate": spend,
-        "tc_idle_estimate": tc_idle(evs, {**age_clicks, **{k: 0 for k in started}}, game_ms, {**age_done, **{k: 0 for k in started}}),
+        "tc_idle_estimate": tc_idle(evs, {**age_clicks, **{k: 0 for k in started}}, game_ms, {**age_done, **{k: 0 for k in started}}, start_ids),
         "banked_resources_experimental": float_info,
         "resigned_at": mmss(resign) if resign is not None else None,
         # when each economy upgrade was first clicked (seconds); for the post-game ECO UPGRADES page
@@ -556,7 +604,13 @@ def analyse(raw):
         if g and t >= 1000:
             done[int(g.group(1))].setdefault(age_id[g.group(2)], t)
     start_age = (header.get("de") or {}).get("starting_age_id") or 0     # 0 = Dark (standard), 1 = Feudal (Empire Wars), 2 = Castle ...
-    reports = [player_report(n, players[n], by_player.get(n, []), game_ms, sync, done.get(n), start_age)
+    try:
+        stcs = start_tcs(header)
+        has_list = any(p.get("objects") for p in header.get("players") or [])   # header lists starting objects
+    except Exception:  # noqa: BLE001
+        stcs, has_list = {}, False
+    reports = [player_report(n, players[n], by_player.get(n, []), game_ms, sync, done.get(n), start_age,
+                             [i for i, _, _ in stcs.get(n, [])] if has_list else None)
                for n in sorted(players)]
     try:
         reached = {r["number"]: r.pop("_reached", {}) for r in reports}

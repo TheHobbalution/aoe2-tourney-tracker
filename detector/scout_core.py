@@ -47,9 +47,14 @@ def summarize_match(m):
                 "team": p.get("team", t.get("teamId")), "civ": p.get("civName") or p.get("civ"),
                 "won": p.get("won"), "color": p.get("color"),
             })
+    # aoe2companion names built-in maps from the lobby's map type ("Arena", map "rm_arena"); custom maps come as
+    # "<name> (Custom)" with map "unknown". The replay's rms_filename can be stale from an earlier custom pick in the
+    # same lobby (22 Nov: Arena saved as "AD5 Dry Socotra"), so a built-in name from here beats the replay's.
+    mname = m.get("mapName") or ""
+    custom = m.get("map") in (None, "", "unknown") or mname.endswith("(Custom)")
     return {
         "matchId": m.get("matchId"), "started": iso_ts(m.get("started")), "finished": iso_ts(m.get("finished")),
-        "map": m.get("mapName"), "leaderboard": m.get("leaderboardName") or m.get("leaderboardId"),
+        "map": re.sub(r"\s*\(Custom\)$", "", mname) or None, "mapCustom": custom, "leaderboard": m.get("leaderboardName") or m.get("leaderboardId"),
         "players": players,
     }
 
@@ -178,6 +183,8 @@ def parse_replay(path):
             log(f"  eAPM detail failed: {e}")
     return {
         "guid": de.get("guid"), "started": de.get("timestamp"), "map": map_name, "rated": de.get("rated"),
+        # built-in map by the lobby's map type number (29 = Arena); rms_filename can be stale from an earlier custom pick
+        "mapBuiltIn": NAMES["maps"].get(str(de.get("rms_map_id"))),
         "gameTime": mmss(game_sec), "realTime": mmss(game_sec / speed), "players": list(num.values()),
         "restoreMs": restore_ms((h.get("map") or {}).get("restore_time"), clock0),
     }
@@ -233,7 +240,11 @@ def merge(summary, stats):
     g = dict(summary or {})
     if stats:
         g.update({k: stats[k] for k in ("guid", "gameTime", "realTime", "rated")})
-        g["map"] = stats["map"] or g.get("map")
+        if not g.get("map"):                         # no aoe2companion name: the replay's map number, else its file name
+            g["map"] = stats.get("mapBuiltIn") or stats["map"]
+        elif g.get("mapCustom"):                     # custom map: replay file name (finds the real HyperRandom pick)
+            g["map"] = stats["map"] or g["map"]
+        # else a built-in map name from aoe2companion wins (see summarize_match)
         g.setdefault("started", stats["started"])
         by_pid = {p["profileId"]: p for p in stats["players"]}
         if not g.get("players"):
