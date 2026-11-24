@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-tF7vDhQvH1rpX1DmG6wRnMTDbyLIZlHMrfI08/9hdgY=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="script-src 'sha256-y5wj2aza+LDxuS+7oLiQ3qcrQSlGX/XSxrcw3xunDZk=' 'sha256-QY+h2aCQg9UW4CxDsAFT8C5cIY8/qhmv98OynqMzFO4=' https://www.gstatic.com https://gc.zgo.at; object-src 'none'; base-uri 'none'; form-action 'none'">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Tourney Tracker</title>
@@ -1983,7 +1983,7 @@ function pageSiteHome(){
     : `<p class="muted">${(live.dir||[]).length ? 'Nothing is running right now. Upcoming and finished tournaments are on the <a href="#/browse">Tournaments</a> page.' : 'No tournaments have been added yet. Organisers can create one after signing in with Organiser login.'}</p>`;
   return `<div class="wrap home">
     <section class="hero2 bhero"><div class="hero2-text"><h1>Follow an Age of Empires II tournament, or run your own.</h1>
-      <p class="lede">Fixtures, standings and results update live while the games are played. Organisers set up the format, the site finds each game on aoe2companion, and an organiser confirms it before it counts.</p>
+      <p class="lede">The site finds each game on aoe2companion shortly after it's played and reads the replay, so organisers can check it. Once an organiser confirms it, the result and full stats go public, and fixtures, standings and stats update for everyone.</p>
       <form class="search" data-form="search" role="search"><label class="sr" for="hq">Search tournaments</label><input id="hq" name="q" type="search" placeholder="Search by name or host" autocomplete="off"><button class="pri" type="submit">Search</button></form>
       <p class="small muted"><a href="#/browse">Browse all tournaments</a> or <a href="#/organiser">run your own</a>.</p></div>${bracketArt()}</section>
     <h2 class="sech">${anyLive ? 'Running now' : 'Tournaments'}</h2>${list}
